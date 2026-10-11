@@ -1,9 +1,10 @@
 """Local transcription (extra: pip install study-app[transcribe]).
 
-Pipeline: several downloader threads fetch ONLY the AUDIO of different videos ahead of time into a temporary folder
-OUTSIDE the data folder, while one or more transcriber threads run faster-whisper (GPU if available, else CPU) and write
-<data>/transcripts/<id>.json. Each audio file is DELETED as soon as its transcript is saved; the work folder is cleaned
-at the start and at the end (and `study clean` removes it). A bounded queue keeps only a few audio files on disk.
+Pipeline: downloader threads fetch ONLY the AUDIO of the next videos into a temporary folder OUTSIDE the data folder,
+while transcriber threads run faster-whisper (GPU if available, else CPU) and write <data>/transcripts/<id>.json. A video's
+own audio is DELETED as soon as its transcript is saved. Nothing else is deleted automatically: leftovers (e.g. after a
+crash) stay until `study clean`. This module is the pipeline for one batch; jobs.py adds the shared queue on top of it
+(many `study transcribe` calls, one runner), and that is what the command line uses.
 
 Politeness towards YouTube: each downloader sleeps `pause` seconds between its downloads; a 403 is retried later and a
 429 / bot check stops everything (the log says BLOCKED: change network or wait). YouTube's terms generally forbid
@@ -22,6 +23,8 @@ from pathlib import Path
 
 from ..paths import work_dir
 from . import extract_id
+
+QUEUE_NAME = "_queue"          # shared queue folder inside the work folder (see jobs.py); clean_work never touches it
 
 _models: dict = {}
 _models_lock = threading.Lock()
@@ -88,11 +91,13 @@ def recognize(audio: Path, model: str = "small", language: str = "pt", device: s
 
 
 def clean_work() -> int:
-    """Deletes every leftover temporary audio folder. Returns how many folders were removed."""
+    """Deletes leftover temporary AUDIO folders (never the queue). Only `study clean` calls this. Returns how many."""
     root = work_dir()
     removed = 0
     if root.exists():
         for child in root.iterdir():
+            if child.name == QUEUE_NAME:
+                continue
             shutil.rmtree(child, ignore_errors=True) if child.is_dir() else child.unlink(missing_ok=True)
             removed += 1
         try:
@@ -122,9 +127,6 @@ def transcribe_many(entries: list[str], out_dir: Path, model: str = "small", lan
     summary = {"ok": [], "failed": [], "blocked": False}
     if not todo:
         return summary
-    removed = clean_work()
-    if removed:
-        log(f"cleaned {removed} leftover temporary folder(s)")
     dev, compute = pick_device(device)
     log(f"{len(todo)} video(s); device={dev}/{compute}; downloads={downloads}; workers={workers}; model={model}")
     ready: queue.Queue = queue.Queue(maxsize=downloads + workers)
@@ -202,6 +204,5 @@ def transcribe_many(entries: list[str], out_dir: Path, model: str = "small", lan
     for t in consumers:
         t.join()
     summary["blocked"] = blocked.is_set()
-    leftover = clean_work()
-    log(f"done: {len(summary['ok'])} ok, {len(summary['failed'])} failed, blocked={summary['blocked']}" + (f"; cleaned {leftover} leftover folder(s)" if leftover else ""))
+    log(f"done: {len(summary['ok'])} ok, {len(summary['failed'])} failed, blocked={summary['blocked']}")
     return summary

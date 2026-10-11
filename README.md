@@ -58,17 +58,20 @@ study search TERMOS...               # busca no YouTube: id | duração | canal 
 study captions ID... [--pause 6]     # baixa as legendas do YouTube para <dados>/transcripts (o YouTube limita)
 study captions --text ID             # imprime uma transcrição guardada, com minutagem
 study transcribe ID... [--model small] [--language pt|en|auto] [--device auto|cpu|cuda]
-                       [--downloads 1] [--workers 2] [--pause 4] [--overwrite]
+                       [--downloads 1] [--workers 2] [--pause 4] [--overwrite] [--no-wait]
                                      # reconhecimento de fala local (GPU se houver); baixa vários áudios adiantados e
                                      # transcreve vários ao mesmo tempo; cada áudio é apagado assim que a transcrição é salva
-study clean                          # apaga restos de áudio temporário
+study queue                          # mostra a fila compartilhada (pendentes, falhas, se há executor ativo)
+study clean [--force]                # apaga restos de áudio temporário (só este comando limpa; recusa se há executor ativo)
 ```
 
 `python -m study_app <comando>` também funciona (use `PYTHONPATH=src` ao rodar de um clone sem instalar).
 
 ### Sobre `study transcribe`
 
-Um **downloader** baixa **só o áudio** (m4a, cerca de 1 MB por minuto), de um vídeo por vez e já adiantado em relação à transcrição, numa pasta temporária (`STUDY_WORK_DIR`), enquanto um ou mais **transcritores** rodam o faster-whisper e gravam `<dados>/transcripts/<id>.json`. Cada áudio é **apagado assim que a transcrição é salva**, a pasta temporária é limpa no começo e no fim, e uma fila limitada mantém poucos arquivos em disco.
+Um **downloader** baixa **só o áudio** (m4a, cerca de 1 MB por minuto), de um vídeo por vez e já adiantado em relação à transcrição, numa pasta temporária (`STUDY_WORK_DIR`), enquanto um ou mais **transcritores** rodam o faster-whisper e gravam `<dados>/transcripts/<id>.json`. O áudio de cada vídeo é **apagado assim que a transcrição dele é salva**. **Nada mais é apagado automaticamente**: restos (por exemplo, depois de uma queda) ficam até alguém rodar `study clean`.
+
+**Fila única:** cada chamada de `study transcribe` apenas **adiciona** seus vídeos a uma fila em disco (dentro de `STUDY_WORK_DIR`). Uma só chamada por vez vira o *executor* (arquivo de trava com batimento) e esvazia a fila inteira, inclusive o que outras chamadas adicionarem enquanto isso; as demais esperam. Assim, chamadas em vários terminais nunca baixam nem transcrevem ao mesmo tempo, e um vídeo nunca é feito duas vezes. Cada chamada só termina quando os **seus** vídeos terminam (`--no-wait` devolve o controle logo após enfileirar, se já houver executor). Se o executor cair, a trava vence em 60 s e a próxima chamada assume. Se o YouTube bloquear, a fila para (`BLOCKED`, saída 3) e a próxima chamada, depois de trocar de rede, retoma de onde parou.
 
 - **GPU:** com `--device auto` (padrão) usa CUDA quando o CTranslate2 enxerga uma placa NVIDIA. No Windows são necessárias as bibliotecas `nvidia-cublas-cu12` e `nvidia-cudnn-cu12` (pip); o app localiza as DLLs sozinho em qualquer pasta do `sys.path` que tenha `nvidia/*/bin`. Sem GPU, cai para CPU (cerca de 4 vezes a duração do vídeo com o modelo `small`).
 - **Paralelismo:** `--downloads` (padrão **1**: os downloads são feitos um de cada vez) e `--workers` (padrão 2: só a transcrição roda em paralelo). Cada downloader espera `--pause` segundos entre os seus downloads.

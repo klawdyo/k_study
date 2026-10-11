@@ -39,7 +39,7 @@ def test_all_videos_are_transcribed_and_audio_is_deleted(monkeypatch, tmp_path):
     for video_id in IDS:
         doc = json.loads((out / f"{video_id}.json").read_text(encoding="utf-8"))
         assert doc["segments"] == [[0, "hello"]] and doc["title"] == f"title {video_id}"
-    assert not (tmp_path / "work").exists()                          # nothing left on disk
+    assert not any(f.is_file() for f in (tmp_path / "work").rglob("*"))      # no audio left on disk
 
 
 def test_existing_transcripts_are_skipped(monkeypatch, tmp_path):

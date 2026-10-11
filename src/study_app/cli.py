@@ -5,8 +5,9 @@
   study validate                            validate the data folder
   study search      TERMS...                search YouTube
   study captions    ID... | --text ID        download YouTube captions / print one with timestamps
-  study transcribe  ID...                   transcribe locally (GPU if available; parallel; audio deleted afterwards)
-  study clean                               delete leftover temporary audio
+  study transcribe  ID...                   add to the shared queue and transcribe locally (GPU if available; waits until done)
+  study queue                               show the shared transcription queue (pending / failed / runner)
+  study clean                               delete leftover temporary audio (nothing else deletes it)
 
 The data folder comes from --data-dir, else STUDY_DATA_DIR, else the folder saved for this computer
 (chosen in the web UI on first run or with `study data-dir PATH`).
@@ -58,8 +59,12 @@ def main(argv=None) -> int:
     s.add_argument("--workers", type=int, default=2, help="videos transcribed at the same time (default 2)")
     s.add_argument("--pause", type=int, default=4, help="seconds each downloader waits between its downloads")
     s.add_argument("--overwrite", action="store_true")
+    s.add_argument("--no-wait", action="store_true", help="only queue the videos and return (default: wait until they are done)")
 
-    sub.add_parser("clean", help="delete leftover temporary audio")
+    sub.add_parser("queue", help="show the shared transcription queue")
+
+    s = sub.add_parser("clean", help="delete leftover temporary audio (the only thing that deletes it besides a finished video)")
+    s.add_argument("--force", action="store_true", help="even if a transcription runner seems to be active")
 
     args = ap.parse_args(argv)
     try:
@@ -84,8 +89,19 @@ def main(argv=None) -> int:
                 print(f"data folder: {found or '(not set)'}  (source: {source})")
                 print(f"settings file: {settings.settings_file()}")
             return 0
+        if args.command == "queue":
+            from .youtube.jobs import queue_status
+            st = queue_status()
+            print(f"runner active: {st['runner']}; blocked: {st['blocked']}")
+            print(f"pending ({len(st['pending'])}): {' '.join(st['pending'])}")
+            print(f"failed ({len(st['failed'])}): {' '.join(st['failed'])}")
+            return 0
         if args.command == "clean":
+            from .youtube.jobs import runner_active
             from .youtube.transcribe import clean_work
+            if runner_active() and not args.force:
+                print("a transcription runner is active; its audio would be deleted. Wait for it or use --force.")
+                return 1
             print(f"removed {clean_work()} leftover folder(s) from {paths.work_dir()}")
             return 0
         if args.command == "serve":
@@ -117,9 +133,9 @@ def main(argv=None) -> int:
             else:
                 fetch_many([extract_id(v) for v in args.videos], out, args.pause)
         elif args.command == "transcribe":
-            from .youtube.transcribe import transcribe_many
-            result = transcribe_many(args.videos, paths.transcripts_dir(data), args.model, args.language, args.pause,
-                                     args.overwrite, args.device, args.downloads, args.workers)
+            from .youtube.jobs import submit
+            result = submit(args.videos, paths.transcripts_dir(data), args.model, args.language, args.pause,
+                            args.overwrite, args.device, args.downloads, args.workers, wait=not args.no_wait)
             return 3 if result["blocked"] else (1 if result["failed"] else 0)
     except paths.ConfigError as exc:
         print("error:", exc, file=sys.stderr)
