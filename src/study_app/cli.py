@@ -61,7 +61,8 @@ def main(argv=None) -> int:
     s.add_argument("--overwrite", action="store_true")
     s.add_argument("--no-wait", action="store_true", help="only queue the videos and return (default: wait until they are done)")
 
-    sub.add_parser("queue", help="show the shared transcription queue")
+    s = sub.add_parser("queue", help="show the shared transcription queue (same view as `study transcribe`)")
+    s.add_argument("--watch", action="store_true", help="keep redrawing until Ctrl+C (open it in another terminal)")
 
     s = sub.add_parser("clean", help="delete leftover temporary audio (the only thing that deletes it besides a finished video)")
     s.add_argument("--force", action="store_true", help="even if a transcription runner seems to be active")
@@ -90,11 +91,22 @@ def main(argv=None) -> int:
                 print(f"settings file: {settings.settings_file()}")
             return 0
         if args.command == "queue":
-            from .youtube.jobs import queue_status
-            st = queue_status()
-            print(f"runner active: {st['runner']}; blocked: {st['blocked']}")
-            print(f"pending ({len(st['pending'])}): {' '.join(st['pending'])}")
-            print(f"failed ({len(st['failed'])}): {' '.join(st['failed'])}")
+            import time
+
+            from .youtube.jobs import snapshot
+            from .youtube.view import Watcher, enable_windows_ansi, render, use_color
+            if args.watch:
+                watcher = Watcher(snapshot, []).start()
+                try:
+                    while True:
+                        time.sleep(3600)
+                except KeyboardInterrupt:
+                    watcher.stop()
+                return 0
+            color = use_color()
+            if color:
+                enable_windows_ansi()
+            print(chr(10).join(render(snapshot(), set(), None, color)))
             return 0
         if args.command == "clean":
             from .youtube.jobs import runner_active

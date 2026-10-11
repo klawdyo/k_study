@@ -26,6 +26,7 @@ from . import extract_id
 
 QUEUE_NAME = "_queue"          # shared queue folder inside the work folder (see jobs.py); clean_work never touches it
 
+_hooks = threading.local()     # per-thread progress callbacks (set by transcribe_many, read by download_audio / recognize)
 _models: dict = {}
 _models_lock = threading.Lock()
 
@@ -74,8 +75,16 @@ def load_model(model: str, device: str, workers: int):
 
 def download_audio(video_id: str, folder: Path):
     import yt_dlp
+    def on_progress(d: dict) -> None:
+        callback = getattr(_hooks, "download", None)
+        if callback and d.get("status") == "downloading":
+            info = d.get("info_dict") or {}
+            callback(title=info.get("title"), duration=info.get("duration"), bytes_done=d.get("downloaded_bytes"),
+                     bytes_total=d.get("total_bytes") or d.get("total_bytes_estimate"))
+
     options = {"format": "bestaudio[ext=m4a]/bestaudio", "outtmpl": str(folder / "%(id)s.%(ext)s"),
-               "noplaylist": True, "quiet": True, "no_warnings": True, "noprogress": True}
+               "noplaylist": True, "quiet": True, "no_warnings": True, "noprogress": True,
+               "progress_hooks": [on_progress]}
     with yt_dlp.YoutubeDL(options) as ydl:
         info = ydl.extract_info("https://www.youtube.com/watch?v=" + video_id, download=True)
     return next(folder.iterdir()), info
@@ -87,7 +96,13 @@ def recognize(audio: Path, model: str = "small", language: str = "pt", device: s
     wanted = None if language in (None, "auto") else language
     segments, info = load_model(model, device, workers).transcribe(
         str(audio), language=wanted, vad_filter=True, beam_size=5)
-    return [[round(s.start), s.text.strip()] for s in segments], (wanted or info.language)
+    callback = getattr(_hooks, "progress", None)
+    result = []
+    for s in segments:
+        result.append([round(s.start), s.text.strip()])
+        if callback and getattr(info, "duration", None):
+            callback(min(1.0, s.end / info.duration))
+    return result, (wanted or info.language)
 
 
 def clean_work() -> int:
@@ -118,8 +133,15 @@ def _is_transient(exc: Exception) -> bool:
 
 def transcribe_many(entries: list[str], out_dir: Path, model: str = "small", language: str = "pt",
                     pause: int = 4, overwrite: bool = False, device: str = "auto",
-                    downloads: int = 1, workers: int = 2, log=log_line) -> dict:
-    """Downloads `downloads` videos at a time (default 1: one by one) and transcribes `workers` at a time. Returns a summary dict."""
+                    downloads: int = 1, workers: int = 2, log=log_line, on_event=None) -> dict:
+    """Downloads `downloads` videos at a time (default 1: one by one) and transcribes `workers` at a time. Returns a summary dict.
+
+    `on_event(video_id, **fields)` (optional) reports each video's state: phase = downloading | downloaded |
+    transcribing | done | failed, plus title, duration, bytes_done/bytes_total, pct (0..1), error, note."""
+    def emit(video_id: str, **fields) -> None:
+        if on_event:
+            on_event(video_id, **fields)
+
     ids = list(dict.fromkeys(extract_id(e) for e in entries))
     todo = [i for i in ids if overwrite or not (out_dir / f"{i}.json").exists()]
     for skipped in set(ids) - set(todo):
@@ -141,25 +163,35 @@ def transcribe_many(entries: list[str], out_dir: Path, model: str = "small", lan
         shutil.rmtree(folder, ignore_errors=True)
         folder.mkdir(parents=True)
         t0 = time.time()
+        _hooks.download = lambda **fields: emit(video_id, phase="downloading", **fields)
         for attempt in (1, 2):
             try:
+                emit(video_id, phase="downloading", note=None)
                 audio, info = download_audio(video_id, folder)
                 log(f"{video_id}: downloaded {audio.stat().st_size / 1e6:.1f} MB in {time.time() - t0:.0f}s - {info.get('title')} ({info.get('duration')}s)")
+                emit(video_id, phase="downloaded", title=info.get("title"), duration=info.get("duration"),
+                     size_mb=round(audio.stat().st_size / 1e6, 1), pct=None, bytes_done=None, bytes_total=None)
                 ready.put((video_id, audio, info, folder))
                 break
             except Exception as exc:
                 if _is_block(exc):
                     blocked.set()
                     log(f"{video_id}: BLOCKED by YouTube ({str(exc)[:80]}). Change network or wait; stopping downloads.")
+                    emit(video_id, phase="queued", note="bloqueado pelo YouTube; volta quando você rodar de novo", pct=None)
                     shutil.rmtree(folder, ignore_errors=True)
                     return
                 if attempt == 1 and _is_transient(exc):
                     log(f"{video_id}: 403, retrying in 30s")
+                    emit(video_id, note="erro 403 passageiro; nova tentativa em 30 s")
                     time.sleep(30)
                     continue
                 with lock:
                     (retry if _is_transient(exc) else summary["failed"]).append(video_id)
                 log(f"{video_id}: download failed ({type(exc).__name__}: {str(exc)[:100]})")
+                if not _is_transient(exc):
+                    emit(video_id, phase="failed", error=f"download: {str(exc)[:120]}")
+                else:
+                    emit(video_id, note="erro 403; nova tentativa no fim do lote")
                 shutil.rmtree(folder, ignore_errors=True)
                 return
         time.sleep(pause)                                   # be gentle with YouTube between downloads of this thread
@@ -172,6 +204,8 @@ def transcribe_many(entries: list[str], out_dir: Path, model: str = "small", lan
             video_id, audio, info, folder = item
             try:
                 t1 = time.time()
+                emit(video_id, phase="transcribing", pct=0.0, note=None)
+                _hooks.progress = lambda fraction, video_id=video_id: emit(video_id, phase="transcribing", pct=fraction)
                 segments, detected = recognize(audio, model, language, device, workers)
                 out_dir.mkdir(parents=True, exist_ok=True)
                 doc = {"lang": detected, "generated": True, "duration": info.get("duration"), "title": info.get("title"),
@@ -180,11 +214,14 @@ def transcribe_many(entries: list[str], out_dir: Path, model: str = "small", lan
                 with lock:
                     summary["ok"].append(video_id)
                 log(f"{video_id}: transcribed in {time.time() - t1:.0f}s ({len(segments)} segments, {detected})")
+                emit(video_id, phase="done", pct=1.0, lang=detected, segments=len(segments), seconds=round(time.time() - t1))
             except Exception as exc:
                 with lock:
                     summary["failed"].append(video_id)
                 log(f"{video_id}: transcription failed ({type(exc).__name__}: {str(exc)[:100]})")
+                emit(video_id, phase="failed", error=f"transcrição: {str(exc)[:120]}")
             finally:
+                _hooks.progress = None
                 shutil.rmtree(folder, ignore_errors=True)   # the audio never stays on disk
                 log(f"{video_id}: audio deleted")
 

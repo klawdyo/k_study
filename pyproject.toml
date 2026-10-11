@@ -13,7 +13,8 @@ dependencies = []          # the app itself uses only the standard library
 [project.optional-dependencies]
 captions = ["youtube-transcript-api"]
 transcribe = ["yt-dlp", "faster-whisper"]
-all = ["youtube-transcript-api", "yt-dlp", "faster-whisper"]
+gpu = ["nvidia-cublas-cu12", "nvidia-cudnn-cu12"]
+all = ["youtube-transcript-api", "yt-dlp", "faster-whisper", "nvidia-cublas-cu12", "nvidia-cudnn-cu12"]
 dev = ["pytest"]
 
 [project.scripts]

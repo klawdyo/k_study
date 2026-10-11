@@ -18,7 +18,7 @@ pip install -e .                      # só o app
 pip install -e ".[all]"               # + legendas + transcrição local (yt-dlp, faster-whisper)
 ```
 
-Extras: `captions` (youtube-transcript-api), `transcribe` (yt-dlp + faster-whisper), `dev` (pytest).
+Extras: `captions` (youtube-transcript-api), `transcribe` (yt-dlp + faster-whisper), `gpu` (bibliotecas CUDA da NVIDIA), `all`, `dev` (pytest). Para transcrever com GPU: `pip install -e ".[captions,transcribe,gpu]"`.
 
 ## Primeira execução: escolher a pasta de dados
 
@@ -74,6 +74,7 @@ Um **downloader** baixa **só o áudio** (m4a, cerca de 1 MB por minuto), de um 
 **Fila única:** cada chamada de `study transcribe` apenas **adiciona** seus vídeos a uma fila em disco (dentro de `STUDY_WORK_DIR`). Uma só chamada por vez vira o *executor* (arquivo de trava com batimento) e esvazia a fila inteira, inclusive o que outras chamadas adicionarem enquanto isso; as demais esperam. Assim, chamadas em vários terminais nunca baixam nem transcrevem ao mesmo tempo, e um vídeo nunca é feito duas vezes. Cada chamada só termina quando os **seus** vídeos terminam (`--no-wait` devolve o controle logo após enfileirar, se já houver executor). Se o executor cair, a trava vence em 60 s e a próxima chamada assume. Se o YouTube bloquear, a fila para (`BLOCKED`, saída 3) e a próxima chamada, depois de trocar de rede, retoma de onde parou.
 
 - **GPU:** com `--device auto` (padrão) usa CUDA quando o CTranslate2 enxerga uma placa NVIDIA. No Windows são necessárias as bibliotecas `nvidia-cublas-cu12` e `nvidia-cudnn-cu12` (pip); o app localiza as DLLs sozinho em qualquer pasta do `sys.path` que tenha `nvidia/*/bin`. Sem GPU, cai para CPU (cerca de 4 vezes a duração do vídeo com o modelo `small`).
+- **Acompanhamento:** o terminal mostra a fila inteira, colorida e redesenhada no lugar: para cada vídeo, a fase (NA FILA, BAIXANDO, ÁUDIO PRONTO, TRANSCREVENDO, CONCLUÍDO, FALHOU), o título, a barra de progresso e o tempo de áudio já transcrito; ★ marca os vídeos da chamada atual. Todas as chamadas leem os mesmos arquivos de estado, então mostram a **mesma fila**, inclusive vídeos adicionados por outro terminal. `study queue` mostra um retrato da fila e `study queue --watch` a acompanha ao vivo, de qualquer terminal. Sem terminal interativo (arquivo de log, agente), sai uma linha por mudança de fase; `NO_COLOR=1` desliga as cores. O log técnico do executor fica em `<STUDY_WORK_DIR>/_queue/runner.log`.
 - **Paralelismo:** `--downloads` (padrão **1**: os downloads são feitos um de cada vez) e `--workers` (padrão 2: só a transcrição roda em paralelo). Cada downloader espera `--pause` segundos entre os seus downloads.
 - **Cuidado com o YouTube:** um `403` é repetido depois; um `429` ou "confirme que não é robô" **para tudo** e o log diz `BLOCKED` (código de saída 3): troque de rede ou espere. Os termos de uso do YouTube em geral proíbem baixar vídeos sem autorização do autor: use para estudo pessoal, poucos vídeos, e nunca guarde nem compartilhe o áudio.
 - `--language auto` deixa o Whisper detectar o idioma (útil para vídeos dublados).

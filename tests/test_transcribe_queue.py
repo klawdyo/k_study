@@ -68,7 +68,7 @@ def test_concurrent_calls_share_one_queue_and_one_runner(monkeypatch, tmp_path):
     results = {}
 
     def call(name, ids):
-        results[name] = jobs.submit(ids, out, log=lambda m: None)
+        results[name] = jobs.submit(ids, out, log=lambda m: None, show=False)
 
     threads = [threading.Thread(target=call, args=("a", IDS[:3])), threading.Thread(target=call, args=("b", IDS[2:]))]
     for th in threads:
@@ -86,22 +86,22 @@ def test_a_crashed_runners_stale_lock_is_taken_over(monkeypatch, tmp_path):
     assert jobs._acquire_runner()
     old = jobs.time.time() - 3600
     os.utime(jobs._lock_file(), (old, old))                          # its heartbeat stopped long ago
-    result = jobs.submit(IDS[:1], tmp_path / "t", log=lambda m: None)
+    result = jobs.submit(IDS[:1], tmp_path / "t", log=lambda m: None, show=False)
     assert result["ok"] == [IDS[0]]
 
 
 def test_no_wait_only_queues_when_another_runner_is_active(tmp_path):
     assert jobs._acquire_runner()                                    # someone else is the runner
-    result = jobs.submit(IDS[:2], tmp_path / "t", wait=False, log=lambda m: None)
+    result = jobs.submit(IDS[:2], tmp_path / "t", wait=False, log=lambda m: None, show=False)
     assert result["queued"] == 2 and jobs.queue_status()["pending"] == IDS[:2]
 
 
 def test_a_youtube_block_is_reported_and_the_next_call_resumes(monkeypatch, tmp_path):
     monkeypatch.setattr(tr, "download_audio", fake_download(fail_with=RuntimeError("HTTP Error 429: Too Many Requests")))
-    result = jobs.submit(IDS[:2], tmp_path / "t", log=lambda m: None)
+    result = jobs.submit(IDS[:2], tmp_path / "t", log=lambda m: None, show=False)
     assert result["blocked"] is True and jobs.queue_status()["blocked"]
     monkeypatch.setattr(tr, "download_audio", fake_download())      # the user changed network
-    result = jobs.submit(IDS[:2], tmp_path / "t", log=lambda m: None)
+    result = jobs.submit(IDS[:2], tmp_path / "t", log=lambda m: None, show=False)
     assert sorted(result["ok"]) == sorted(IDS[:2]) and not jobs.queue_status()["blocked"]
 
 
@@ -112,6 +112,57 @@ def test_a_video_that_fails_is_marked_and_does_not_block_the_others(monkeypatch,
         return fake_download()(video_id, folder)
 
     monkeypatch.setattr(tr, "download_audio", download)
-    result = jobs.submit(IDS[:3], tmp_path / "t", log=lambda m: None)
+    result = jobs.submit(IDS[:3], tmp_path / "t", log=lambda m: None, show=False)
     assert result["failed"] == [IDS[0]] and sorted(result["ok"]) == sorted(IDS[1:3])
     assert jobs.queue_status()["failed"] == [IDS[0]]
+
+
+# ---- shared view
+def test_status_files_follow_each_video_and_every_instance_reads_the_same_snapshot(monkeypatch, tmp_path):
+    seen = []
+
+    def download(video_id, folder):
+        seen.append(jobs.snapshot())                                  # what ANY instance would draw right now
+        return fake_download()(video_id, folder)
+
+    monkeypatch.setattr(tr, "download_audio", download)
+    jobs.submit(IDS[:2], tmp_path / "t", log=lambda m: None, show=False)
+    final = {v["id"]: v for v in jobs.snapshot()["videos"]}
+    assert {final[i]["phase"] for i in IDS[:2]} == {"done"}
+    first = {v["id"]: v["phase"] for v in seen[0]["videos"]}
+    assert set(first) == set(IDS[:2]) and "queued" in first.values() or "downloading" in first.values()
+
+
+def test_a_video_added_by_another_call_shows_up_in_the_shared_snapshot(monkeypatch, tmp_path):
+    assert jobs._acquire_runner()                                    # a runner exists (another terminal)
+    jobs.submit(IDS[:1], tmp_path / "t", wait=False, log=lambda m: None, show=False)
+    jobs.submit(IDS[1:2], tmp_path / "t", wait=False, log=lambda m: None, show=False)   # a second instance adds more
+    assert sorted(v["id"] for v in jobs.snapshot()["videos"]) == sorted(IDS[:2])
+
+
+def test_render_shows_phase_progress_title_and_marks_this_calls_videos():
+    from study_app.youtube import view
+    snap = {"runner": True, "blocked": False, "meta": {"device": "cuda/float16", "model": "small"}, "videos": [
+        {"id": IDS[0], "phase": "transcribing", "pct": 0.5, "duration": 600, "title": "Aula sobre KNN", "added": 1},
+        {"id": IDS[1], "phase": "queued", "added": 2},
+        {"id": IDS[2], "phase": "failed", "error": "download: boom", "added": 3}]}
+    text = "\n".join(view.render(snap, {IDS[0]}, 0, color=False, width=120))
+    assert "TRANSCREVENDO" in text and "50%" in text and "Aula sobre KNN" in text and "★" in text
+    assert "NA FILA" in text and "FALHOU" in text and "boom" in text and "cuda/float16" in text
+    colored = "\n".join(view.render(snap, set(), 0, color=True, width=120))
+    assert "\x1b[" in colored
+
+
+def test_plain_output_prints_one_line_per_change(capsys):
+    import io
+
+    from study_app.youtube import view
+    out = io.StringIO()
+    state = {"runner": True, "blocked": False, "meta": None, "videos": [{"id": IDS[0], "phase": "queued"}]}
+    watcher = view.Watcher(lambda: state, [IDS[0]], out=out)
+    watcher._draw()
+    watcher._draw()                                                  # nothing changed: no new line
+    state["videos"][0] = {"id": IDS[0], "phase": "downloading", "title": "T"}
+    watcher._draw()
+    lines = out.getvalue().strip().splitlines()
+    assert len(lines) == 2 and "NA FILA" in lines[0] and "BAIXANDO" in lines[1]
