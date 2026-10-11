@@ -164,12 +164,39 @@ function counterTitle(items) {
 }
 
 /* ---------- items ---------- */
+const questionProgress = {};            // item key -> {answered, total}; filled by renderQuestions
+
+function followingOf(item) {
+  return state.items[state.items.findIndex((x) => x.key === item.key) + 1];
+}
+
+/* Status as a badge-like pill. Clicking toggles done/pending, except for question sets: those become done only
+   when every question has been answered, so their pill just shows the progress. */
+function statusPill(item) {
+  const done = isDone(item);
+  const qp = questionProgress[item.key];
+  if (item.type === "questions") {
+    const text = qp ? `${qp.answered}/${qp.total} respondidas` : (done ? "Concluído" : "Pendente");
+    return h("span", { class: "badge status-pill " + (done ? "ok" : "pending"), title: "O conjunto de questões só fica concluído quando todas forem respondidas." },
+      icon(done ? "check_circle_filled" : "radio_button_unchecked"), done ? "Concluído · " + text : text);
+  }
+  return h("button", { class: "badge status-pill " + (done ? "ok" : "pending"), title: done ? "Clique para marcar como pendente" : "Clique para marcar como feito",
+    onclick: () => toggleDone(item) }, icon(done ? "check_circle_filled" : "radio_button_unchecked"), done ? "Feito" : "Pendente");
+}
+function nextPill(item) {
+  const following = followingOf(item);
+  return following ? h("button", { class: "badge next-pill", title: following.title, onclick: () => openItem(following) }, "Próximo item ›") : null;
+}
+function refreshPills() {
+  for (const slot of document.querySelectorAll(".pillbar .status-slot")) slot.replaceChildren(statusPill(state.current));
+}
+
 async function openItem(item, byClick = true) {
   if (!item) { $("#main").replaceChildren(h("p", {}, "Bloco vazio.")); return; }
   state.current = item;
   if (byClick) history.replaceState(null, "", `#${state.block.id}/${item.id}`);
-  // opening an item by click marks it as done (it can be unmarked on the page)
-  if (byClick && !isDone(item)) await mutate("PUT", `items/${keyPath(item.key)}`, { done: true });
+  // opening an item by click marks it as done (it can be unmarked on the page); question sets are never marked on open
+  if (byClick && !isDone(item) && item.type !== "questions") await mutate("PUT", `items/${keyPath(item.key)}`, { done: true });
   drawMenu();
   const main = $("#main");
   const kind = KINDS[item.type] || { icon: "article", label: item.type };
@@ -179,6 +206,7 @@ async function openItem(item, byClick = true) {
   if (item.optional) badges.append(h("span", { class: "badge" }, "opcional"));
   if (item.type === "video" && item.review) badges.append(h("span", { class: "badge ok", title: "Li a transcrição e comparei com os tópicos dos slides; os detalhes estão em \"Conferência com os slides\", abaixo do vídeo." }, item.review.badge));
   if (item.type === "video" && !item.review) badges.append(h("span", { class: "badge warn", title: "Ainda não li a transcrição deste vídeo para comparar com os slides." }, "transcrição ainda não lida"));
+  badges.append(h("span", { class: "pillbar top" }, h("span", { class: "status-slot" }, statusPill(item)), nextPill(item)));
 
   const body = h("div");
   main.replaceChildren(...[
@@ -196,17 +224,12 @@ async function openItem(item, byClick = true) {
   catch (error) { body.append(h("div", { class: "verdict no" }, `Erro ao carregar este item: ${error.message}`)); }
 
   if (state.current !== item) return;
-  const doneButton = h("button", { class: "btn done-btn" + (isDone(item) ? " done" : ""), onclick: () => toggleDone(item) });
-  doneButton.id = "done-btn";
-  setDoneLabel(doneButton, isDone(item));
-  const following = state.items[state.items.findIndex((x) => x.key === item.key) + 1];
-  const actions = h("div", { class: "actions" }, doneButton,
-    following ? h("button", { class: "btn primary", onclick: () => openItem(following) }, "Próximo item →") : null);
   const notes = h("textarea", { class: "notes", placeholder: "Anotações suas sobre este item (dúvidas, o que errou, o que reler)…" });
   notes.value = state.progress.notes[item.key] || "";
   let timer;
   notes.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(() => mutate("PUT", `notes/${keyPath(item.key)}`, { text: notes.value }), 500); });
-  main.append(actions, h("label", { class: "notes-label" }, "Anotações"), notes);
+  main.append(h("div", { class: "pillbar bottom" }, h("span", { class: "status-slot" }, statusPill(item)), nextPill(item)),
+    h("label", { class: "notes-label" }, "Anotações"), notes);
   if (byClick) window.scrollTo(0, 0);
 }
 
@@ -214,11 +237,7 @@ async function toggleDone(item, value) {
   const next = value === undefined ? !isDone(item) : value;
   await mutate("PUT", `items/${keyPath(item.key)}`, { done: next });
   drawMenu();
-  const button = $("#done-btn");
-  if (button && state.current && state.current.key === item.key) { button.className = "btn done-btn" + (isDone(item) ? " done" : ""); setDoneLabel(button, isDone(item)); }
-}
-function setDoneLabel(button, done) {
-  button.replaceChildren(icon(done ? "check_circle_filled" : "radio_button_unchecked"), done ? "Feito · clique para desmarcar" : "Marcar como feito");
+  if (state.current && state.current.key === item.key) refreshPills();
 }
 
 async function renderItem(item, body) {
@@ -227,6 +246,9 @@ async function renderItem(item, body) {
     let text, base;
     if (item.content != null) { text = item.content; base = state.blockUrl; }
     else { base = resolve(item.path, state.blockUrl); text = await getText(base); }
+    const minutes = Math.max(1, Math.round(text.split(/\s+/).length / 180));
+    const bar = $(".badges");
+    if (bar) bar.insertBefore(h("span", { class: "badge" }, `~${minutes} min de leitura`), $(".badges .pillbar"));
     return renderMarkdown(text, base, body);
   }
   if (item.type === "pdf") {
@@ -343,44 +365,101 @@ function transcriptCard(transcript, clips, seek) {
 }
 
 /* ---------- questions ---------- */
+// One question at a time. The set is "done" only when every question is answered; when it is complete, entering
+// the item shows the summary (what you chose, what was right or wrong, with every explanation).
 async function renderQuestions(item, body) {
   const url = resolve(item.path, state.blockUrl);
   const set = await getJson(url);
-  const answers = () => state.progress.answers[item.key] || {};
-  const score = h("div", { class: "score" });
-  const updateScore = async () => {
-    const given = answers();
-    const answered = set.questions.filter((q) => given[q.id]).length;
-    const right = set.questions.filter((q) => given[q.id]?.correct).length;
-    score.textContent = `Respondidas: ${answered}/${set.questions.length} · Acertos: ${right}`;
-    if (answered === set.questions.length && !isDone(item)) await toggleDone(item, true);
-  };
-  if (set.instructions) body.append(h("div", { class: "md", html: marked.parse(set.instructions) }));
-  body.append(score);
-  let number = 0;
-  for (const question of set.questions) {
-    number++;
-    const card = h("div", { class: "question" });
-    body.append(card);
-    let prompt = question.prompt || "";
-    let base = url;
+  const total = set.questions.length;
+  const prepared = await Promise.all(set.questions.map(async (question) => {
+    let prompt = question.prompt || "", base = url;
     if (question.promptFile) { base = resolve(question.promptFile, url); prompt = await getText(base); }
-    const n = number;
-    const draw = () => drawQuestion(card, question, n, prompt, base, answers()[question.id], {
-      answer: async (chosen, correct) => { await mutate("PUT", `answers/${keyPath(item.key)}/${encodeURIComponent(question.id)}`, { chosen, correct }); draw(); updateScore(); },
-      redo: async () => { await mutate("DELETE", `answers/${keyPath(item.key)}/${encodeURIComponent(question.id)}`); draw(); updateScore(); },
-    });
-    draw();
+    return { question, prompt, base };
+  }));
+  const given = () => state.progress.answers[item.key] || {};
+  const answeredCount = () => prepared.filter((p) => given()[p.question.id]).length;
+  const rightCount = () => prepared.filter((p) => given()[p.question.id]?.correct).length;
+  const firstPending = () => Math.max(0, prepared.findIndex((p) => !given()[p.question.id]));
+  const wrap = h("div");
+  body.append(wrap);
+  let index = firstPending();
+  let summary = answeredCount() === total;
+
+  async function sync() {                      // done <=> every question answered (never on open)
+    const all = answeredCount() === total;
+    questionProgress[item.key] = { answered: answeredCount(), total };
+    if (all && !isDone(item)) await toggleDone(item, true);
+    else if (!all && isDone(item)) await toggleDone(item, false);
+    else refreshPills();
   }
-  updateScore();
-  if (set.closing) body.append(h("div", { class: "general md", html: marked.parse(set.closing) }));
+  const keyOf = (question) => `answers/${keyPath(item.key)}/${encodeURIComponent(question.id)}`;
+  const actionsFor = (question) => ({
+    answer: async (chosen, correct) => { await mutate("PUT", keyOf(question), { chosen, correct }); await sync(); draw(); },
+    redo: async () => { await mutate("DELETE", keyOf(question)); await sync(); summary = false; index = prepared.findIndex((p) => p.question.id === question.id); draw(); },
+  });
+
+  function dots() {
+    return h("div", { class: "qdots" }, ...prepared.map((p, i) => {
+      const saved = given()[p.question.id];
+      return h("button", { class: "dot" + (saved ? (saved.correct ? " ok" : " no") : "") + (!summary && i === index ? " current" : ""),
+        title: `Questão ${i + 1}${saved ? (saved.correct ? " (acertou)" : " (errou)") : " (pendente)"}`,
+        onclick: () => { summary = false; index = i; draw(); } }, String(i + 1));
+    }));
+  }
+
+  function drawSummary() {
+    const answered = answeredCount(), right = rightCount();
+    const percent = Math.round((100 * right) / total);
+    const head = h("div", { class: "summary-head" },
+      h("h2", {}, "Resumo das questões"),
+      h("p", { class: "score" }, `Você acertou ${right} de ${total} (${percent}%).`),
+      h("p", { class: "muted small" }, "Abaixo estão todas as questões, com a alternativa que você marcou, o gabarito e a explicação de cada opção."),
+      h("div", { class: "summary-actions" },
+        h("button", { class: "btn small-btn", onclick: async () => { for (const p of prepared) await mutate("DELETE", keyOf(p.question)); await sync(); summary = false; index = 0; draw(); } }, "Refazer todas"),
+        answered < total ? h("button", { class: "btn small-btn", onclick: () => { summary = false; index = firstPending(); draw(); } }, "Voltar às questões pendentes") : null));
+    wrap.append(head, dots());
+    prepared.forEach((p, i) => {
+      const card = h("div", { class: "question" });
+      wrap.append(card);
+      drawQuestion(card, p.question, i + 1, p.prompt, p.base, given()[p.question.id], actionsFor(p.question), true);
+    });
+    if (set.closing) wrap.append(h("div", { class: "general md", html: marked.parse(set.closing) }));
+  }
+
+  function drawOne() {
+    const { question, prompt, base } = prepared[index];
+    if (set.instructions && answeredCount() === 0 && index === 0) wrap.append(h("div", { class: "md", html: marked.parse(set.instructions) }));
+    wrap.append(h("p", { class: "muted small" }, `Questão ${index + 1} de ${total} · respondidas: ${answeredCount()}/${total}`), dots());
+    const card = h("div", { class: "question" });
+    wrap.append(card);
+    drawQuestion(card, question, index + 1, prompt, base, given()[question.id], actionsFor(question), false);
+    const saved = given()[question.id];
+    const last = index === total - 1;
+    wrap.append(h("div", { class: "qnav" },
+      h("button", { class: "btn", disabled: index === 0, onclick: () => { index--; draw(); } }, "‹ Anterior"),
+      answeredCount() === total
+        ? h("button", { class: "btn primary", onclick: () => { summary = true; draw(); } }, "Ver resumo")
+        : h("button", { class: "btn primary", disabled: !saved || last, title: saved ? "" : "Responda para continuar", onclick: () => {
+            const next = prepared.findIndex((p, i) => i > index && !given()[p.question.id]);
+            index = next >= 0 ? next : index + 1; draw(); } }, "Próxima ›")));
+  }
+
+  function draw() {
+    wrap.replaceChildren();
+    if (summary) drawSummary(); else drawOne();
+  }
+  questionProgress[item.key] = { answered: answeredCount(), total };
+  refreshPills();
+  draw();
 }
 
-function drawQuestion(card, question, number, prompt, base, saved, actions) {
+function drawQuestion(card, question, number, prompt, base, saved, actions, inSummary) {
   const multiple = question.type === "multiple";
   card.replaceChildren();
   card.className = "question" + (saved ? " answered" : "");
-  card.append(h("div", { class: "qn" }, `Questão ${number}${question.label ? " · " + question.label : ""}${multiple ? " · marque todas as corretas" : ""}`));
+  card.append(h("div", { class: "qn" }, `Questão ${number}${question.label ? " · " + question.label : ""}${multiple ? " · marque todas as corretas" : ""} `,
+    inSummary && saved ? h("span", { class: "badge " + (saved.correct ? "ok" : "warn") }, saved.correct ? "acertou" : "errou") : null,
+    inSummary && !saved ? h("span", { class: "badge pending" }, "não respondida") : null));
   const promptBox = h("div");
   renderMarkdown(prompt, base, promptBox);
   card.append(promptBox);
@@ -388,19 +467,19 @@ function drawQuestion(card, question, number, prompt, base, saved, actions) {
   const chosen = new Set(saved ? saved.chosen : []);
   const inputs = [];
   for (const option of question.options) {
-    const input = h("input", { type: multiple ? "checkbox" : "radio", name: "q-" + question.id, value: option.id, disabled: !!saved });
+    const input = h("input", { type: multiple ? "checkbox" : "radio", name: (inSummary ? "s-" : "q-") + question.id, value: option.id, disabled: !!saved });
     input.checked = chosen.has(option.id);
     inputs.push(input);
-    const marked_ = chosen.has(option.id);
+    const picked = chosen.has(option.id);
     let cls = "option";
     if (saved) {
-      if (option.correct && marked_) cls += " right";
-      else if (!option.correct && marked_) cls += " wrong";
-      else if (option.correct && !marked_) cls += " missed";
+      if (option.correct && picked) cls += " right";
+      else if (!option.correct && picked) cls += " wrong";
+      else if (option.correct && !picked) cls += " missed";
     }
     const content = h("div", { class: "body" }, h("div", { html: `<strong>${option.id.toUpperCase()})</strong> ` + marked.parseInline(option.text) }));
     if (saved && option.explanation) {
-      const tag = option.correct ? (marked_ ? "Correta — você marcou." : "Correta — você não marcou.") : (marked_ ? "Errada — você marcou." : "Errada.");
+      const tag = option.correct ? (picked ? "Correta — você marcou." : "Correta — você não marcou.") : (picked ? "Errada — você marcou." : "Errada.");
       content.append(h("div", { class: "why" }, h("span", { class: "tag" }, tag + " "), h("span", { html: marked.parseInline(option.explanation) })));
     }
     card.append(h("label", { class: cls }, input, content));
@@ -408,20 +487,23 @@ function drawQuestion(card, question, number, prompt, base, saved, actions) {
 
   if (!saved) {
     const button = h("button", { class: "btn primary", onclick: () => {
-      const picked = inputs.filter((i) => i.checked).map((i) => i.value);
-      if (!picked.length) { button.textContent = "Escolha uma alternativa primeiro"; return; }
+      const picks = inputs.filter((i) => i.checked).map((i) => i.value);
+      if (!picks.length) { button.textContent = "Escolha uma alternativa primeiro"; return; }
       const rightIds = question.options.filter((o) => o.correct).map((o) => o.id).sort().join(",");
-      actions.answer(picked, picked.slice().sort().join(",") === rightIds);
+      actions.answer(picks, picks.slice().sort().join(",") === rightIds);
     } }, "Responder");
     card.append(button);
   } else {
-    card.append(h("div", { class: "verdict " + (saved.correct ? "ok" : "no") }, saved.correct ? "Você acertou." : "Você errou. Leia a explicação de cada alternativa antes de seguir."));
+    const mine = question.options.filter((o) => chosen.has(o.id)).map((o) => o.id.toUpperCase()).join(", ");
+    const gabarito = question.options.filter((o) => o.correct).map((o) => o.id.toUpperCase()).join(", ");
+    card.append(h("div", { class: "verdict " + (saved.correct ? "ok" : "no") },
+      saved.correct ? `Você acertou. Marcou: ${mine}.` : `Você errou. Marcou: ${mine}. Gabarito: ${gabarito}. Leia a explicação de cada alternativa.`));
     if (question.generalExplanation) {
       const general = h("div", { class: "general" });
       renderMarkdown(question.generalExplanation, base, general);
       card.append(general);
     }
-    card.append(h("p", {}, h("button", { class: "btn", onclick: () => actions.redo() }, "Refazer esta questão")));
+    card.append(h("p", {}, h("button", { class: "btn small-btn", onclick: () => actions.redo() }, "Refazer esta questão")));
   }
 }
 

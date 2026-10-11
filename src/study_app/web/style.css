@@ -162,3 +162,27 @@ details.card ul { margin: 4px 0 0; padding-left: 20px; }
   body.menu-open #sidebar { transform: none; }
   .brand { display: none; } .bar { width: 70px; }
 }
+
+/* compact, badge-like controls (status + next item), at the top and at the bottom of every page */
+button.badge { font: inherit; font-size: 12px; border: 0; cursor: pointer; }
+.badge .ic svg { width: 14px; height: 14px; vertical-align: -2px; margin-right: 4px; }
+.badge.pending { background: var(--line); color: var(--muted); }
+button.badge.status-pill:hover, button.badge.next-pill:hover { filter: brightness(0.95); outline: 1px solid var(--accent); }
+.badge.next-pill { background: var(--accent); color: #fff; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .badge.next-pill { color: #0b1020; } }
+.pillbar { display: inline-flex; gap: 8px; align-items: center; margin-left: auto; }
+.pillbar.bottom { display: flex; justify-content: flex-end; margin: 24px 0 8px; }
+.pillbar .status-slot { display: inline-flex; }
+
+/* questions, one at a time */
+.qdots { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 14px; }
+.dot { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel); color: var(--muted);
+  font: inherit; font-size: 12px; cursor: pointer; }
+.dot.ok { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
+.dot.no { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); }
+.dot.current { outline: 2px solid var(--accent); outline-offset: 1px; }
+.qnav { display: flex; justify-content: space-between; gap: 10px; margin: 0 0 24px; }
+.summary-head h2 { margin: 0 0 4px; }
+.summary-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 4px; }
+.qn .badge { margin-left: 8px; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }

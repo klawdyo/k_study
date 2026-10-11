@@ -28,12 +28,14 @@ def download_audio(video_id: str, folder: Path):
     return next(folder.iterdir()), info
 
 
-def recognize(audio: Path, model: str = "small", language: str = "pt") -> list[list]:
+def recognize(audio: Path, model: str = "small", language: str = "pt") -> tuple[list[list], str]:
+    """Returns (segments, language). language="auto" lets Whisper detect it."""
     from faster_whisper import WhisperModel
     if model not in _models:
         _models[model] = WhisperModel(model, device="cpu", compute_type="int8")
-    segments, _ = _models[model].transcribe(str(audio), language=language, vad_filter=True, beam_size=5)
-    return [[round(s.start), s.text.strip()] for s in segments]
+    wanted = None if language in (None, "auto") else language
+    segments, info = _models[model].transcribe(str(audio), language=wanted, vad_filter=True, beam_size=5)
+    return [[round(s.start), s.text.strip()] for s in segments], (wanted or info.language)
 
 
 def transcribe_one(entry: str, out_dir: Path, model: str = "small", language: str = "pt",
@@ -51,10 +53,10 @@ def transcribe_one(entry: str, out_dir: Path, model: str = "small", language: st
         audio, info = download_audio(video_id, folder)
         t1 = time.time()
         log(f"{video_id}: downloaded {audio.stat().st_size / 1e6:.1f} MB in {t1 - t0:.0f}s - {info.get('title')} ({info.get('duration')}s)")
-        segments = recognize(audio, model, language)
-        log(f"{video_id}: transcribed in {time.time() - t1:.0f}s ({len(segments)} segments)")
+        segments, detected = recognize(audio, model, language)
+        log(f"{video_id}: transcribed in {time.time() - t1:.0f}s ({len(segments)} segments, language: {detected})")
         out_dir.mkdir(parents=True, exist_ok=True)
-        doc = {"lang": language, "generated": True, "duration": info.get("duration"), "title": info.get("title"),
+        doc = {"lang": detected, "generated": True, "duration": info.get("duration"), "title": info.get("title"),
                "source": f"transcribed locally with faster-whisper ({model}) from the video audio", "segments": segments}
         target.write_text(json.dumps(doc, ensure_ascii=False), encoding="utf-8")
         return target

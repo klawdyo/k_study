@@ -102,7 +102,10 @@ Toda gravação de progresso salva o `progress.json` de forma atômica e devolve
 
 ## Comportamento da interface
 
-Abrir um item com um clique o marca como feito (dá para desmarcar na própria página); itens opcionais não contam e são pulados pelo "PRÓXIMO"; quando a aba volta a ter foco, a interface relê o estado da API; se a API estiver fora do ar, aparece uma faixa vermelha e nada é salvo.
+- **Estado do item como selo.** No topo e no fim de cada página há dois controles compactos: o selo de estado ("Pendente" / "Feito", que se **inverte com um clique**) e o botão "Próximo item ›". Abrir um item com um clique o marca como feito (dá para voltar a "Pendente" no selo).
+- **Contadores.** O topo e cada seção contam **todo item feito**, opcional ou não; ao passar o mouse aparece o detalhamento (obrigatórios e opcionais). Itens opcionais não bloqueiam o "PRÓXIMO".
+- **Questões, uma por vez.** Abrir um conjunto de questões **não** o marca como feito: ele só fica concluído quando **todas** forem respondidas (e volta a pendente se você refizer alguma). Cada questão aparece sozinha, com navegação por pontos (verde = acertou, vermelho = errou); depois de responder, a explicação de todas as alternativas aparece na hora. Ao concluir, e **sempre que você voltar a um conjunto concluído**, a tela mostra o **resumo**: acertos e erros, a alternativa que você marcou, o gabarito e a explicação de cada opção, com "Refazer esta questão" e "Refazer todas".
+- Quando a aba volta a ter foco, a interface relê o estado da API; se a API estiver fora do ar, aparece uma faixa vermelha e nada é salvo.
 
 ## Desenvolvimento
 
