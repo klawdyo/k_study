@@ -19,6 +19,8 @@ import json
 import os
 import threading
 import time
+import urllib.parse
+import urllib.request
 from pathlib import Path
 
 from ..paths import work_dir
@@ -89,6 +91,9 @@ def update_status(video_id: str, **fields) -> None:
     with _status_lock:
         path = _status_dir() / f"{video_id}.json"
         status = _read_json(path) or {"id": video_id, "phase": "queued", "added": time.time()}
+        for key in ("title", "duration"):                        # never erase what we already know with an empty value
+            if fields.get(key) is None and status.get(key) is not None:
+                fields.pop(key, None)
         status.update(fields)
         status["updated"] = time.time()
         _write_json(path, status)
@@ -108,6 +113,29 @@ def make_on_event():
         update_status(video_id, **fields)
 
     return on_event
+
+
+def fetch_title(video_id: str) -> dict:
+    """Title and channel from YouTube's public oEmbed endpoint: one tiny request, no download. {} when unavailable."""
+    url = "https://www.youtube.com/oembed?format=json&url=" + urllib.parse.quote(f"https://www.youtube.com/watch?v={video_id}", safe="")
+    try:
+        with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "study-app"}), timeout=6) as response:
+            data = json.loads(response.read().decode("utf-8"))
+        return {"title": data.get("title"), "channel": data.get("author_name")}
+    except Exception:
+        return {}
+
+
+def fill_titles(ids: list[str]) -> None:
+    """Sets the title of queued videos as soon as they are queued (one by one, politely), without waiting for the download."""
+    for video_id in ids:
+        current = _read_json(_status_dir() / f"{video_id}.json") or {}
+        if current.get("title"):
+            continue
+        found = fetch_title(video_id)
+        if found.get("title"):
+            update_status(video_id, **found)
+        time.sleep(0.3)
 
 
 def snapshot() -> dict:
@@ -275,6 +303,7 @@ def submit(entries: list[str], out_dir: Path, model: str = "small", language: st
     if not todo:
         return result
     result["queued"] = enqueue(todo, model, language, overwrite)
+    threading.Thread(target=fill_titles, args=(list(todo),), daemon=True).start()
     watcher = Watcher(snapshot, todo).start() if show else None
     try:
         while True:

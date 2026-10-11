@@ -16,6 +16,7 @@ def fast(monkeypatch, tmp_path):
     monkeypatch.setattr(tr.time, "sleep", lambda s: None)
     monkeypatch.setattr(tr, "pick_device", lambda device="auto": ("cpu", "int8"))
     monkeypatch.setattr(tr, "recognize", lambda *a, **k: ([[0, "x"]], "pt"))
+    monkeypatch.setattr(jobs, "fetch_title", lambda video_id: {})        # no network in tests
 
 
 def fake_download(calls=None, fail_with=None):
@@ -166,3 +167,13 @@ def test_plain_output_prints_one_line_per_change(capsys):
     watcher._draw()
     lines = out.getvalue().strip().splitlines()
     assert len(lines) == 2 and "NA FILA" in lines[0] and "BAIXANDO" in lines[1]
+
+
+def test_titles_come_from_oembed_while_queued_and_are_not_erased(monkeypatch):
+    monkeypatch.setattr(jobs, "fetch_title", lambda video_id: {"title": f"Title {video_id}", "channel": "Chan"})
+    jobs.enqueue(IDS[:2], "small", "pt", False)
+    jobs.fill_titles(IDS[:2])
+    videos = {v["id"]: v for v in jobs.snapshot()["videos"]}
+    assert videos[IDS[0]]["title"] == "Title " + IDS[0] and videos[IDS[0]]["phase"] == "queued"
+    jobs.update_status(IDS[0], phase="downloading", title=None)       # the downloader may not know the title yet
+    assert {v["id"]: v for v in jobs.snapshot()["videos"]}[IDS[0]]["title"] == "Title " + IDS[0]
