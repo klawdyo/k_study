@@ -26,7 +26,12 @@ Extras: `captions` (youtube-transcript-api), `transcribe` (yt-dlp + faster-whisp
 study serve
 ```
 
-Abra <http://localhost:8765/>. Se nenhuma pasta de dados estiver configurada, o app mostra a tela **"Onde estão os arquivos do curso?"**: navegue até a pasta que contém o `config.json` e clique em **Usar esta pasta**. A escolha fica salva **neste computador**, fora da pasta de dados (porque o caminho muda de um computador para outro):
+Abra <http://localhost:8765/>. Se nenhuma pasta de dados estiver configurada, o app mostra a tela **"Onde estão os arquivos do curso?"** com uma dica de onde a pasta fica. Você tem duas formas de informar o local, e **o app nunca lista o disco**:
+
+1. **Escolher o arquivo `config.json`** na janela de seleção do próprio sistema operacional (o servidor abre o seletor no seu desktop; no Linux pode ser preciso instalar `python3-tk`);
+2. **colar o caminho** da pasta no campo de texto.
+
+Depois clique em **Usar esta pasta**. A escolha fica salva **neste computador**, fora da pasta de dados (porque o caminho muda de um computador para outro):
 
 | Sistema | Arquivo de configurações |
 | :-- | :-- |
@@ -83,7 +88,7 @@ Todo caminho é relativo ao arquivo que o contém e precisa ficar dentro da past
 | Rota | O que faz |
 | :-- | :-- |
 | `GET /api/setup` | situação da pasta de dados: `{configured, dataDir, source, home, sep, savedDir}` |
-| `GET /api/fs?path=` | lista as subpastas (usado pela tela de escolha da pasta) |
+| `POST /api/setup/pick` | abre o seletor de arquivos do sistema e devolve a pasta do `config.json` escolhido (não grava; `409` se a pasta estiver fixada) |
 | `PUT /api/setup` | `{"path": "..."}` escolhe e salva a pasta de dados (recusa se não houver `config.json`; `409` se a pasta estiver fixada por parâmetro ou variável de ambiente) |
 | `GET /api/config` | devolve o `config.json` (`409` enquanto não houver pasta configurada) |
 | `GET /api/content/<caminho>` | lê um arquivo dentro da pasta de dados (nunca fora dela) |
@@ -93,7 +98,7 @@ Todo caminho é relativo ao arquivo que o contém e precisa ficar dentro da past
 | `DELETE /api/progress/answers/<bloco>/<item>/<questão>` | apaga a resposta |
 | `PUT /api/progress/notes/<bloco>/<item>` | `{"text": "..."}` (texto vazio apaga a anotação) |
 
-Toda gravação de progresso salva o `progress.json` de forma atômica e devolve o estado completo atualizado. **Limites (por decisão):** só `127.0.0.1`, sem autenticação, um único usuário, a última gravação vence (`/api/fs` lista nomes de pastas deste computador, por isso o servidor não deve ser exposto na rede). Renomear o id de um item ou de uma questão faz o progresso dela sumir (a chave muda). A API não edita conteúdo: o conteúdo se edita como arquivo. A transcrição é de propósito um comando, e não uma rota da API.
+Toda gravação de progresso salva o `progress.json` de forma atômica e devolve o estado completo atualizado. **Limites (por decisão):** só `127.0.0.1`, sem autenticação, um único usuário, a última gravação vence (o app não lista o disco; pedidos cujo cabeçalho `Host` não seja `localhost`, `127.0.0.1` ou `::1` são recusados com `403`, contra ataques de DNS rebinding; mesmo assim, não exponha o servidor na rede). Renomear o id de um item ou de uma questão faz o progresso dela sumir (a chave muda). A API não edita conteúdo: o conteúdo se edita como arquivo. A transcrição é de propósito um comando, e não uma rota da API.
 
 ## Comportamento da interface
 

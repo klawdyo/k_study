@@ -7,7 +7,7 @@ The web UI keeps no state of its own.
 
 Routes
   GET    /api/setup                                           {configured, dataDir, source, home, sep}
-  GET    /api/fs?path=<folder>                                list sub-folders (to pick the data folder in the UI)
+  POST   /api/setup/pick                                      opens the OS file dialog; returns the folder of the chosen config.json
   PUT    /api/setup                                           {"path": "..."}  choose and save the data folder
   GET    /api/config                                          <data>/config.json            (409 until configured)
   GET    /api/content/<path>                                  any file inside the data folder
@@ -17,21 +17,21 @@ Routes
   DELETE /api/progress/answers/<block>/<item>/<question>      removes the answer
   PUT    /api/progress/notes/<block>/<item>                   {"text": "..."}
 Every progress write saves the file atomically and returns the full updated state.
-Localhost only, single user, no authentication: /api/fs lists folder names of this computer.
+Localhost only, single user, no authentication. The app never lists the disk: the user picks config.json in the
+operating system's own dialog or pastes the path. Requests whose Host header is not localhost are refused (DNS rebinding).
 """
 import json
 import mimetypes
 import os
-import string
 import tempfile
 import threading
 from datetime import datetime, timezone
 from functools import partial
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, unquote, urlparse
+from urllib.parse import unquote, urlparse
 
-from . import paths, settings
+from . import paths, picker, settings
 from .paths import progress_file
 
 WEB = Path(__file__).parent / "web"
@@ -122,22 +122,6 @@ def inside(root: Path, relative: str) -> Path | None:
     return target if target == root or root in target.parents else None
 
 
-def list_folder(raw: str | None, data: Path | None) -> dict:
-    """Sub-folders of `raw` (default: the home folder), to browse to the data folder in the UI."""
-    start = Path(raw).expanduser() if raw else (data.parent if data else Path.home())
-    path = start.resolve() if start.exists() else Path.home()
-    if not path.is_dir():
-        path = path.parent
-    try:
-        dirs = sorted((p.name for p in path.iterdir() if p.is_dir() and not p.name.startswith(".")), key=str.lower)
-    except OSError:
-        dirs = []
-    roots = ([f"{c}:\\" for c in string.ascii_uppercase if os.path.exists(f"{c}:\\")] if os.name == "nt" else ["/"])
-    parent = str(path.parent) if path.parent != path else None
-    return {"path": str(path), "parent": parent, "dirs": dirs, "roots": roots, "sep": os.sep,
-            "isDataDir": paths.is_data_dir(path)}
-
-
 class Handler(BaseHTTPRequestHandler):
     server_version = "StudyApp/0.3"
 
@@ -177,6 +161,14 @@ class Handler(BaseHTTPRequestHandler):
                 "source": self.ctx.source, "home": str(Path.home()), "sep": os.sep,
                 "savedDir": settings.saved_data_dir()}
 
+    def _host_ok(self) -> bool:
+        """Refuse requests addressed to any host other than localhost (DNS-rebinding protection)."""
+        host = (self.headers.get("Host") or "").rsplit(":", 1)[0].strip("[]").lower()
+        if host in ("localhost", "127.0.0.1", "::1"):
+            return True
+        self._json(403, {"error": "forbidden_host"})
+        return False
+
     def _need_data(self) -> bool:
         if self.ctx.data is None:
             self._json(409, {"error": "setup_required"})
@@ -185,12 +177,12 @@ class Handler(BaseHTTPRequestHandler):
 
     # ---- reads ----
     def do_GET(self):
+        if not self._host_ok():
+            return None
         url = urlparse(self.path)
         path = unquote(url.path)
         if path == "/api/setup":
             return self._json(200, self._setup_info())
-        if path == "/api/fs":
-            return self._json(200, list_folder((parse_qs(url.query).get("path") or [None])[0], self.ctx.data))
         if path == "/api/config":
             return self._file(inside(self.ctx.data, "config.json")) if self._need_data() else None
         if path.startswith("/api/content/"):
@@ -218,12 +210,18 @@ class Handler(BaseHTTPRequestHandler):
         return self._json(200, self._setup_info())
 
     def _mutate(self, method: str):
+        if not self._host_ok():
+            return None
         parts = [p for p in unquote(urlparse(self.path).path).split("/") if p]
         body = self._body()
         if body is None:
             return self._json(400, {"error": "invalid JSON"})
         if parts == ["api", "setup"] and method == "PUT":
             return self._choose_folder(body)
+        if parts == ["api", "setup", "pick"] and method == "POST":
+            if self.ctx.source in ("flag", "env"):
+                return self._json(409, {"error": "locked", "message": "The data folder was fixed by --data-dir or STUDY_DATA_DIR."})
+            return self._json(200, picker.pick_config_file(str(self.ctx.data.parent) if self.ctx.data else None))
         if len(parts) < 4 or parts[:2] != ["api", "progress"]:
             return self._json(404, {"error": "unknown route"})
         if not self._need_data():
@@ -236,6 +234,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_DELETE(self):
         self._mutate("DELETE")
+
+    def do_POST(self):
+        self._mutate("POST")
 
     def log_message(self, fmt, *args):
         pass

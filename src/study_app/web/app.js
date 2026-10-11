@@ -123,12 +123,10 @@ function drawMenu() {
   nav.replaceChildren();
   const next = nextItem();
   for (const section of state.block.sections) {
-    // same rule as the overall counter: optional items do not count
-    const mandatory = section.items.filter((i) => !i.optional);
-    const done = mandatory.filter((i) => isDone({ key: `${state.block.id}/${i.id}` })).length;
+    const done = section.items.filter((i) => isDone({ key: `${state.block.id}/${i.id}` })).length;
     const box = h("div", { class: "section" + (section._collapsed ? " collapsed" : "") });
     box.append(h("h3", { onclick: () => { section._collapsed = !section._collapsed; box.classList.toggle("collapsed"); } },
-      h("span", {}, section.title), h("span", { title: "Itens obrigatórios feitos; os opcionais não entram na conta." }, `${done}/${mandatory.length}`)));
+      h("span", {}, section.title), h("span", { title: counterTitle(section.items.map((i) => ({ key: `${state.block.id}/${i.id}`, optional: i.optional }))) }, `${done}/${section.items.length}`)));
     const list = h("div", { class: "items" });
     for (const raw of section.items) {
       const item = state.items.find((x) => x.id === raw.id);
@@ -151,10 +149,18 @@ function drawMenu() {
       h("button", { class: "btn small-btn", onclick: () => showSetup("Escolha a nova pasta de dados.") }, "Trocar a pasta de dados"),
       h("p", { class: "muted small", title: state.setup.dataDir }, "Pasta atual: " + state.setup.dataDir)));
   }
-  const required = state.items.filter((i) => !i.optional);
-  const total = required.length, finished = required.filter(isDone).length;
+  const total = state.items.length, finished = state.items.filter(isDone).length;
   $("#overall-fill").style.width = total ? `${(100 * finished) / total}%` : "0";
   $("#overall-text").textContent = `${finished}/${total}`;
+  $(".overall").title = counterTitle(state.items);
+}
+// "4 de 8 itens feitos (3 de 7 obrigatórios; 1 de 1 opcional)": every item that is done counts.
+function counterTitle(items) {
+  const done = items.filter(isDone).length;
+  const required = items.filter((i) => !i.optional), optional = items.filter((i) => i.optional);
+  const parts = [`${required.filter(isDone).length} de ${required.length} obrigatórios`];
+  if (optional.length) parts.push(`${optional.filter(isDone).length} de ${optional.length} opcionais`);
+  return `${done} de ${items.length} itens feitos (${parts.join("; ")}). Os opcionais não bloqueiam o "PRÓXIMO".`;
 }
 
 /* ---------- items ---------- */
@@ -420,53 +426,51 @@ function drawQuestion(card, question, number, prompt, base, saved, actions) {
 }
 
 /* ---------- choosing the data folder ---------- */
+// The app never lists the disk. The user picks config.json in the operating system's own dialog, or pastes the path.
+const DATA_FOLDER_HINT = "Neste projeto é a pasta conteudo, dentro de estudo, na pasta do Google Drive da disciplina (…/Mestrado/2026.2 - Aprend. máquina/estudo/conteudo). Dentro dela está o arquivo config.json.";
 async function showSetup(message) {
   document.body.classList.remove("menu-open");
   $("#sidebar").replaceChildren();
   const main = $("#main");
   const info = state.setup || (state.setup = await getJson("/api/setup"));
-  const input = h("input", { class: "path-input", type: "text", spellcheck: "false", placeholder: "Caminho da pasta de dados" });
+  const input = h("input", { class: "path-input", type: "text", spellcheck: "false", placeholder: "…ou cole aqui o caminho da pasta de dados" });
   const status = h("p", { class: "muted" });
-  const list = h("div", { class: "folders" });
-  const roots = h("div", { class: "roots" });
-  const useButton = h("button", { class: "btn primary", disabled: true }, "Usar esta pasta");
-  let current = null;
+  const useButton = h("button", { class: "btn primary" }, "Usar esta pasta");
+  const pickButton = h("button", { class: "btn" }, "Escolher o arquivo config.json…");
 
-  const join = (base, name, sep) => (base.endsWith(sep) ? base + name : base + sep + name);
-  async function browse(path) {
-    let listing;
-    try { listing = await getJson("/api/fs" + (path ? "?path=" + encodeURIComponent(path) : "")); }
-    catch (error) { status.textContent = "Não consegui abrir essa pasta: " + error.message; return; }
-    current = listing;
-    input.value = listing.path;
-    list.replaceChildren(...[
-      listing.parent ? h("button", { class: "folder up", onclick: () => browse(listing.parent) }, "⬑ subir uma pasta") : null,
-      ...listing.dirs.map((name) => h("button", { class: "folder", onclick: () => browse(join(listing.path, name, listing.sep)) }, name)),
-      listing.dirs.length ? null : h("p", { class: "muted small" }, "Nenhuma subpasta aqui."),
-    ].filter(Boolean));
-    roots.replaceChildren(...[listing.roots.length > 1 ? h("span", { class: "muted small" }, "Unidades: ") : null,
-      ...(listing.roots.length > 1 ? listing.roots.map((r) => h("button", { class: "btn small-btn", onclick: () => browse(r) }, r)) : []),
-    ].filter(Boolean));
-    useButton.disabled = !listing.isDataDir;
-    status.textContent = listing.isDataDir ? "Esta pasta tem o arquivo config.json: é a pasta de dados." : "Esta pasta não tem config.json. Entre na pasta de dados (a que contém config.json) para poder usá-la.";
-    status.className = listing.isDataDir ? "ok-text" : "muted";
-  }
-  input.addEventListener("keydown", (e) => { if (e.key === "Enter") browse(input.value.trim()); });
+  pickButton.onclick = async () => {
+    status.textContent = "Aguardando a janela de seleção do sistema (ela pode abrir atrás deste navegador)…"; status.className = "muted";
+    pickButton.disabled = true;
+    try {
+      const response = await fetch("/api/setup/pick", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+      const result = await response.json();
+      if (!response.ok) { status.textContent = result.message || result.error; status.className = "bad-text"; }
+      else if (!result.available) { status.textContent = "Este computador não tem o seletor de arquivos do Python (no Linux: instale o pacote python3-tk). Cole o caminho no campo ao lado."; status.className = "bad-text"; }
+      else if (result.cancelled) { status.textContent = "Nenhum arquivo escolhido."; status.className = "muted"; }
+      else { input.value = result.folder; status.textContent = result.isDataDir ? "Pasta encontrada. Confira o caminho e clique em “Usar esta pasta”." : "A pasta escolhida não tem um config.json. Escolha o arquivo config.json da pasta de dados."; status.className = result.isDataDir ? "ok-text" : "bad-text"; }
+    } catch (error) { status.textContent = "Não consegui abrir o seletor: " + error.message; status.className = "bad-text"; }
+    pickButton.disabled = false;
+  };
   useButton.onclick = async () => {
-    const response = await fetch("/api/setup", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: current.path }) });
+    const path = input.value.trim();
+    if (!path) { status.textContent = "Escolha o arquivo config.json ou cole o caminho da pasta."; status.className = "bad-text"; return; }
+    const response = await fetch("/api/setup", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path }) });
     if (!response.ok) { const err = await response.json(); status.textContent = err.message || err.error; status.className = "bad-text"; return; }
     location.reload();
   };
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") useButton.click(); });
   main.replaceChildren(...[
     h("h1", { class: "page-title" }, "Onde estão os arquivos do curso?"),
     message ? h("p", {}, message) : null,
-    h("p", {}, "Escolha a pasta que contém o arquivo ", h("code", {}, "config.json"),
-      " (a pasta de dados: aulas, figuras, transcrições e o seu progresso). A escolha fica salva neste computador; em outro computador, escolha de novo."),
+    h("p", {}, "O app precisa saber qual é a pasta de dados: a que contém o arquivo ", h("code", {}, "config.json"),
+      " (aulas, figuras, transcrições e o seu progresso). A escolha fica salva neste computador; em outro computador, escolha de novo."),
+    h("div", { class: "goals" }, h("strong", {}, "Onde encontrar"), h("p", {}, DATA_FOLDER_HINT)),
     info.savedDir ? h("p", { class: "muted small" }, "Pasta salva anteriormente (não encontrada ou sem config.json): " + info.savedDir) : null,
-    h("div", { class: "path-row" }, input, h("button", { class: "btn", onclick: () => browse(input.value.trim()) }, "Abrir")),
-    roots, status, list, h("div", { class: "actions" }, useButton),
+    h("p", {}, pickButton),
+    h("div", { class: "path-row" }, input, useButton),
+    status,
+    h("p", { class: "muted small" }, "O app não lista o disco: ele só conhece o caminho que você escolher ou colar. Depois de escolhida, ele lê apenas arquivos dentro da pasta de dados."),
   ].filter(Boolean));
-  await browse(info.dataDir ? info.dataDir : info.home);
 }
 
 /* ---------- start ---------- */

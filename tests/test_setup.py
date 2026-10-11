@@ -41,12 +41,22 @@ def test_folder_fixed_by_flag_or_env_cannot_be_changed_in_the_ui(api, tmp_path):
     assert status == 409 and json.loads(raw)["error"] == "locked"
 
 
-def test_folder_browser_lists_subfolders_and_flags_data_folders(blank_api, data_dir):
-    status, listing = jget(blank_api, "/api/fs?path=" + str(data_dir).replace("\\", "/"))
-    assert status == 200 and listing["isDataDir"] is True
-    assert "block-1" in listing["dirs"] and "transcripts" in listing["dirs"]
-    status, parent = jget(blank_api, "/api/fs?path=" + str(data_dir.parent).replace("\\", "/"))
-    assert parent["isDataDir"] is False and data_dir.name in parent["dirs"]
+def test_app_never_lists_the_disk(blank_api):
+    assert blank_api("GET", "/api/fs?path=C:/")[0] == 404          # the folder browser route no longer exists
+
+
+def test_native_file_dialog_result_is_returned_but_not_saved(blank_api, data_dir, monkeypatch):
+    from study_app import picker, settings
+    monkeypatch.setattr(picker, "pick_config_file", lambda initial=None: {
+        "available": True, "cancelled": False, "folder": str(data_dir), "isDataDir": True})
+    status, raw = blank_api("POST", "/api/setup/pick", {})
+    result = json.loads(raw)
+    assert status == 200 and result["folder"] == str(data_dir) and result["isDataDir"] is True
+    assert settings.saved_data_dir() is None                          # only PUT /api/setup saves
+
+
+def test_file_dialog_is_refused_when_the_folder_is_fixed(api):
+    assert api("POST", "/api/setup/pick", {})[0] == 409
 
 
 def test_env_var_wins_over_the_saved_folder(data_dir, tmp_path, monkeypatch):
@@ -58,3 +68,22 @@ def test_env_var_wins_over_the_saved_folder(data_dir, tmp_path, monkeypatch):
     monkeypatch.setenv("STUDY_DATA_DIR", str(data_dir))
     path, source = paths.resolve()
     assert path == data_dir.resolve() and source == "env"
+
+
+def test_forged_host_header_is_refused(data_dir):
+    import http.client
+    import threading
+
+    from study_app.server import make_server
+
+    server = make_server(data_dir, port=0, source="flag")
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        port = server.server_address[1]
+        for host, expected in ((f"localhost:{port}", 200), (f"127.0.0.1:{port}", 200), ("evil.example.com", 403), (f"evil.example.com:{port}", 403)):
+            conn = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
+            conn.request("GET", "/api/progress", headers={"Host": host})
+            assert conn.getresponse().status == expected, host
+            conn.close()
+    finally:
+        server.shutdown()
