@@ -18,7 +18,7 @@ import shutil
 import sys
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
+from collections import deque
 from pathlib import Path
 
 from ..paths import work_dir
@@ -133,11 +133,14 @@ def _is_transient(exc: Exception) -> bool:
 
 def transcribe_many(entries: list[str], out_dir: Path, model: str = "small", language: str = "pt",
                     pause: int = 4, overwrite: bool = False, device: str = "auto",
-                    downloads: int = 1, workers: int = 2, log=log_line, on_event=None) -> dict:
+                    downloads: int = 1, workers: int = 2, log=log_line, on_event=None, more=None) -> dict:
     """Downloads `downloads` videos at a time (default 1: one by one) and transcribes `workers` at a time. Returns a summary dict.
 
     `on_event(video_id, **fields)` (optional) reports each video's state: phase = downloading | downloaded |
-    transcribing | done | failed, plus title, duration, bytes_done/bytes_total, pct (0..1), error, note."""
+    transcribing | done | failed, plus title, duration, bytes_done/bytes_total, pct (0..1), error, note.
+
+    `more()` (optional) is asked for more video ids whenever the downloader runs out of work, so videos queued while the
+    batch runs are downloaded right away (the downloader never sits idle while the queue has something)."""
     def emit(video_id: str, **fields) -> None:
         if on_event:
             on_event(video_id, **fields)
@@ -146,7 +149,7 @@ def transcribe_many(entries: list[str], out_dir: Path, model: str = "small", lan
     todo = [i for i in ids if overwrite or not (out_dir / f"{i}.json").exists()]
     for skipped in set(ids) - set(todo):
         log(f"{skipped}: already transcribed; skipping")
-    summary = {"ok": [], "failed": [], "blocked": False}
+    summary = {"ok": [], "failed": [], "blocked": False, "handled": []}
     if not todo:
         return summary
     dev, compute = pick_device(device)
@@ -228,14 +231,37 @@ def transcribe_many(entries: list[str], out_dir: Path, model: str = "small", lan
     consumers = [threading.Thread(target=transcribe_loop, daemon=True) for _ in range(workers)]
     for t in consumers:
         t.start()
-    with ThreadPoolExecutor(max_workers=downloads) as pool:
-        list(pool.map(fetch, todo))
-        # one more try, sequentially, for the videos that got a transient 403
-        for video_id in retry:
-            if not blocked.is_set():
-                log(f"{video_id}: retrying after the batch")
-                time.sleep(20)
-                fetch(video_id)
+    pending, handed, pull_lock = deque(todo), list(todo), threading.Lock()
+
+    def next_id():
+        with pull_lock:
+            if blocked.is_set():
+                return None
+            if not pending and more:
+                for extra in more():
+                    if extra not in handed:
+                        handed.append(extra)
+                        pending.append(extra)
+            return pending.popleft() if pending else None
+
+    def downloader() -> None:
+        while True:
+            video_id = next_id()
+            if video_id is None:
+                return
+            fetch(video_id)
+
+    fetchers = [threading.Thread(target=downloader, daemon=True) for _ in range(downloads)]
+    for t in fetchers:
+        t.start()
+    for t in fetchers:
+        t.join()
+    for video_id in retry:                                  # one more try, sequentially, for the videos that got a transient 403
+        if not blocked.is_set():
+            log(f"{video_id}: retrying after the batch")
+            time.sleep(20)
+            fetch(video_id)
+    summary["handled"] = list(handed)
     for _ in consumers:
         ready.put(None)
     for t in consumers:

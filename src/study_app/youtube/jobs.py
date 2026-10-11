@@ -267,8 +267,27 @@ def _run_queue(out_dir: Path, pause: int, device: str, downloads: int, workers: 
                 if current.get("phase") in ("downloading", "downloaded", "transcribing"):
                     update_status(video_id, phase="queued", pct=None, note=None, bytes_done=None, bytes_total=None)
             log(f"queue: {len(jobs)} pending; running {len(ids)} (model={key[0]}, language={key[1]})")
-            summary = transcribe_many(ids, out_dir, key[0], key[1], pause, key[2], device, downloads, workers, log, on_event)
-            for video_id in ids:
+            threading.Thread(target=fill_titles, args=(list(ids),), daemon=True).start()
+            seen = set(ids)
+
+            def more() -> list[str]:
+                """Videos queued by other calls while this batch runs (same settings): taken right away."""
+                extra = []
+                for job in _read_jobs():
+                    same = (job["model"], job["language"], bool(job.get("overwrite"))) == key
+                    if job["id"] in seen or not same:
+                        continue
+                    if not key[2] and (out_dir / f"{job['id']}.json").exists():
+                        continue
+                    seen.add(job["id"])
+                    extra.append(job["id"])
+                if extra:
+                    log(f"queue: {len(extra)} video(s) added meanwhile")
+                    threading.Thread(target=fill_titles, args=(list(extra),), daemon=True).start()
+                return extra
+
+            summary = transcribe_many(ids, out_dir, key[0], key[1], pause, key[2], device, downloads, workers, log, on_event, more)
+            for video_id in summary["handled"] or ids:
                 if video_id in summary["ok"]:
                     _remove(_jobs_dir() / f"{video_id}.json")
                 elif not summary["blocked"]:

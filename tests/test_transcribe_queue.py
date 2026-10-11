@@ -177,3 +177,27 @@ def test_titles_come_from_oembed_while_queued_and_are_not_erased(monkeypatch):
     assert videos[IDS[0]]["title"] == "Title " + IDS[0] and videos[IDS[0]]["phase"] == "queued"
     jobs.update_status(IDS[0], phase="downloading", title=None)       # the downloader may not know the title yet
     assert {v["id"]: v for v in jobs.snapshot()["videos"]}[IDS[0]]["title"] == "Title " + IDS[0]
+
+
+def test_videos_queued_while_a_batch_runs_are_downloaded_without_waiting_for_the_batch_to_end(monkeypatch, tmp_path):
+    order = []
+    late = IDS[3:]
+
+    def download(video_id, folder):
+        order.append(("download", video_id))
+        if video_id == IDS[0]:
+            jobs.enqueue(late, "small", "pt", False)                  # another terminal adds videos mid-batch
+        return fake_download()(video_id, folder)
+
+    def recognize(audio, *a, **k):
+        order.append(("transcribe", audio.stem))
+        return [[0, "x"]], "pt"
+
+    monkeypatch.setattr(tr, "download_audio", download)
+    monkeypatch.setattr(tr, "recognize", recognize)
+    lines = []
+    result = jobs.submit(IDS[:3], tmp_path / "t", log=lines.append, show=False)
+    assert sorted(result["ok"]) == sorted(IDS[:3])
+    assert any("added meanwhile" in line for line in lines)                      # fed into the running batch, not a second one
+    assert sorted(v for k, v in order if k == "download") == sorted(IDS)       # the late ones were picked up too
+    assert jobs.queue_status()["pending"] == [] and all((tmp_path / "t" / f"{i}.json").exists() for i in IDS)
