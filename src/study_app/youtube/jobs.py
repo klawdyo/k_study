@@ -64,7 +64,17 @@ def _write_json(path: Path, data: dict) -> None:
             return
         except PermissionError:
             time.sleep(0.05)
-    tmp.unlink(missing_ok=True)
+    _remove(tmp)
+
+
+def _remove(path: Path) -> None:
+    """Unlink a shared file; on Windows another instance may be reading it for a moment, so retry."""
+    for attempt in range(10):
+        try:
+            path.unlink(missing_ok=True)
+            return
+        except PermissionError:
+            time.sleep(0.05)
 
 
 def _read_json(path: Path) -> dict | None:
@@ -148,15 +158,15 @@ def enqueue(ids: list[str], model: str, language: str, overwrite: bool) -> int:
     """Adds videos to the queue (an id already queued is not added twice). Clears old failure/block marks of a new request."""
     _jobs_dir().mkdir(parents=True, exist_ok=True)
     _failed_dir().mkdir(parents=True, exist_ok=True)
-    _blocked_file().unlink(missing_ok=True)
+    _remove(_blocked_file())
     if not runner_active() and not any(_jobs_dir().glob("*.json")) and _status_dir().exists():
         for f in _status_dir().glob("*.json"):                   # idle queue: a new session starts, drop the old finished rows
             status = _read_json(f)
             if status and status.get("phase") in ("done", "failed"):
-                f.unlink(missing_ok=True)
+                _remove(f)
     added = 0
     for video_id in ids:
-        (_failed_dir() / f"{video_id}.txt").unlink(missing_ok=True)
+        _remove(_failed_dir() / f"{video_id}.txt")
         job = _jobs_dir() / f"{video_id}.json"
         if job.exists():
             continue
@@ -209,7 +219,7 @@ def _run_queue(out_dir: Path, pause: int, device: str, downloads: int, workers: 
             jobs = []
             for job in _read_jobs():
                 if not job.get("overwrite") and (out_dir / f"{job['id']}.json").exists():
-                    (_jobs_dir() / f"{job['id']}.json").unlink(missing_ok=True)        # already done
+                    _remove(_jobs_dir() / f"{job['id']}.json")        # already done
                     update_status(job["id"], phase="done", pct=1.0)
                 else:
                     jobs.append(job)
@@ -232,11 +242,11 @@ def _run_queue(out_dir: Path, pause: int, device: str, downloads: int, workers: 
             summary = transcribe_many(ids, out_dir, key[0], key[1], pause, key[2], device, downloads, workers, log, on_event)
             for video_id in ids:
                 if video_id in summary["ok"]:
-                    (_jobs_dir() / f"{video_id}.json").unlink(missing_ok=True)
+                    _remove(_jobs_dir() / f"{video_id}.json")
                 elif not summary["blocked"]:
                     _failed_dir().mkdir(parents=True, exist_ok=True)
                     (_failed_dir() / f"{video_id}.txt").write_text("not transcribed; see runner.log", encoding="utf-8")
-                    (_jobs_dir() / f"{video_id}.json").unlink(missing_ok=True)
+                    _remove(_jobs_dir() / f"{video_id}.json")
                     current = _read_json(_status_dir() / f"{video_id}.json") or {}
                     if current.get("phase") != "failed":
                         update_status(video_id, phase="failed", error=current.get("note") or "não foi transcrito (veja runner.log)",
