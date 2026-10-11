@@ -62,11 +62,11 @@ def test_broken_json_escapes_fail_but_latex_and_answer_position_only_warn(data_d
     from study_app.validate import inspect
     path = data_dir / "block-1" / "q.json"
     doc = json.loads(path.read_text(encoding="utf-8"))
-    doc["questions"][0]["options"][0]["text"] = "valor $\beta$ = 0"
+    doc["questions"][0]["options"][0]["text"] = "valor $" + chr(92) + "beta$ = 0"
     path.write_text(json.dumps(doc), encoding="utf-8")
     _, problems, warnings = inspect(data_dir)
     assert problems == [] and any("LaTeX" in w for w in warnings)
-    doc["questions"][0]["options"][0]["text"] = "valor \x08eta = 0"            # what a broken "\beta" becomes
+    doc["questions"][0]["options"][0]["text"] = "valor " + chr(8) + "eta = 0"            # what a broken backslash-beta becomes
     path.write_text(json.dumps(doc), encoding="utf-8")
     _, problems, _ = inspect(data_dir)
     assert any("control character" in p for p in problems)
