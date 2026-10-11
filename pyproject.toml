@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "study-app"
+version = "0.2.0"
+description = "Local study app: a small API + web UI that serves lessons (videos, readings, questions) from a data folder and stores progress in one file."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []          # the app itself uses only the standard library
+
+[project.optional-dependencies]
+captions = ["youtube-transcript-api"]
+transcribe = ["yt-dlp", "faster-whisper"]
+all = ["youtube-transcript-api", "yt-dlp", "faster-whisper"]
+dev = ["pytest"]
+
+[project.scripts]
+study = "study_app.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+study_app = ["web/*", "web/vendor/*", "web/vendor/icons/*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

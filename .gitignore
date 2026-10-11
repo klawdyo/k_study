@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+build/
+dist/
+# never commit study data, progress, downloaded audio or models
+progress.json
+*.m4a
+*.webm
+*.mp3
+*.wav
