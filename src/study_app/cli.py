@@ -5,7 +5,8 @@
   study validate                            validate the data folder
   study search      TERMS...                search YouTube
   study captions    ID... | --text ID        download YouTube captions / print one with timestamps
-  study transcribe  ID...                   transcribe locally (one video at a time, audio deleted afterwards)
+  study transcribe  ID...                   transcribe locally (GPU if available; parallel; audio deleted afterwards)
+  study clean                               delete leftover temporary audio
 
 The data folder comes from --data-dir, else STUDY_DATA_DIR, else the folder saved for this computer
 (chosen in the web UI on first run or with `study data-dir PATH`).
@@ -46,12 +47,17 @@ def main(argv=None) -> int:
     s.add_argument("--text", metavar="ID", help="print the stored transcript with timestamps")
     s.add_argument("--pause", type=int, default=6)
 
-    s = sub.add_parser("transcribe", help="transcribe locally, one video at a time")
+    s = sub.add_parser("transcribe", help="transcribe locally (parallel downloads and transcriptions)")
     s.add_argument("videos", nargs="+")
     s.add_argument("--model", default="small", help="tiny, base, small (default), medium, large-v3")
-    s.add_argument("--language", default="pt")
-    s.add_argument("--pause", type=int, default=20)
+    s.add_argument("--language", default="pt", help="pt (default), en, ... or auto")
+    s.add_argument("--device", default="auto", choices=["auto", "cpu", "cuda"])
+    s.add_argument("--downloads", type=int, default=3, help="videos downloaded at the same time (default 3)")
+    s.add_argument("--workers", type=int, default=2, help="videos transcribed at the same time (default 2)")
+    s.add_argument("--pause", type=int, default=4, help="seconds each downloader waits between its downloads")
     s.add_argument("--overwrite", action="store_true")
+
+    sub.add_parser("clean", help="delete leftover temporary audio")
 
     args = ap.parse_args(argv)
     try:
@@ -75,6 +81,10 @@ def main(argv=None) -> int:
                 found, source = paths.resolve(args.data_dir)
                 print(f"data folder: {found or '(not set)'}  (source: {source})")
                 print(f"settings file: {settings.settings_file()}")
+            return 0
+        if args.command == "clean":
+            from .youtube.transcribe import clean_work
+            print(f"removed {clean_work()} leftover folder(s) from {paths.work_dir()}")
             return 0
         if args.command == "serve":
             from .server import serve
@@ -106,7 +116,9 @@ def main(argv=None) -> int:
                 fetch_many([extract_id(v) for v in args.videos], out, args.pause)
         elif args.command == "transcribe":
             from .youtube.transcribe import transcribe_many
-            transcribe_many(args.videos, paths.transcripts_dir(data), args.model, args.language, args.pause, args.overwrite)
+            result = transcribe_many(args.videos, paths.transcripts_dir(data), args.model, args.language, args.pause,
+                                     args.overwrite, args.device, args.downloads, args.workers)
+            return 3 if result["blocked"] else (1 if result["failed"] else 0)
     except paths.ConfigError as exc:
         print("error:", exc, file=sys.stderr)
         return 2

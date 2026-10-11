@@ -57,15 +57,23 @@ study validate                       # confere a pasta de dados (rode antes de d
 study search TERMOS...               # busca no YouTube: id | duração | canal | título | visualizações
 study captions ID... [--pause 6]     # baixa as legendas do YouTube para <dados>/transcripts (o YouTube limita)
 study captions --text ID             # imprime uma transcrição guardada, com minutagem
-study transcribe ID... [--model small] [--pause 20] [--overwrite]
-                                     # reconhecimento de fala local, UM vídeo por vez; o áudio é apagado depois
+study transcribe ID... [--model small] [--language pt|en|auto] [--device auto|cpu|cuda]
+                       [--downloads 3] [--workers 2] [--pause 4] [--overwrite]
+                                     # reconhecimento de fala local (GPU se houver); baixa vários áudios adiantados e
+                                     # transcreve vários ao mesmo tempo; cada áudio é apagado assim que a transcrição é salva
+study clean                          # apaga restos de áudio temporário
 ```
 
 `python -m study_app <comando>` também funciona (use `PYTHONPATH=src` ao rodar de um clone sem instalar).
 
 ### Sobre `study transcribe`
 
-Para cada vídeo, baixa **só o áudio** (m4a, cerca de 1 MB por minuto) em `STUDY_WORK_DIR`, transcreve com o faster-whisper na CPU, grava `<dados>/transcripts/<id>.json` e **apaga o áudio**. Medido: cerca de 4 vezes a duração do vídeo com o modelo `small` numa CPU de 16 núcleos; a primeira execução baixa o modelo (~0,5 GB, guardado no cache do Hugging Face). Um `403` do YouTube pode ser passageiro: repita aquele vídeo sozinho. Os termos de uso do YouTube em geral proíbem baixar vídeos sem autorização do autor: use para estudo pessoal, poucos vídeos, e nunca guarde nem compartilhe o áudio.
+Vários **downloaders** baixam **só o áudio** (m4a, cerca de 1 MB por minuto) de vídeos diferentes, adiantados, numa pasta temporária (`STUDY_WORK_DIR`), enquanto um ou mais **transcritores** rodam o faster-whisper e gravam `<dados>/transcripts/<id>.json`. Cada áudio é **apagado assim que a transcrição é salva**, a pasta temporária é limpa no começo e no fim, e uma fila limitada mantém poucos arquivos em disco.
+
+- **GPU:** com `--device auto` (padrão) usa CUDA quando o CTranslate2 enxerga uma placa NVIDIA. No Windows são necessárias as bibliotecas `nvidia-cublas-cu12` e `nvidia-cudnn-cu12` (pip); o app localiza as DLLs sozinho em qualquer pasta do `sys.path` que tenha `nvidia/*/bin`. Sem GPU, cai para CPU (cerca de 4 vezes a duração do vídeo com o modelo `small`).
+- **Paralelismo:** `--downloads` (padrão 3) e `--workers` (padrão 2). Cada downloader espera `--pause` segundos entre os seus downloads.
+- **Cuidado com o YouTube:** um `403` é repetido depois; um `429` ou "confirme que não é robô" **para tudo** e o log diz `BLOCKED` (código de saída 3): troque de rede ou espere. Os termos de uso do YouTube em geral proíbem baixar vídeos sem autorização do autor: use para estudo pessoal, poucos vídeos, e nunca guarde nem compartilhe o áudio.
+- `--language auto` deixa o Whisper detectar o idioma (útil para vídeos dublados).
 
 `study captions` é bem mais rápido, mas o YouTube bloqueia o IP depois de cerca de 15 consultas seguidas (`IpBlocked`); quando isso acontecer, use `transcribe`.
 
