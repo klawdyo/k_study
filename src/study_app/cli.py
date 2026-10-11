@@ -52,7 +52,7 @@ def main(argv=None) -> int:
     s.add_argument("--model", default="small", help="tiny, base, small (default), medium, large-v3")
     s.add_argument("--language", default="pt", help="pt (default), en, ... or auto")
     s.add_argument("--device", default="auto", choices=["auto", "cpu", "cuda"])
-    s.add_argument("--downloads", type=int, default=3, help="videos downloaded at the same time (default 3)")
+    s.add_argument("--downloads", type=int, default=1, help="videos downloaded at the same time (default 1: one by one)")
     s.add_argument("--workers", type=int, default=2, help="videos transcribed at the same time (default 2)")
     s.add_argument("--pause", type=int, default=4, help="seconds each downloader waits between its downloads")
     s.add_argument("--overwrite", action="store_true")

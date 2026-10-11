@@ -113,8 +113,8 @@ def _is_transient(exc: Exception) -> bool:
 
 def transcribe_many(entries: list[str], out_dir: Path, model: str = "small", language: str = "pt",
                     pause: int = 4, overwrite: bool = False, device: str = "auto",
-                    downloads: int = 3, workers: int = 2, log=log_line) -> dict:
-    """Downloads `downloads` videos at a time and transcribes `workers` at a time. Returns a summary dict."""
+                    downloads: int = 1, workers: int = 2, log=log_line) -> dict:
+    """Downloads `downloads` videos at a time (default 1: one by one) and transcribes `workers` at a time. Returns a summary dict."""
     ids = list(dict.fromkeys(extract_id(e) for e in entries))
     todo = [i for i in ids if overwrite or not (out_dir / f"{i}.json").exists()]
     for skipped in set(ids) - set(todo):

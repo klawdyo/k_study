@@ -58,7 +58,7 @@ study search TERMOS...               # busca no YouTube: id | duração | canal 
 study captions ID... [--pause 6]     # baixa as legendas do YouTube para <dados>/transcripts (o YouTube limita)
 study captions --text ID             # imprime uma transcrição guardada, com minutagem
 study transcribe ID... [--model small] [--language pt|en|auto] [--device auto|cpu|cuda]
-                       [--downloads 3] [--workers 2] [--pause 4] [--overwrite]
+                       [--downloads 1] [--workers 2] [--pause 4] [--overwrite]
                                      # reconhecimento de fala local (GPU se houver); baixa vários áudios adiantados e
                                      # transcreve vários ao mesmo tempo; cada áudio é apagado assim que a transcrição é salva
 study clean                          # apaga restos de áudio temporário
@@ -68,10 +68,10 @@ study clean                          # apaga restos de áudio temporário
 
 ### Sobre `study transcribe`
 
-Vários **downloaders** baixam **só o áudio** (m4a, cerca de 1 MB por minuto) de vídeos diferentes, adiantados, numa pasta temporária (`STUDY_WORK_DIR`), enquanto um ou mais **transcritores** rodam o faster-whisper e gravam `<dados>/transcripts/<id>.json`. Cada áudio é **apagado assim que a transcrição é salva**, a pasta temporária é limpa no começo e no fim, e uma fila limitada mantém poucos arquivos em disco.
+Um **downloader** baixa **só o áudio** (m4a, cerca de 1 MB por minuto), de um vídeo por vez e já adiantado em relação à transcrição, numa pasta temporária (`STUDY_WORK_DIR`), enquanto um ou mais **transcritores** rodam o faster-whisper e gravam `<dados>/transcripts/<id>.json`. Cada áudio é **apagado assim que a transcrição é salva**, a pasta temporária é limpa no começo e no fim, e uma fila limitada mantém poucos arquivos em disco.
 
 - **GPU:** com `--device auto` (padrão) usa CUDA quando o CTranslate2 enxerga uma placa NVIDIA. No Windows são necessárias as bibliotecas `nvidia-cublas-cu12` e `nvidia-cudnn-cu12` (pip); o app localiza as DLLs sozinho em qualquer pasta do `sys.path` que tenha `nvidia/*/bin`. Sem GPU, cai para CPU (cerca de 4 vezes a duração do vídeo com o modelo `small`).
-- **Paralelismo:** `--downloads` (padrão 3) e `--workers` (padrão 2). Cada downloader espera `--pause` segundos entre os seus downloads.
+- **Paralelismo:** `--downloads` (padrão **1**: os downloads são feitos um de cada vez) e `--workers` (padrão 2: só a transcrição roda em paralelo). Cada downloader espera `--pause` segundos entre os seus downloads.
 - **Cuidado com o YouTube:** um `403` é repetido depois; um `429` ou "confirme que não é robô" **para tudo** e o log diz `BLOCKED` (código de saída 3): troque de rede ou espere. Os termos de uso do YouTube em geral proíbem baixar vídeos sem autorização do autor: use para estudo pessoal, poucos vídeos, e nunca guarde nem compartilhe o áudio.
 - `--language auto` deixa o Whisper detectar o idioma (útil para vídeos dublados).
 
