@@ -124,12 +124,16 @@ def main(argv=None) -> int:
 
         data = paths.data_dir(args.data_dir)
         if args.command == "validate":
-            from .validate import validate
-            summary, problems = validate(data)
+            from .validate import inspect
+            summary, problems, warnings = inspect(data)
             print("\n".join(summary))
             print("PROBLEMS:" if problems else "OK: no problems.")
             for p in problems:
                 print(" -", p)
+            if warnings:
+                print(f"WARNINGS ({len(warnings)}; heuristics, they never fail the validation; check them):")
+                for w in warnings:
+                    print(" ~", w)
             return 1 if problems else 0
         elif args.command == "captions":
             from .youtube import extract_id
