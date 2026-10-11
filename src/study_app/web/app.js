@@ -36,6 +36,7 @@ const state = {
   block: null, blockUrl: null, items: [],        // flattened items; each has .section and .key
   progress: { items: {}, answers: {}, notes: {} },  // mirror of what the API returned
   current: null,
+  setup: null,                                     // {configured, dataDir, source, ...} from /api/setup
 };
 
 /* ---------- API ---------- */
@@ -142,6 +143,11 @@ function drawMenu() {
     }
     box.append(list);
     nav.append(box);
+  }
+  if (state.setup && state.setup.source !== "flag" && state.setup.source !== "env") {
+    nav.append(h("div", { class: "section" },
+      h("button", { class: "btn small-btn", onclick: () => showSetup("Escolha a nova pasta de dados.") }, "Trocar a pasta de dados"),
+      h("p", { class: "muted small", title: state.setup.dataDir }, "Pasta atual: " + state.setup.dataDir)));
   }
   const required = state.items.filter((i) => !i.optional);
   const total = required.length, finished = required.filter(isDone).length;
@@ -411,20 +417,72 @@ function drawQuestion(card, question, number, prompt, base, saved, actions) {
   }
 }
 
+/* ---------- choosing the data folder ---------- */
+async function showSetup(message) {
+  document.body.classList.remove("menu-open");
+  $("#sidebar").replaceChildren();
+  const main = $("#main");
+  const info = state.setup || (state.setup = await getJson("/api/setup"));
+  const input = h("input", { class: "path-input", type: "text", spellcheck: "false", placeholder: "Caminho da pasta de dados" });
+  const status = h("p", { class: "muted" });
+  const list = h("div", { class: "folders" });
+  const roots = h("div", { class: "roots" });
+  const useButton = h("button", { class: "btn primary", disabled: true }, "Usar esta pasta");
+  let current = null;
+
+  const join = (base, name, sep) => (base.endsWith(sep) ? base + name : base + sep + name);
+  async function browse(path) {
+    let listing;
+    try { listing = await getJson("/api/fs" + (path ? "?path=" + encodeURIComponent(path) : "")); }
+    catch (error) { status.textContent = "Não consegui abrir essa pasta: " + error.message; return; }
+    current = listing;
+    input.value = listing.path;
+    list.replaceChildren(...[
+      listing.parent ? h("button", { class: "folder up", onclick: () => browse(listing.parent) }, "⬑ subir uma pasta") : null,
+      ...listing.dirs.map((name) => h("button", { class: "folder", onclick: () => browse(join(listing.path, name, listing.sep)) }, name)),
+      listing.dirs.length ? null : h("p", { class: "muted small" }, "Nenhuma subpasta aqui."),
+    ].filter(Boolean));
+    roots.replaceChildren(...[listing.roots.length > 1 ? h("span", { class: "muted small" }, "Unidades: ") : null,
+      ...(listing.roots.length > 1 ? listing.roots.map((r) => h("button", { class: "btn small-btn", onclick: () => browse(r) }, r)) : []),
+    ].filter(Boolean));
+    useButton.disabled = !listing.isDataDir;
+    status.textContent = listing.isDataDir ? "Esta pasta tem o arquivo config.json: é a pasta de dados." : "Esta pasta não tem config.json. Entre na pasta de dados (a que contém config.json) para poder usá-la.";
+    status.className = listing.isDataDir ? "ok-text" : "muted";
+  }
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") browse(input.value.trim()); });
+  useButton.onclick = async () => {
+    const response = await fetch("/api/setup", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: current.path }) });
+    if (!response.ok) { const err = await response.json(); status.textContent = err.message || err.error; status.className = "bad-text"; return; }
+    location.reload();
+  };
+  main.replaceChildren(...[
+    h("h1", { class: "page-title" }, "Onde estão os arquivos do curso?"),
+    message ? h("p", {}, message) : null,
+    h("p", {}, "Escolha a pasta que contém o arquivo ", h("code", {}, "config.json"),
+      " (a pasta de dados: aulas, figuras, transcrições e o seu progresso). A escolha fica salva neste computador; em outro computador, escolha de novo."),
+    info.savedDir ? h("p", { class: "muted small" }, "Pasta salva anteriormente (não encontrada ou sem config.json): " + info.savedDir) : null,
+    h("div", { class: "path-row" }, input, h("button", { class: "btn", onclick: () => browse(input.value.trim()) }, "Abrir")),
+    roots, status, list, h("div", { class: "actions" }, useButton),
+  ].filter(Boolean));
+  await browse(info.dataDir ? info.dataDir : info.home);
+}
+
 /* ---------- start ---------- */
 async function start() {
-  state.config = await getJson("/api/config");
   await loadIcons();
-  if (!(await reloadProgress())) throw new Error("A API de progresso não respondeu.");
   $("#menu-btn").replaceChildren(icon("menu"));
+  $("#menu-btn").addEventListener("click", () => document.body.classList.toggle("menu-open"));
+  state.setup = await getJson("/api/setup");
+  if (!state.setup.configured) { await showSetup(); return; }
+  state.config = await getJson("/api/config");
+  if (!(await reloadProgress())) throw new Error("A API de progresso não respondeu.");
   const select = $("#block-select");
   for (const block of state.config.blocks) select.append(h("option", { value: block.id }, block.title));
   select.addEventListener("change", () => { history.replaceState(null, "", "#"); openBlock(select.value); });
-  $("#menu-btn").addEventListener("click", () => document.body.classList.toggle("menu-open"));
   const wanted = location.hash.slice(1).split("/")[0];
   await openBlock(state.config.blocks.some((b) => b.id === wanted) ? wanted : state.config.blocks[0].id);
 }
 start().catch((error) => {
   $("#main").replaceChildren(h("div", { class: "verdict no" }, "Não consegui iniciar: " + error.message),
-    h("p", {}, "Inicie a API com: study serve  (e defina STUDY_DATA_DIR) e abra http://localhost:8765/"));
+    h("p", {}, "Inicie a API com: study serve  e abra http://localhost:8765/"));
 });

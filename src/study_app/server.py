@@ -6,26 +6,32 @@ Single source of truth:
 The web UI keeps no state of its own.
 
 Routes
-  GET    /api/config                                          <data>/config.json
+  GET    /api/setup                                           {configured, dataDir, source, home, sep}
+  GET    /api/fs?path=<folder>                                list sub-folders (to pick the data folder in the UI)
+  PUT    /api/setup                                           {"path": "..."}  choose and save the data folder
+  GET    /api/config                                          <data>/config.json            (409 until configured)
   GET    /api/content/<path>                                  any file inside the data folder
   GET    /api/progress                                        full state {items, answers, notes}
   PUT    /api/progress/items/<block>/<item>                   {"done": true|false}
   PUT    /api/progress/answers/<block>/<item>/<question>      {"chosen": ["a"], "correct": true}
   DELETE /api/progress/answers/<block>/<item>/<question>      removes the answer
   PUT    /api/progress/notes/<block>/<item>                   {"text": "..."}
-Every write route saves the file atomically and returns the full updated state.
+Every progress write saves the file atomically and returns the full updated state.
+Localhost only, single user, no authentication: /api/fs lists folder names of this computer.
 """
 import json
 import mimetypes
 import os
+import string
 import tempfile
 import threading
 from datetime import datetime, timezone
 from functools import partial
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
+from . import paths, settings
 from .paths import progress_file
 
 WEB = Path(__file__).parent / "web"
@@ -94,6 +100,21 @@ class Store:
             return state
 
 
+class Context:
+    """The data folder in use (None until configured) and its progress store."""
+
+    def __init__(self, data: Path | None, source: str):
+        self.data, self.source, self.store = None, "none", None
+        self.lock = threading.Lock()
+        if data:
+            self.use(data, source)
+
+    def use(self, data: Path, source: str) -> None:
+        with self.lock:
+            self.data, self.source = data, source
+            self.store = Store(progress_file(data))
+
+
 def inside(root: Path, relative: str) -> Path | None:
     """Resolves `relative` under `root`; None if it tries to escape the folder."""
     root = root.resolve()
@@ -101,11 +122,27 @@ def inside(root: Path, relative: str) -> Path | None:
     return target if target == root or root in target.parents else None
 
 
-class Handler(BaseHTTPRequestHandler):
-    server_version = "StudyApp/0.2"
+def list_folder(raw: str | None, data: Path | None) -> dict:
+    """Sub-folders of `raw` (default: the home folder), to browse to the data folder in the UI."""
+    start = Path(raw).expanduser() if raw else (data.parent if data else Path.home())
+    path = start.resolve() if start.exists() else Path.home()
+    if not path.is_dir():
+        path = path.parent
+    try:
+        dirs = sorted((p.name for p in path.iterdir() if p.is_dir() and not p.name.startswith(".")), key=str.lower)
+    except OSError:
+        dirs = []
+    roots = ([f"{c}:\\" for c in string.ascii_uppercase if os.path.exists(f"{c}:\\")] if os.name == "nt" else ["/"])
+    parent = str(path.parent) if path.parent != path else None
+    return {"path": str(path), "parent": parent, "dirs": dirs, "roots": roots, "sep": os.sep,
+            "isDataDir": paths.is_data_dir(path)}
 
-    def __init__(self, data: Path, store: Store, *args, **kwargs):
-        self.data, self.store = data, store
+
+class Handler(BaseHTTPRequestHandler):
+    server_version = "StudyApp/0.3"
+
+    def __init__(self, ctx: Context, *args, **kwargs):
+        self.ctx = ctx
         super().__init__(*args, **kwargs)
 
     # ---- responses ----
@@ -135,16 +172,34 @@ class Handler(BaseHTTPRequestHandler):
         except ValueError:
             return None
 
+    def _setup_info(self) -> dict:
+        return {"configured": self.ctx.data is not None, "dataDir": str(self.ctx.data) if self.ctx.data else None,
+                "source": self.ctx.source, "home": str(Path.home()), "sep": os.sep,
+                "savedDir": settings.saved_data_dir()}
+
+    def _need_data(self) -> bool:
+        if self.ctx.data is None:
+            self._json(409, {"error": "setup_required"})
+            return False
+        return True
+
     # ---- reads ----
     def do_GET(self):
-        path = unquote(urlparse(self.path).path)
+        url = urlparse(self.path)
+        path = unquote(url.path)
+        if path == "/api/setup":
+            return self._json(200, self._setup_info())
+        if path == "/api/fs":
+            return self._json(200, list_folder((parse_qs(url.query).get("path") or [None])[0], self.ctx.data))
         if path == "/api/config":
-            return self._file(inside(self.data, "config.json"))
+            return self._file(inside(self.ctx.data, "config.json")) if self._need_data() else None
         if path.startswith("/api/content/"):
-            return self._file(inside(self.data, path[len("/api/content/"):]))
+            return self._file(inside(self.ctx.data, path[len("/api/content/"):])) if self._need_data() else None
         if path == "/api/progress":
-            with self.store.lock:
-                return self._json(200, self.store.read())
+            if not self._need_data():
+                return None
+            with self.ctx.store.lock:
+                return self._json(200, self.ctx.store.read())
         if path.startswith("/api/"):
             return self._json(404, {"error": "unknown route"})
         return self._file(inside(WEB, "index.html" if path in ("", "/") else path.lstrip("/")))
@@ -152,14 +207,28 @@ class Handler(BaseHTTPRequestHandler):
     do_HEAD = do_GET
 
     # ---- writes ----
+    def _choose_folder(self, body: dict):
+        if self.ctx.source in ("flag", "env"):
+            return self._json(409, {"error": "locked", "message": "The data folder was fixed by --data-dir or STUDY_DATA_DIR."})
+        path = Path(str(body.get("path", ""))).expanduser().resolve()
+        if not paths.is_data_dir(path):
+            return self._json(400, {"error": "not_a_data_folder", "message": f"{path} has no config.json."})
+        settings.save_data_dir(path)
+        self.ctx.use(path, "saved")
+        return self._json(200, self._setup_info())
+
     def _mutate(self, method: str):
-        parts = [p for p in unquote(urlparse(self.path).path).split("/") if p]    # ['api', 'progress', kind, ...]
-        if len(parts) < 4 or parts[:2] != ["api", "progress"]:
-            return self._json(404, {"error": "unknown route"})
+        parts = [p for p in unquote(urlparse(self.path).path).split("/") if p]
         body = self._body()
         if body is None:
             return self._json(400, {"error": "invalid JSON"})
-        state = self.store.mutate(parts[2], method, parts[3:], body)
+        if parts == ["api", "setup"] and method == "PUT":
+            return self._choose_folder(body)
+        if len(parts) < 4 or parts[:2] != ["api", "progress"]:
+            return self._json(404, {"error": "unknown route"})
+        if not self._need_data():
+            return None
+        state = self.ctx.store.mutate(parts[2], method, parts[3:], body)
         return self._json(404, {"error": "unknown route"}) if state is None else self._json(200, state)
 
     def do_PUT(self):
@@ -172,14 +241,14 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
-def make_server(data: Path, port: int = 8765, host: str = "127.0.0.1") -> ThreadingHTTPServer:
-    store = Store(progress_file(data))
-    return ThreadingHTTPServer((host, port), partial(Handler, data, store))
+def make_server(data: Path | None, port: int = 8765, host: str = "127.0.0.1", source: str = "flag") -> ThreadingHTTPServer:
+    return ThreadingHTTPServer((host, port), partial(Handler, Context(data, source)))
 
 
-def serve(data: Path, port: int = 8765) -> None:
-    server = make_server(data, port)
-    print(f"Data     : {data}\nProgress : {progress_file(data)}\nOpen     : http://localhost:{port}/")
+def serve(data: Path | None, port: int = 8765, source: str = "none") -> None:
+    server = make_server(data, port, source=source)
+    where = f"{data}  (source: {source})" if data else "not set: the browser will ask for it"
+    print(f"Data folder : {where}\nOpen        : http://localhost:{port}/")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

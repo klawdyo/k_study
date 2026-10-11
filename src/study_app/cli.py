@@ -1,12 +1,14 @@
 """Command line:  study <command>
 
-  study serve       [--port 8765]          run the API and the web UI
+  study serve       [--port 8765]          run the API and the web UI (asks for the data folder on first run)
+  study data-dir    [PATH]                  show / save the data folder for this computer
   study validate                            validate the data folder
   study search      TERMS...                search YouTube
   study captions    ID... | --text ID        download YouTube captions / print one with timestamps
   study transcribe  ID...                   transcribe locally (one video at a time, audio deleted afterwards)
 
-The data folder comes from the STUDY_DATA_DIR environment variable (or --data-dir).
+The data folder comes from --data-dir, else STUDY_DATA_DIR, else the folder saved for this computer
+(chosen in the web UI on first run or with `study data-dir PATH`).
 """
 import argparse
 import json
@@ -30,6 +32,9 @@ def main(argv=None) -> int:
 
     s = sub.add_parser("serve", help="run the API and the web UI")
     s.add_argument("--port", type=int, default=8765)
+
+    s = sub.add_parser("data-dir", help="show or save the data folder for this computer")
+    s.add_argument("path", nargs="?")
 
     sub.add_parser("validate", help="validate the data folder")
 
@@ -56,11 +61,29 @@ def main(argv=None) -> int:
                 print(" | ".join(row))
             return 0
 
-        data = paths.data_dir(args.data_dir)
+        if args.command == "data-dir":
+            from pathlib import Path
+            from . import settings
+            if args.path:
+                target = Path(args.path).expanduser().resolve()
+                if not paths.is_data_dir(target):
+                    raise paths.ConfigError(f"{target} does not look like a data folder (config.json not found).")
+                settings.save_data_dir(target)
+                print(f"saved: {target}")
+                print(f"settings file: {settings.settings_file()}")
+            else:
+                found, source = paths.resolve(args.data_dir)
+                print(f"data folder: {found or '(not set)'}  (source: {source})")
+                print(f"settings file: {settings.settings_file()}")
+            return 0
         if args.command == "serve":
             from .server import serve
-            serve(data, args.port)
-        elif args.command == "validate":
+            found, source = paths.resolve(args.data_dir)
+            serve(found, args.port, source)
+            return 0
+
+        data = paths.data_dir(args.data_dir)
+        if args.command == "validate":
             from .validate import validate
             summary, problems = validate(data)
             print("\n".join(summary))

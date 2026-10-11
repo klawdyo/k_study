@@ -1,6 +1,6 @@
-# Data model
+# Modelo de dados
 
-All files live in the data folder (`STUDY_DATA_DIR`). Paths are relative to the file that contains them and must stay inside the folder. JSON keys are English; the **values the student reads** (titles, goals, explanations) are Portuguese.
+Todos os arquivos ficam na pasta de dados. Os caminhos são relativos ao arquivo que os contém e precisam ficar dentro da pasta. As **chaves JSON são em inglês**; os **valores que o estudante lê** (títulos, objetivos, explicações) são em português.
 
 ## config.json
 
@@ -17,82 +17,82 @@ All files live in the data folder (`STUDY_DATA_DIR`). Paths are relative to the 
 ```json
 {
   "schema": "block/v2", "id": "block-1", "title": "…", "description": "…",
-  "sections": [ { "id": "lesson-1", "title": "Aula 1 · …", "items": [ /* in study order */ ] } ]
+  "sections": [ { "id": "lesson-1", "title": "Aula 1 · …", "items": [ /* na ordem de estudo */ ] } ]
 }
 ```
 
-The order of `sections[].items[]` **is the study sequence**. The first item that is not done (and not optional) is marked "PRÓXIMO".
+A ordem de `sections[].items[]` **é a sequência de estudo**. O primeiro item que não está feito (e não é opcional) recebe a marca "PRÓXIMO".
 
-### Items
+### Itens
 
-| Field | Required | Meaning |
+| Campo | Obrigatório | Significado |
 | :-- | :-- | :-- |
-| `id` | yes | Unique within the block. It is the progress key (`<block>/<item>`): **do not rename after publishing**. |
-| `type` | yes | `video`, `markdown`, `pdf`, `link` or `questions` |
-| `title` | yes | Menu and page title |
-| `goals` / `goalsTitle` | no | List of "what you should leave knowing" (inline Markdown) / custom heading |
-| `warnings` | no | List of points where a video diverges from the course slides (yellow box) |
-| `note` | no | Free-text box shown above the content |
-| `optional` | no | `true`: not counted in the progress bar and skipped by "PRÓXIMO" |
-| `duration`, `channel` | no | Shown in the menu |
+| `id` | sim | Único dentro do bloco. É a chave do progresso (`<bloco>/<item>`): **não renomeie depois de publicado**. |
+| `type` | sim | `video`, `markdown`, `pdf`, `link` ou `questions` |
+| `title` | sim | Título no menu e na página |
+| `goals` / `goalsTitle` | não | Lista de "o que você deve sair sabendo" (Markdown em linha) / título alternativo da caixa |
+| `warnings` | não | Lista de pontos em que um vídeo diverge dos slides da disciplina (caixa amarela) |
+| `note` | não | Caixa de texto livre mostrada acima do conteúdo |
+| `optional` | não | `true`: não entra na barra de progresso e é pulado pelo "PRÓXIMO" |
+| `duration`, `channel` | não | Mostrados no menu |
 
-By type:
+Por tipo:
 
-- **`video`** — `url` (YouTube; embedded with youtube-nocookie), `start`/`end` in seconds (optional) **or** `clips`: `[{ "start", "end", "slides", "note" }]` (one button per clip); `transcript`: path to a transcript JSON (the page shows a card with the beginning, "Ver mais" and clickable timestamps; clips are highlighted); `review`: result of reading the transcript against the slides: `{ "badge", "covers": [..], "notCovered", "profile": [..], "verdict" }` — the `badge` is the green label (e.g. "transcrição lida · só os trechos indicados"); a video **without `review`** shows "transcrição ainda não lida"; `summary`: optional Markdown below the video.
-- **`markdown`** — `path` to a `.md` file **or** `content` (Markdown inside the JSON). Images and links inside are relative to the `.md`.
+- **`video`** — `url` (YouTube; incorporado com youtube-nocookie); `start`/`end` em segundos (opcionais) **ou** `clips`: `[{ "start", "end", "slides", "note" }]` (um botão por trecho); `transcript`: caminho de um JSON de transcrição (a página mostra um cartão com o começo, "Ver mais" e horários clicáveis; os trechos recomendados ficam em destaque); `review`: resultado da leitura da transcrição comparada aos slides: `{ "badge", "covers": [..], "notCovered", "profile": [..], "verdict" }`, onde `badge` é a etiqueta verde (ex.: "transcrição lida · só os trechos indicados"); um vídeo **sem `review`** mostra "transcrição ainda não lida"; `summary`: Markdown opcional abaixo do vídeo.
+- **`markdown`** — `path` de um arquivo `.md` **ou** `content` (Markdown dentro do próprio JSON). Imagens e links são relativos ao `.md`.
 - **`pdf`** — `path`.
-- **`link`** — `url`, optional `description`.
-- **`questions`** — `path` to a question-set JSON. The item becomes done automatically when every question is answered.
+- **`link`** — `url` e, opcionalmente, `description`.
+- **`questions`** — `path` de um conjunto de questões. O item vira "feito" automaticamente quando todas as questões forem respondidas.
 
-## Question sets (`*-questions.json`)
+## Conjuntos de questões (`*-questions.json`)
 
 ```json
 {
-  "schema": "questions/v2", "id": "block-1-lesson-1", "title": "…", "instructions": "optional Markdown",
+  "schema": "questions/v2", "id": "block-1-lesson-1", "title": "…", "instructions": "Markdown opcional",
   "questions": [
     {
-      "id": "q01", "label": "short topic (optional)",
+      "id": "q01", "label": "tema curto (opcional)",
       "type": "single",
-      "prompt": "Markdown; may contain tables and images: ![](../figures/f01.png)",
+      "prompt": "Markdown; pode ter tabela e imagem: ![](../figures/f01.png)",
       "promptFile": "q01-prompt.md",
       "options": [
-        { "id": "a", "text": "…", "correct": true,  "explanation": "why it is right" },
-        { "id": "b", "text": "…", "correct": false, "explanation": "why it is wrong" }
+        { "id": "a", "text": "…", "correct": true,  "explanation": "por que está certa" },
+        { "id": "b", "text": "…", "correct": false, "explanation": "por que está errada" }
       ],
-      "generalExplanation": "the central idea of the question"
+      "generalExplanation": "a ideia central da questão"
     }
   ],
-  "closing": "optional Markdown after the last question"
+  "closing": "Markdown opcional, depois da última questão"
 }
 ```
 
-- `type: "single"` — exactly one `correct: true` (radio buttons). `type: "multiple"` — two or more correct; it only counts as right if the chosen set equals the correct set.
-- Use `prompt` (inline) **or** `promptFile` (a `.md` file with images); the file wins if both exist.
-- **Every option must have an `explanation`, right or wrong**, and every question a `generalExplanation`: after answering, the UI shows the explanation of all options, because that is where the learning happens. `study validate` enforces this.
-- Option text and explanations accept inline Markdown.
+- `type: "single"` — exatamente uma `correct: true` (botões de rádio). `type: "multiple"` — duas ou mais corretas; só conta como acerto se o conjunto marcado for igual ao conjunto correto.
+- Use `prompt` (no próprio JSON) **ou** `promptFile` (um `.md`, com imagens); se houver os dois, vale o arquivo.
+- **Toda alternativa precisa de `explanation`, certa ou errada**, e toda questão de `generalExplanation`: depois de responder, a interface mostra a explicação de todas as alternativas, porque é nelas que está o aprendizado. `study validate` confere isso.
+- Texto das alternativas e explicações aceita Markdown em linha.
 
-## Transcript files (`transcripts/<videoId>.json`)
+## Transcrições (`transcripts/<videoId>.json`)
 
 ```json
 { "lang": "pt", "generated": true, "duration": 314, "source": "transcribed locally with faster-whisper (small) …",
-  "title": "…", "segments": [[0, "text"], [4, "text"]] }
+  "title": "…", "segments": [[0, "texto"], [4, "texto"]] }
 ```
 
-Written by `study captions` (YouTube captions) or `study transcribe` (local Whisper); the UI reads `segments`, `lang`, `generated` and `source`.
+Gravadas por `study captions` (legendas do YouTube) ou `study transcribe` (Whisper local). A interface lê `segments`, `lang`, `generated` e `source`.
 
-## progress.json (owned by the API; never edit by hand)
+## progress.json (da API; nunca edite à mão)
 
 ```json
 {
   "items":   { "block-1/a1-v1": { "done": true, "at": "2026-10-11T13:04:00+00:00" } },
   "answers": { "block-1/a1-q":  { "q01": { "chosen": ["b"], "correct": true, "at": "…" } } },
-  "notes":   { "block-1/a1-v1": "free text" }
+  "notes":   { "block-1/a1-v1": "texto livre" }
 }
 ```
 
-## Adding a block
+## Como acrescentar um bloco
 
-1. Create `block-N/block.json` (copy another block) and its `.md` / `*-questions.json` files.
-2. Add the block to `config.json`.
-3. Copy any figures into `figures/`; reference them as `../figures/x.png` from inside a block folder.
-4. Run `study validate`.
+1. Crie `block-N/block.json` (copie o de outro bloco) e os arquivos `.md` e `*-questions.json` que ele cita.
+2. Inclua o bloco em `config.json`.
+3. Copie as figuras para `figures/`; dentro da pasta de um bloco, cite-as como `../figures/x.png`.
+4. Rode `study validate`.

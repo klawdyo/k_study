@@ -143,6 +143,15 @@ details.card ul { margin: 4px 0 0; padding-left: 20px; }
 .ts { font: inherit; font-size: 12px; font-variant-numeric: tabular-nums; border: 0; background: none; color: var(--accent); cursor: pointer; padding: 0 4px 0 0; }
 .ts:hover { text-decoration: underline; }
 
+.small-btn { font-size: 13px; padding: 4px 10px; }
+.path-row { display: flex; gap: 8px; margin: 12px 0; }
+.path-input { flex: 1; font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--text); }
+.roots { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0 0 8px; }
+.folders { display: flex; flex-direction: column; max-height: 46vh; overflow-y: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+.folder { text-align: left; font: inherit; padding: 8px 14px; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--text); cursor: pointer; }
+.folder:hover { background: var(--accent-soft); }
+.folder.up { color: var(--muted); }
+.ok-text { color: var(--ok); font-weight: 600; } .bad-text { color: var(--bad); font-weight: 600; }
 .banner { position: sticky; top: 0; z-index: 30; padding: 10px 16px; background: var(--bad-soft); color: var(--bad); font-weight: 600; text-align: center; }
 
 @media (max-width: 860px) {

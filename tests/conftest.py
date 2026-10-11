@@ -31,15 +31,12 @@ def data_dir(tmp_path):
     return tmp_path
 
 
-@pytest.fixture()
-def api(data_dir):
-    """Running server on a free port; yields a tiny HTTP helper."""
+def _running(server):
+    """Starts `server` in a thread; returns (call helper, stop function)."""
     import http.client
 
-    server = make_server(data_dir, port=0)
     port = server.server_address[1]
-    thread = threading.Thread(target=server.serve_forever, daemon=True)
-    thread.start()
+    threading.Thread(target=server.serve_forever, daemon=True).start()
 
     def call(method, path, body=None):
         conn = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
@@ -50,5 +47,27 @@ def api(data_dir):
         conn.close()
         return response.status, raw
 
+    return call, server.shutdown
+
+
+@pytest.fixture(autouse=True)
+def isolated_settings(tmp_path, monkeypatch):
+    """Never touch the real per-machine settings file or the real STUDY_DATA_DIR."""
+    monkeypatch.setenv("STUDY_SETTINGS_FILE", str(tmp_path / "settings" / "settings.json"))
+    monkeypatch.delenv("STUDY_DATA_DIR", raising=False)
+
+
+@pytest.fixture()
+def api(data_dir):
+    """Server already configured with the sample data folder (fixed, like --data-dir)."""
+    call, stop = _running(make_server(data_dir, port=0, source="flag"))
     yield call
-    server.shutdown()
+    stop()
+
+
+@pytest.fixture()
+def blank_api():
+    """Server started with no data folder (first run): setup mode."""
+    call, stop = _running(make_server(None, port=0))
+    yield call
+    stop()

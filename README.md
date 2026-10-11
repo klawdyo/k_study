@@ -1,88 +1,105 @@
 # study-app
 
-A small local study app: a **web UI + HTTP API** that serves lessons (videos, readings, question sets) from a **data folder** and stores your progress in **one file**. It also ships the **CLI tools** used to build the lessons (YouTube search, captions, local transcription, content validation).
+App local de estudo: uma **interface web + API HTTP** que serve aulas (vídeos, leituras e questões) a partir de uma **pasta de dados** e guarda o seu progresso em **um único arquivo**. Também traz as **ferramentas de linha de comando** usadas para montar as aulas (busca no YouTube, legendas, transcrição local e validação do conteúdo).
 
-- The app itself uses **only the Python standard library**. Heavy dependencies (speech recognition) are optional extras.
-- **Code and data are separate.** This repository holds code only. The data folder (lessons, figures, transcripts, `progress.json`) lives elsewhere (e.g. a synced folder) and is selected with an environment variable.
-- **Single source of truth.** The web UI keeps no state: content and progress are read and written only through the API; the API owns `progress.json`.
-- Code, identifiers, file names and JSON keys are in English. The UI text and the Markdown the student reads are in Portuguese.
+- O app usa **somente a biblioteca padrão do Python**. As dependências pesadas (reconhecimento de fala) são opcionais.
+- **Código e dados ficam separados.** Este repositório guarda só código. A pasta de dados (aulas, figuras, transcrições, `progress.json`) fica em outro lugar (por exemplo, uma pasta sincronizada) e é escolhida na primeira execução.
+- **Fonte única de verdade.** A interface não guarda estado: conteúdo e progresso passam somente pela API, e a API é a única a gravar o `progress.json`.
+- Código, identificadores, nomes de arquivos e chaves JSON são em inglês. O texto da interface e os arquivos Markdown que o estudante lê são em português.
 
-## Install
+## Instalação
 
 ```bash
 git clone git@github.com:klawdyo/estudos.git
 cd estudos
-python -m venv .venv && .venv\Scripts\activate          # Windows (use source .venv/bin/activate on Linux/macOS)
-pip install -e .                                         # the app only
-pip install -e ".[all]"                                  # + captions + local transcription (yt-dlp, faster-whisper)
+python -m venv .venv
+.venv\Scripts\activate                # Windows   (Linux/macOS: source .venv/bin/activate)
+pip install -e .                      # só o app
+pip install -e ".[all]"               # + legendas + transcrição local (yt-dlp, faster-whisper)
 ```
 
 Extras: `captions` (youtube-transcript-api), `transcribe` (yt-dlp + faster-whisper), `dev` (pytest).
 
-## Configure
+## Primeira execução: escolher a pasta de dados
 
 ```bash
-set STUDY_DATA_DIR=G:\path\to\data            # Windows;  export STUDY_DATA_DIR=/path/to/data  elsewhere
+study serve
 ```
 
-| Variable | Meaning |
+Abra <http://localhost:8765/>. Se nenhuma pasta de dados estiver configurada, o app mostra a tela **"Onde estão os arquivos do curso?"**: navegue até a pasta que contém o `config.json` e clique em **Usar esta pasta**. A escolha fica salva **neste computador**, fora da pasta de dados (porque o caminho muda de um computador para outro):
+
+| Sistema | Arquivo de configurações |
 | :-- | :-- |
-| `STUDY_DATA_DIR` | **Required.** Folder with `config.json`, `progress.json`, `transcripts/`, `figures/` and one folder per block. Any command also accepts `--data-dir`. |
-| `STUDY_WORK_DIR` | Temporary folder for downloaded audio (default: system temp). Never put it inside a synced folder. |
+| Windows | `%APPDATA%\study-app\settings.json` |
+| Linux / macOS | `~/.config/study-app/settings.json` (ou `$XDG_CONFIG_HOME/study-app/settings.json`) |
 
-## Commands
+Para trocar depois, use o botão **"Trocar a pasta de dados"** no fim do menu lateral, ou `study data-dir CAMINHO` na linha de comando.
+
+Ordem de precedência (a primeira que existir vence):
+
+1. `--data-dir CAMINHO` (parâmetro de qualquer comando);
+2. variável de ambiente `STUDY_DATA_DIR`;
+3. a pasta salva neste computador (tela de escolha ou `study data-dir`).
+
+Quando a pasta vem do parâmetro ou da variável de ambiente, ela fica **fixa** e a interface não oferece a troca. `STUDY_WORK_DIR` define a pasta temporária do áudio baixado (padrão: pasta temporária do sistema; nunca a coloque dentro de uma pasta sincronizada). `STUDY_SETTINGS_FILE` muda o local do arquivo de configurações (usado nos testes).
+
+## Comandos
 
 ```bash
-study serve [--port 8765]            # API + web UI at http://localhost:8765/
-study validate                       # check the data folder (run before calling a block done)
-study search TERMS...                # search YouTube: id | duration | channel | title | views
-study captions ID... [--pause 6]     # download YouTube captions into <data>/transcripts (rate-limited by YouTube)
-study captions --text ID             # print a stored transcript with timestamps
+study serve [--port 8765]            # API + interface em http://localhost:8765/
+study data-dir [CAMINHO]             # mostra ou salva a pasta de dados deste computador
+study validate                       # confere a pasta de dados (rode antes de dar um bloco por pronto)
+study search TERMOS...               # busca no YouTube: id | duração | canal | título | visualizações
+study captions ID... [--pause 6]     # baixa as legendas do YouTube para <dados>/transcripts (o YouTube limita)
+study captions --text ID             # imprime uma transcrição guardada, com minutagem
 study transcribe ID... [--model small] [--pause 20] [--overwrite]
-                                     # local speech recognition, ONE video at a time; the audio is deleted afterwards
+                                     # reconhecimento de fala local, UM vídeo por vez; o áudio é apagado depois
 ```
 
-`python -m study_app <command>` works too (set `PYTHONPATH=src` when running from a clone without installing).
+`python -m study_app <comando>` também funciona (use `PYTHONPATH=src` ao rodar de um clone sem instalar).
 
-### About `study transcribe`
+### Sobre `study transcribe`
 
-For each video it downloads **only the audio** (m4a, about 1 MB per minute) into `STUDY_WORK_DIR`, transcribes it with faster-whisper on the CPU, writes `<data>/transcripts/<id>.json` and **deletes the audio**. Measured: about 4x the video duration with the `small` model on a 16-core CPU; the first run downloads the model (~0.5 GB, cached by Hugging Face). A YouTube `403` can be transient: retry that video alone. YouTube's terms generally forbid downloading videos without the author's permission: use it for personal study, few videos, never keep or share the audio.
+Para cada vídeo, baixa **só o áudio** (m4a, cerca de 1 MB por minuto) em `STUDY_WORK_DIR`, transcreve com o faster-whisper na CPU, grava `<dados>/transcripts/<id>.json` e **apaga o áudio**. Medido: cerca de 4 vezes a duração do vídeo com o modelo `small` numa CPU de 16 núcleos; a primeira execução baixa o modelo (~0,5 GB, guardado no cache do Hugging Face). Um `403` do YouTube pode ser passageiro: repita aquele vídeo sozinho. Os termos de uso do YouTube em geral proíbem baixar vídeos sem autorização do autor: use para estudo pessoal, poucos vídeos, e nunca guarde nem compartilhe o áudio.
 
-`study captions` is much faster but YouTube blocks the IP after roughly 15 consecutive requests (`IpBlocked`); use `transcribe` when that happens.
+`study captions` é bem mais rápido, mas o YouTube bloqueia o IP depois de cerca de 15 consultas seguidas (`IpBlocked`); quando isso acontecer, use `transcribe`.
 
-## Data folder
+## Pasta de dados
 
 ```
-config.json                   list of blocks
-progress.json                 written ONLY by the API
-transcripts/<videoId>.json    {lang, generated, duration, source, title, segments: [[second, "text"], ...]}
-figures/                      images used by readings and questions
-block-1/block.json            sections -> items (video | markdown | pdf | link | questions)
-block-1/*.md, *.pdf           readings
-block-1/*-questions.json      question sets
+config.json                   lista de blocos
+progress.json                 gravado SOMENTE pela API
+transcripts/<videoId>.json    {lang, generated, duration, source, title, segments: [[segundo, "texto"], ...]}
+figures/                      imagens usadas pelas leituras e pelas questões
+block-1/block.json            seções -> itens (video | markdown | pdf | link | questions)
+block-1/*.md, *.pdf           leituras
+block-1/*-questions.json      conjuntos de questões
 ```
 
-Every path is relative to the file that contains it and must stay inside the data folder. Full schema: [docs/data-model.md](docs/data-model.md).
+Todo caminho é relativo ao arquivo que o contém e precisa ficar dentro da pasta de dados. Esquema completo: [docs/data-model.md](docs/data-model.md).
 
 ## API
 
-| Route | Does |
+| Rota | O que faz |
 | :-- | :-- |
-| `GET /api/config` | returns `config.json` |
-| `GET /api/content/<path>` | reads a file inside the data folder (never outside it) |
-| `GET /api/progress` | full state `{items, answers, notes}` |
-| `PUT /api/progress/items/<block>/<item>` | `{"done": true}` |
-| `PUT /api/progress/answers/<block>/<item>/<question>` | `{"chosen": ["a"], "correct": true}` |
-| `DELETE /api/progress/answers/<block>/<item>/<question>` | removes the answer |
-| `PUT /api/progress/notes/<block>/<item>` | `{"text": "..."}` (empty text deletes the note) |
+| `GET /api/setup` | situação da pasta de dados: `{configured, dataDir, source, home, sep, savedDir}` |
+| `GET /api/fs?path=` | lista as subpastas (usado pela tela de escolha da pasta) |
+| `PUT /api/setup` | `{"path": "..."}` escolhe e salva a pasta de dados (recusa se não houver `config.json`; `409` se a pasta estiver fixada por parâmetro ou variável de ambiente) |
+| `GET /api/config` | devolve o `config.json` (`409` enquanto não houver pasta configurada) |
+| `GET /api/content/<caminho>` | lê um arquivo dentro da pasta de dados (nunca fora dela) |
+| `GET /api/progress` | estado completo `{items, answers, notes}` |
+| `PUT /api/progress/items/<bloco>/<item>` | `{"done": true}` |
+| `PUT /api/progress/answers/<bloco>/<item>/<questão>` | `{"chosen": ["a"], "correct": true}` |
+| `DELETE /api/progress/answers/<bloco>/<item>/<questão>` | apaga a resposta |
+| `PUT /api/progress/notes/<bloco>/<item>` | `{"text": "..."}` (texto vazio apaga a anotação) |
 
-Every write saves `progress.json` atomically and returns the full updated state. **Limits (by design):** localhost only (`127.0.0.1`), no authentication, one user, last write wins. Renaming an item or question id drops its progress (the key changes). The API does not edit content; content is edited as files. Transcription is deliberately a CLI, not an API route.
+Toda gravação de progresso salva o `progress.json` de forma atômica e devolve o estado completo atualizado. **Limites (por decisão):** só `127.0.0.1`, sem autenticação, um único usuário, a última gravação vence (`/api/fs` lista nomes de pastas deste computador, por isso o servidor não deve ser exposto na rede). Renomear o id de um item ou de uma questão faz o progresso dela sumir (a chave muda). A API não edita conteúdo: o conteúdo se edita como arquivo. A transcrição é de propósito um comando, e não uma rota da API.
 
-## UI behaviour
+## Comportamento da interface
 
-Opening an item by click marks it done (it can be unmarked on the page); optional items do not count and are skipped by "PRÓXIMO"; when the tab regains focus the UI re-reads the API state; if the API is down the UI shows a red banner and saves nothing.
+Abrir um item com um clique o marca como feito (dá para desmarcar na própria página); itens opcionais não contam e são pulados pelo "PRÓXIMO"; quando a aba volta a ter foco, a interface relê o estado da API; se a API estiver fora do ar, aparece uma faixa vermelha e nada é salvo.
 
-## Develop
+## Desenvolvimento
 
 ```bash
 pip install -e ".[dev]"
