@@ -123,10 +123,12 @@ function drawMenu() {
   nav.replaceChildren();
   const next = nextItem();
   for (const section of state.block.sections) {
-    const done = section.items.filter((i) => isDone({ key: `${state.block.id}/${i.id}` })).length;
+    // same rule as the overall counter: optional items do not count
+    const mandatory = section.items.filter((i) => !i.optional);
+    const done = mandatory.filter((i) => isDone({ key: `${state.block.id}/${i.id}` })).length;
     const box = h("div", { class: "section" + (section._collapsed ? " collapsed" : "") });
     box.append(h("h3", { onclick: () => { section._collapsed = !section._collapsed; box.classList.toggle("collapsed"); } },
-      h("span", {}, section.title), h("span", {}, `${done}/${section.items.length}`)));
+      h("span", {}, section.title), h("span", { title: "Itens obrigatórios feitos; os opcionais não entram na conta." }, `${done}/${mandatory.length}`)));
     const list = h("div", { class: "items" });
     for (const raw of section.items) {
       const item = state.items.find((x) => x.id === raw.id);
