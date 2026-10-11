@@ -29,7 +29,7 @@ def fake_download_factory(fail=None):
     return fake_download, calls
 
 
-def test_all_videos_are_transcribed_and_audio_is_deleted(monkeypatch, tmp_path):
+def test_all_videos_are_transcribed_and_audio_is_kept(monkeypatch, tmp_path):
     download, calls = fake_download_factory()
     monkeypatch.setattr(tr, "download_audio", download)
     monkeypatch.setattr(tr, "recognize", lambda audio, model, language, device, workers: ([[0, "hello"]], "pt"))
@@ -39,7 +39,7 @@ def test_all_videos_are_transcribed_and_audio_is_deleted(monkeypatch, tmp_path):
     for video_id in IDS:
         doc = json.loads((out / f"{video_id}.json").read_text(encoding="utf-8"))
         assert doc["segments"] == [[0, "hello"]] and doc["title"] == f"title {video_id}"
-    assert not any(f.is_file() for f in (tmp_path / "work").rglob("*"))      # no audio left on disk
+    assert all((tmp_path / "work" / i).exists() for i in IDS)                   # audio is KEPT until `study clean`
 
 
 def test_existing_transcripts_are_skipped(monkeypatch, tmp_path):

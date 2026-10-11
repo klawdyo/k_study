@@ -64,7 +64,7 @@ def main(argv=None) -> int:
     s = sub.add_parser("queue", help="show the shared transcription queue (same view as `study transcribe`)")
     s.add_argument("--watch", action="store_true", help="keep redrawing until Ctrl+C (open it in another terminal)")
 
-    s = sub.add_parser("clean", help="delete leftover temporary audio (the only thing that deletes it besides a finished video)")
+    s = sub.add_parser("clean", help="delete the temporary audio (the only thing that ever deletes it)")
     s.add_argument("--force", action="store_true", help="even if a transcription runner seems to be active")
 
     args = ap.parse_args(argv)

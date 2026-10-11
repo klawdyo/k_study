@@ -2,8 +2,8 @@
 
 Pipeline: downloader threads fetch ONLY the AUDIO of the next videos into a temporary folder OUTSIDE the data folder,
 while transcriber threads run faster-whisper (GPU if available, else CPU) and write <data>/transcripts/<id>.json. A video's
-own audio is DELETED as soon as its transcript is saved. Nothing else is deleted automatically: leftovers (e.g. after a
-crash) stay until `study clean`. This module is the pipeline for one batch; jobs.py adds the shared queue on top of it
+audio is KEPT in <work folder>/<video id>/ after its transcript is saved: NOTHING is deleted automatically, only
+`study clean` removes audio (it is the caller's job, e.g. the agent, to run it when done). This module is the pipeline for one batch; jobs.py adds the shared queue on top of it
 (many `study transcribe` calls, one runner), and that is what the command line uses.
 
 Politeness towards YouTube: each downloader sleeps `pause` seconds between its downloads; a 403 is retried later and a
@@ -87,7 +87,8 @@ def download_audio(video_id: str, folder: Path):
                "progress_hooks": [on_progress]}
     with yt_dlp.YoutubeDL(options) as ydl:
         info = ydl.extract_info("https://www.youtube.com/watch?v=" + video_id, download=True)
-    return next(folder.iterdir()), info
+    files = [f for f in folder.glob(video_id + ".*") if f.suffix not in (".part", ".ytdl")]
+    return max(files, key=lambda f: f.stat().st_mtime), info
 
 
 def recognize(audio: Path, model: str = "small", language: str = "pt", device: str = "auto",
@@ -163,8 +164,7 @@ def transcribe_many(entries: list[str], out_dir: Path, model: str = "small", lan
         if blocked.is_set():
             return
         folder = work_dir() / video_id
-        shutil.rmtree(folder, ignore_errors=True)
-        folder.mkdir(parents=True)
+        folder.mkdir(parents=True, exist_ok=True)
         t0 = time.time()
         _hooks.download = lambda **fields: emit(video_id, phase="downloading", **fields)
         for attempt in (1, 2):
@@ -181,7 +181,6 @@ def transcribe_many(entries: list[str], out_dir: Path, model: str = "small", lan
                     blocked.set()
                     log(f"{video_id}: BLOCKED by YouTube ({str(exc)[:80]}). Change network or wait; stopping downloads.")
                     emit(video_id, phase="queued", note="bloqueado pelo YouTube; volta quando você rodar de novo", pct=None)
-                    shutil.rmtree(folder, ignore_errors=True)
                     return
                 if attempt == 1 and _is_transient(exc):
                     log(f"{video_id}: 403, retrying in 30s")
@@ -195,7 +194,6 @@ def transcribe_many(entries: list[str], out_dir: Path, model: str = "small", lan
                     emit(video_id, phase="failed", error=f"download: {str(exc)[:120]}")
                 else:
                     emit(video_id, note="erro 403; nova tentativa no fim do lote")
-                shutil.rmtree(folder, ignore_errors=True)
                 return
         time.sleep(pause)                                   # be gentle with YouTube between downloads of this thread
 
@@ -225,8 +223,7 @@ def transcribe_many(entries: list[str], out_dir: Path, model: str = "small", lan
                 emit(video_id, phase="failed", error=f"transcrição: {str(exc)[:120]}")
             finally:
                 _hooks.progress = None
-                shutil.rmtree(folder, ignore_errors=True)   # the audio never stays on disk
-                log(f"{video_id}: audio deleted")
+                log(f"{video_id}: audio kept in {folder} (run `study clean` to delete it)")
 
     consumers = [threading.Thread(target=transcribe_loop, daemon=True) for _ in range(workers)]
     for t in consumers:

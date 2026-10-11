@@ -60,16 +60,16 @@ study captions --text ID             # imprime uma transcrição guardada, com m
 study transcribe ID... [--model small] [--language pt|en|auto] [--device auto|cpu|cuda]
                        [--downloads 1] [--workers 2] [--pause 4] [--overwrite] [--no-wait]
                                      # reconhecimento de fala local (GPU se houver); baixa vários áudios adiantados e
-                                     # transcreve vários ao mesmo tempo; cada áudio é apagado assim que a transcrição é salva
+                                     # transcreve vários ao mesmo tempo; os áudios FICAM guardados até você rodar `study clean`
 study queue                          # mostra a fila compartilhada (pendentes, falhas, se há executor ativo)
-study clean [--force]                # apaga restos de áudio temporário (só este comando limpa; recusa se há executor ativo)
+study clean [--force]                # apaga os áudios temporários (só este comando apaga; recusa se há executor ativo)
 ```
 
 `python -m study_app <comando>` também funciona (use `PYTHONPATH=src` ao rodar de um clone sem instalar).
 
 ### Sobre `study transcribe`
 
-Um **downloader** baixa **só o áudio** (m4a, cerca de 1 MB por minuto), de um vídeo por vez e já adiantado em relação à transcrição, numa pasta temporária (`STUDY_WORK_DIR`), enquanto um ou mais **transcritores** rodam o faster-whisper e gravam `<dados>/transcripts/<id>.json`. O áudio de cada vídeo é **apagado assim que a transcrição dele é salva**. **Nada mais é apagado automaticamente**: restos (por exemplo, depois de uma queda) ficam até alguém rodar `study clean`.
+Um **downloader** baixa **só o áudio** (m4a, cerca de 1 MB por minuto), de um vídeo por vez e já adiantado em relação à transcrição, numa pasta temporária (`STUDY_WORK_DIR`), enquanto um ou mais **transcritores** rodam o faster-whisper e gravam `<dados>/transcripts/<id>.json`. **Nenhum áudio é apagado automaticamente**: cada um fica em `<STUDY_WORK_DIR>/<id do vídeo>/` (cerca de 1 MB por minuto) até alguém rodar `study clean`. Quem chama o `study transcribe` (por exemplo, o agente) é quem deve rodar `study clean` quando terminar. Os termos do YouTube em geral proíbem guardar o áudio: limpe depois de usar.
 
 **Fila única:** cada chamada de `study transcribe` apenas **adiciona** seus vídeos a uma fila em disco (dentro de `STUDY_WORK_DIR`). Uma só chamada por vez vira o *executor* (arquivo de trava com batimento) e esvazia a fila inteira, inclusive o que outras chamadas adicionarem enquanto isso; as demais esperam. Assim, chamadas em vários terminais nunca baixam nem transcrevem ao mesmo tempo, e um vídeo nunca é feito duas vezes. Cada chamada só termina quando os **seus** vídeos terminam (`--no-wait` devolve o controle logo após enfileirar, se já houver executor). Se o executor cair, a trava vence em 60 s e a próxima chamada assume. Se o YouTube bloquear, a fila para (`BLOCKED`, saída 3) e a próxima chamada, depois de trocar de rede, retoma de onde parou.
 
