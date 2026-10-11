@@ -51,7 +51,7 @@ Quando a pasta vem do parâmetro ou da variável de ambiente, ela fica **fixa** 
 ## Comandos
 
 ```bash
-study serve [--port 8765]            # API + interface em http://localhost:8765/
+study serve [--port 8765] [--lan]      # API + interface em http://localhost:8765/ (--lan: também na rede interna)
 study data-dir [CAMINHO]             # mostra ou salva a pasta de dados deste computador
 study validate                       # confere a pasta de dados (rode antes de dar um bloco por pronto)
 study search TERMOS...               # busca no YouTube: id | duração | canal | título | visualizações
@@ -121,3 +121,11 @@ Toda gravação de progresso salva o `progress.json` de forma atômica e devolve
 pip install -e ".[dev]"
 pytest
 ```
+
+## Acessar de outro computador (rede interna)
+
+```bash
+study serve --lan
+```
+
+O terminal mostra o endereço da rede (ex.: `http://192.168.0.10:8765/`); abra-o no outro computador. Sem senha, então só aceita máquinas de rede privada (nunca a internet) e só quem está no computador do servidor pode trocar a pasta de dados. O firewall do Windows pode pedir permissão na primeira vez. O progresso fica no arquivo do servidor, então os dois computadores veem o mesmo progresso.

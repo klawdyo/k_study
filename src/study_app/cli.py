@@ -1,6 +1,6 @@
 """Command line:  study <command>
 
-  study serve       [--port 8765]          run the API and the web UI (asks for the data folder on first run)
+  study serve       [--port 8765] [--lan]  run the API and the web UI (asks for the data folder on first run)
   study data-dir    [PATH]                  show / save the data folder for this computer
   study validate                            validate the data folder
   study search      TERMS...                search YouTube
@@ -33,6 +33,8 @@ def main(argv=None) -> int:
 
     s = sub.add_parser("serve", help="run the API and the web UI")
     s.add_argument("--port", type=int, default=8765)
+    s.add_argument("--lan", action="store_true",
+                   help="also accept other computers on your private network (no password; the firewall may ask to allow it)")
 
     s = sub.add_parser("data-dir", help="show or save the data folder for this computer")
     s.add_argument("path", nargs="?")
@@ -89,7 +91,7 @@ def main(argv=None) -> int:
         if args.command == "serve":
             from .server import serve
             found, source = paths.resolve(args.data_dir)
-            serve(found, args.port, source)
+            serve(found, args.port, source, args.lan)
             return 0
 
         data = paths.data_dir(args.data_dir)

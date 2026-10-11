@@ -19,10 +19,17 @@ Routes
 Every progress write saves the file atomically and returns the full updated state.
 Localhost only, single user, no authentication. The app never lists the disk: the user picks config.json in the
 operating system's own dialog or pastes the path. Requests whose Host header is not localhost are refused (DNS rebinding).
+
+Optional LAN mode (`study serve --lan`): listens on all interfaces so another computer on the same private network can
+use the app. Still no authentication, so it only accepts clients from private/loopback addresses, and only a request
+from this very computer may change the data folder. Host headers that are IP literals (or this computer's name) are
+accepted; any other name is refused.
 """
+import ipaddress
 import json
 import mimetypes
 import os
+import socket
 import tempfile
 import threading
 from datetime import datetime, timezone
@@ -103,8 +110,8 @@ class Store:
 class Context:
     """The data folder in use (None until configured) and its progress store."""
 
-    def __init__(self, data: Path | None, source: str):
-        self.data, self.source, self.store = None, "none", None
+    def __init__(self, data: Path | None, source: str, lan: bool = False):
+        self.data, self.source, self.store, self.lan = None, "none", None, lan
         self.lock = threading.Lock()
         if data:
             self.use(data, source)
@@ -166,8 +173,39 @@ class Handler(BaseHTTPRequestHandler):
         host = (self.headers.get("Host") or "").rsplit(":", 1)[0].strip("[]").lower()
         if host in ("localhost", "127.0.0.1", "::1"):
             return True
+        if self.ctx.lan and self._client_ok() and (self._is_ip(host) or host in self._own_names()):
+            return True
         self._json(403, {"error": "forbidden_host"})
         return False
+
+    @staticmethod
+    def _is_ip(text: str) -> bool:
+        try:
+            ipaddress.ip_address(text.split("%")[0])
+            return True
+        except ValueError:
+            return False
+
+    @staticmethod
+    def _own_names() -> set:
+        name = socket.gethostname().lower()
+        return {name, name + ".local", name + ".lan"}
+
+    def _client_ok(self) -> bool:
+        """LAN mode: only private or loopback clients (never the open internet)."""
+        try:
+            ip = ipaddress.ip_address(self.client_address[0].split("%")[0])
+        except ValueError:
+            return False
+        if getattr(ip, "ipv4_mapped", None):
+            ip = ip.ipv4_mapped
+        return ip.is_private or ip.is_loopback or ip.is_link_local
+
+    def _from_this_computer(self) -> bool:
+        try:
+            return ipaddress.ip_address(self.client_address[0].split("%")[0]).is_loopback
+        except ValueError:
+            return False
 
     def _need_data(self) -> bool:
         if self.ctx.data is None:
@@ -216,6 +254,8 @@ class Handler(BaseHTTPRequestHandler):
         body = self._body()
         if body is None:
             return self._json(400, {"error": "invalid JSON"})
+        if parts[:2] == ["api", "setup"] and not self._from_this_computer():
+            return self._json(403, {"error": "local_only", "message": "The data folder can only be changed from the computer running the server."})
         if parts == ["api", "setup"] and method == "PUT":
             return self._choose_folder(body)
         if parts == ["api", "setup", "pick"] and method == "POST":
@@ -242,14 +282,29 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
-def make_server(data: Path | None, port: int = 8765, host: str = "127.0.0.1", source: str = "flag") -> ThreadingHTTPServer:
-    return ThreadingHTTPServer((host, port), partial(Handler, Context(data, source)))
+def make_server(data: Path | None, port: int = 8765, host: str = "127.0.0.1", source: str = "flag",
+                lan: bool = False) -> ThreadingHTTPServer:
+    return ThreadingHTTPServer(("0.0.0.0" if lan else host, port), partial(Handler, Context(data, source, lan)))
 
 
-def serve(data: Path | None, port: int = 8765, source: str = "none") -> None:
-    server = make_server(data, port, source=source)
+def lan_address() -> str | None:
+    """Best guess of this computer's address on the local network (no packet is sent)."""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
+            probe.connect(("10.255.255.255", 1))
+            return probe.getsockname()[0]
+    except OSError:
+        return None
+
+
+def serve(data: Path | None, port: int = 8765, source: str = "none", lan: bool = False) -> None:
+    server = make_server(data, port, source=source, lan=lan)
     where = f"{data}  (source: {source})" if data else "not set: the browser will ask for it"
     print(f"Data folder : {where}\nOpen        : http://localhost:{port}/")
+    if lan:
+        address = lan_address()
+        print(f"Local network: http://{address or '<this-computer-ip>'}:{port}/   (private networks only, no password;"
+              " the data folder can only be changed on this computer)")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

@@ -87,3 +87,41 @@ def test_forged_host_header_is_refused(data_dir):
             conn.close()
     finally:
         server.shutdown()
+
+
+def test_lan_mode_accepts_ip_hosts_but_not_names_and_keeps_setup_local(data_dir):
+    import http.client
+    import threading
+
+    from study_app.server import make_server
+
+    server = make_server(data_dir, port=0, source="flag", lan=True)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        port = server.server_address[1]
+        assert server.server_address[0] == "0.0.0.0"
+        for host, expected in ((f"192.168.0.10:{port}", 200), (f"[fe80::1]:{port}", 200), ("evil.example.com", 403)):
+            conn = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
+            conn.request("GET", "/api/progress", headers={"Host": host})
+            assert conn.getresponse().status == expected, host
+            conn.close()
+    finally:
+        server.shutdown()
+
+
+def test_without_lan_mode_ip_hosts_are_refused_and_only_loopback_is_bound(data_dir):
+    import http.client
+    import threading
+
+    from study_app.server import make_server
+
+    server = make_server(data_dir, port=0, source="flag")
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        port = server.server_address[1]
+        assert server.server_address[0] == "127.0.0.1"
+        conn = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
+        conn.request("GET", "/api/progress", headers={"Host": f"192.168.0.10:{port}"})
+        assert conn.getresponse().status == 403
+    finally:
+        server.shutdown()
