@@ -1,0 +1,2423 @@
+{
+  "schema": "block/v2",
+  "id": "block-2",
+  "title": "Bloco 2 · Algoritmos Supervisionados",
+  "description": "Aulas 5, 6 e 8: Regressão Linear (OLS, Gradiente Descendente, Regularização Ridge/Lasso e Métricas), k-NN (Distâncias, Escolha de K e Escala) e Árvores de Decisão (Entropia, Gini e Poda).",
+  "sections": [
+    {
+      "id": "aula-5",
+      "title": "Aula 5 · Regressão Linear",
+      "items": [
+        {
+          "id": "a5-v1",
+          "type": "video",
+          "title": "Explicando como funciona Regressão Linear",
+          "channel": "Codifike",
+          "duration": "5:48",
+          "url": "https://www.youtube.com/watch?v=88olil97P_Q",
+          "goals": [
+            "Ver o resíduo, a elevação ao quadrado e a soma dos quadrados dos resíduos (SQR) (slides 10 e 11).",
+            "Ver a equação da reta com variável dependente (Y) e independente (X) (slides 4 a 6).",
+            "Ter a ideia de que o melhor ajuste é o mínimo da curva de erro, achado por derivada (slides 12 e 20, só a ideia)."
+          ],
+          "warnings": [
+            "Notação do vídeo: Y = aX + b (a = inclinação, que ele chama de 'ângulo'); nos slides é Y = α + βx.",
+            "Aos 01:02 o vídeo diz que o R² serve para saber a inclinação da reta: errado. O R² mede a qualidade do ajuste (slide 51).",
+            "Aos 04:36–04:47 diz que o melhor ajuste é aquele em que 'o mínimo quadrado é zero': errado. O melhor ajuste é o MÍNIMO da SQR, que em geral é maior que zero (só é zero se a reta passa por todos os pontos).",
+            "A reta usada para explicar resíduos e SQR (01:44–02:52) é a reta horizontal da média, não a reta ajustada.",
+            "Não ensina gradiente descendente nem OLS matricial (slides 20 a 44): isso vem nos vídeos seguintes e na leitura."
+          ],
+          "clips": [
+            {
+              "start": 100,
+              "end": 182,
+              "slides": "10, 11",
+              "note": "Resíduo = valor real menos a reta; elevar ao quadrado; soma = SQR (a reta usada aqui é a da média)."
+            },
+            {
+              "start": 193,
+              "end": 300,
+              "slides": "4, 5, 6, 12, 20",
+              "note": "Equação da reta (Y dependente, X independente), mínimos quadrados e derivada para achar o mínimo. Atenção aos dois erros do vídeo (ver avisos)."
+            }
+          ],
+          "transcript": "../transcripts/88olil97P_Q.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "01:40–02:52 — Resíduo, elevar ao quadrado para o sinal não cancelar, e SQR (slides 10 e 11)",
+              "03:13–03:43 — Equação da reta, variável dependente e independente, intercepto e inclinação (slides 4 a 6)",
+              "03:43–04:57 — Método dos mínimos quadrados e mínimo da curva de erro via derivada (slides 12 e 20, só a ideia)"
+            ],
+            "notCovered": "Não cobre regressão múltipla/hiperplano, gradiente descendente, taxa de aprendizado, OLS x GD (slides 13 a 15 e 20 a 44), regularização nem as métricas MAE/MSE/R² ajustado.",
+            "profile": [
+              "**Nível:** iniciante; serve como primeiro contato, é superficial.",
+              "**Idioma/qualidade:** português do Brasil; a transcrição tem pequenos erros ('indinação', 'grave' = gráfico)."
+            ],
+            "verdict": "aprovar só os trechos 01:40–03:02 e 03:13–05:00, lendo os avisos sobre os dois erros do vídeo."
+          }
+        },
+        {
+          "id": "a5-v5",
+          "type": "video",
+          "title": "COEFICIENTE DE CORRELAÇÃO LINEAR EP 1",
+          "channel": "Prof. Murakami",
+          "duration": "8:38",
+          "url": "https://www.youtube.com/watch?v=ayAxTRN4aVg",
+          "goals": [
+            "Entender o coeficiente de correlação r de Pearson e seu intervalo de −1 a +1 (slide 7).",
+            "Interpretar correlação positiva, negativa e nula em gráficos de dispersão e a força da correlação (slides 7 e 8)."
+          ],
+          "warnings": [
+            "Assista só até 03:55. Depois o vídeo vira conta manual (colunas x², y², xy, somatórios): não está nos slides e a prova não tem cálculo.",
+            "Não diz que o Pearson mede apenas associação LINEAR, nem trata multicolinearidade entre variáveis independentes (slide 8), nem causalidade, nem o exemplo felicidade x expectativa de vida (slide 9): isso está na leitura.",
+            "A transcrição automática escreve 'dinéar' para 'linear'."
+          ],
+          "clips": [
+            {
+              "start": 46,
+              "end": 235,
+              "slides": "7, 8",
+              "note": "Coeficiente de correlação linear r: varia de −1 a +1; +1 perfeita positiva, −1 perfeita negativa, 0 sem correlação linear; perto de ±1 = forte, perto de 0 = fraca."
+            }
+          ],
+          "transcript": "../transcripts/ayAxTRN4aVg.json",
+          "review": {
+            "badge": "transcrição lida · só o trecho indicado",
+            "covers": [
+              "00:46–01:32 — r é um número entre −1 e +1; +1 = correlação linear perfeita positiva (reta crescente) (slide 7)",
+              "01:32–02:19 — r = −1 perfeita negativa; r = 0, pontos dispersos, sem reta que se ajuste (slide 7)",
+              "02:19–03:55 — Força: perto de ±1 forte, perto de 0 fraca; exemplo de correlação positiva forte (slides 7 e 8)"
+            ],
+            "notCovered": "Não diz que r mede só relação linear; não trata multicolinearidade (slide 8), causalidade nem o exemplo do slide 9. A partir de 03:55 é cálculo manual.",
+            "profile": [
+              "**Nível:** iniciante.",
+              "**Idioma/qualidade:** português do Brasil, fala clara; erros pontuais do reconhecimento automático."
+            ],
+            "verdict": "aprovar só o trecho 00:46–03:55."
+          }
+        },
+        {
+          "id": "a5-v2",
+          "type": "video",
+          "title": "Função de Custo (Regressão Linear) - Machine Learning em Português (Aula 14)",
+          "channel": "Zurubabel",
+          "duration": "5:33",
+          "url": "https://www.youtube.com/watch?v=jSaJjshIAUw",
+          "goals": [
+            "Entender o que é a função de custo e como ela mede a qualidade do modelo (slide 11).",
+            "Ver por que elevar o erro ao quadrado: erros positivos e negativos não se cancelam (slides 10 e 11)."
+          ],
+          "warnings": [
+            "Usa θ0/θ1 e o fator 1/(2m) (curso de Andrew Ng); nos slides os coeficientes são α e β e a função de custo é a SQR/MSE (sem o 1/2).",
+            "Os nomes SQR/MSE não são ditos: ele fala 'soma dos erros ao quadrado' e cita RMSE só de passagem (01:02).",
+            "O vídeo termina antes de mostrar como minimizar a função de custo (slide 12 e gradiente descendente).",
+            "Áudio com voz rouca e trechos refeitos; a fórmula é só lida."
+          ],
+          "clips": [
+            {
+              "start": 25,
+              "end": 300,
+              "slides": "10, 11",
+              "note": "O que é função de custo e a fórmula J = 1/(2m) Σ (previsto − real)²; por que elevar ao quadrado."
+            }
+          ],
+          "transcript": "../transcripts/jSaJjshIAUw.json",
+          "review": {
+            "badge": "transcrição lida · trecho indicado",
+            "covers": [
+              "00:25–01:07 — O que é a função de custo: um número que diz quão bom é o modelo (slide 11)",
+              "01:07–04:00 — Fórmula J com soma dos erros ao quadrado dividida por 2m (slides 10 e 11)",
+              "04:10–04:40 — Por que elevar ao quadrado: 5−1 e 1−5 dão o mesmo 16 (slide 10)"
+            ],
+            "notCovered": "Não mostra como minimizar a função de custo (slide 12), nem gradiente, regularização ou outras métricas.",
+            "profile": [
+              "**Nível:** iniciante.",
+              "**Idioma/qualidade:** português do Brasil; didática mediana, fala confusa."
+            ],
+            "verdict": "aprovar o trecho 00:25–05:00."
+          }
+        },
+        {
+          "id": "a5-v6",
+          "type": "video",
+          "title": "Regressão Linear Múltipla - Introdução",
+          "channel": "Statmeup",
+          "duration": "10:21",
+          "url": "https://www.youtube.com/watch?v=TLlzToeIpGc",
+          "goals": [
+            "Ver a diferença entre regressão simples (uma variável X) e múltipla (várias X) (slide 13).",
+            "Ler a equação da regressão múltipla com um coeficiente por variável e interpretar cada coeficiente 'mantida a outra constante' (slide 15).",
+            "Ver que com duas variáveis o modelo é um plano em 3D (ideia do hiperplano, slide 15)."
+          ],
+          "warnings": [
+            "Usa Excel, teste F e valores-p (02:40–07:10): fora dos slides, pule essa parte.",
+            "Notação b₀, b₁, b₂ (nos slides: α e β). Não diz a palavra 'hiperplano': mostra o plano no gráfico 3D com duas variáveis.",
+            "Não fala de padronizar variáveis (slide 19) nem de multicolinearidade."
+          ],
+          "clips": [
+            {
+              "start": 26,
+              "end": 187,
+              "slides": "13, 15",
+              "note": "Regressão simples versus múltipla; exemplo preço do apartamento por tamanho e idade; equação com b₀, b₁, b₂."
+            },
+            {
+              "start": 396,
+              "end": 410,
+              "slides": "52",
+              "note": "R² ajustado serve para comparar modelos com quantidades diferentes de variáveis."
+            },
+            {
+              "start": 478,
+              "end": 540,
+              "slides": "15, 19",
+              "note": "Cada coeficiente é o efeito de uma variável mantendo a outra constante."
+            },
+            {
+              "start": 562,
+              "end": 620,
+              "slides": "15",
+              "note": "Gráfico 3D: com duas variáveis X o modelo é um plano."
+            }
+          ],
+          "transcript": "../transcripts/TLlzToeIpGc.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:26–01:16 — Regressão simples (tamanho → preço) e por que usar várias variáveis (slide 13)",
+              "01:17–02:00 e 02:46–03:07 — Exemplo com tamanho e idade do prédio; equação ŷ = b₀ + b₁x₁ + b₂x₂ (slides 13 e 15)",
+              "06:36–06:48 — R² ajustado ao comparar modelos com números diferentes de variáveis (slide 52)",
+              "07:58–08:56 — Interpretação dos coeficientes mantendo a outra variável constante (slides 15 e 19)",
+              "09:22–10:20 — Gráfico 3D: plano de previsão e pontos (slide 15)"
+            ],
+            "notCovered": "Não cobre hiperplano com mais de duas variáveis pelo nome, padronização dos betas, multicolinearidade, nem a estimação (mínimos quadrados ou gradiente).",
+            "profile": [
+              "**Nível:** iniciante a intermediário.",
+              "**Idioma/qualidade:** português (Brasil), fala clara; a maior parte do vídeo é demonstração no Excel."
+            ],
+            "verdict": "aprovar só os trechos 00:26–03:07, 06:36–06:48, 07:58–08:56 e 09:22–10:20."
+          }
+        },
+        {
+          "id": "a5-v7",
+          "type": "video",
+          "title": "Descida do Gradiente - Intuição",
+          "channel": "Born to be AI",
+          "duration": "6:06",
+          "url": "https://www.youtube.com/watch?v=ejrEX9xrKlw",
+          "goals": [
+            "Entender a ideia do gradiente descendente: a função de erro como uma superfície, andar no sentido contrário do gradiente (slides 24 e 28).",
+            "Entender por que se dão passos pequenos (risco de passar do mínimo) (slides 35 e 39)."
+          ],
+          "warnings": [
+            "O vídeo é um trecho de aula e começa no meio ('Então, tem uma função quadrática...'): assume que o erro médio quadrático já foi apresentado.",
+            "Notação θ1 e θ2 (nos slides: α e β, ou m e b). Fala 'passar do mínimo' (overshooting), que o slide 39 chama de taxa de aprendizado alta.",
+            "Não mostra a fórmula de atualização nem o nome 'taxa de aprendizado' (isso vem nos próximos vídeos)."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 362,
+              "slides": "24, 28, 35",
+              "note": "Erro como superfície; gradiente aponta para onde o erro mais cresce; andar no sentido oposto; passos pequenos para não passar do mínimo; imagem da bolinha descendo."
+            }
+          ],
+          "transcript": "../transcripts/ejrEX9xrKlw.json",
+          "review": {
+            "badge": "transcrição lida · vídeo inteiro",
+            "covers": [
+              "00:00–01:35 — A função de erro (altura) em função dos parâmetros; não confundir com a reta ajustada (slide 28)",
+              "01:38–03:07 — O gradiente é a direção em que o erro mais aumenta; andar na direção contrária reduz o erro (slides 24 e 28)",
+              "04:06–06:00 — Passos pequenos para não passar do mínimo; imagem da bolinha que desce até o fundo (slides 35 e 39)"
+            ],
+            "notCovered": "Não mostra a fórmula de atualização, a derivada, a taxa de aprendizado pelo nome nem o efeito de taxas diferentes.",
+            "profile": [
+              "**Nível:** iniciante a intermediário; ajuda ter visto o gráfico da função de custo.",
+              "**Idioma/qualidade:** português do Brasil; fala informal, desenho à mão."
+            ],
+            "verdict": "aprovar o vídeo inteiro (0:00–6:00)."
+          }
+        },
+        {
+          "id": "a5-v8",
+          "type": "video",
+          "title": "Redes neurais artificiais #15: Descida do gradiente e derivada",
+          "channel": "Machine Learning para humanos",
+          "duration": "7:23",
+          "url": "https://www.youtube.com/watch?v=szqcb5qQbWQ",
+          "goals": [
+            "Entender a derivada como a inclinação da reta tangente a uma curva em um ponto (slides 26 e 27).",
+            "Ver a regra 'valor novo = valor antigo − taxa de aprendizado × inclinação' (slides 30 a 35)."
+          ],
+          "warnings": [
+            "O vídeo fala de pesos de redes neurais e do erro em função do peso; para a regressão, leia 'peso' como coeficiente (α, β).",
+            "Chama a taxa de aprendizado de η (eta).",
+            "Só uma variável: não mostra o gradiente com vários parâmetros."
+          ],
+          "clips": [
+            {
+              "start": 50,
+              "end": 347,
+              "slides": "26, 27",
+              "note": "Inclinação de uma reta e de uma curva; a derivada é a inclinação no ponto (reta tangente)."
+            },
+            {
+              "start": 380,
+              "end": 407,
+              "slides": "30, 35",
+              "note": "Valor novo do parâmetro = valor antigo − taxa de aprendizado × derivada do erro."
+            }
+          ],
+          "transcript": "../transcripts/szqcb5qQbWQ.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:50–01:50 — Peso novo = peso antigo − taxa de aprendizado × inclinação (slide 35)",
+              "01:49–05:46 — Inclinação na reta e na parábola; encolher o intervalo até a derivada ser a inclinação da tangente em um ponto (slides 26 e 27)",
+              "06:20–06:47 — Fórmula de atualização com a derivada do erro (slides 30 e 35)"
+            ],
+            "notCovered": "Não fala de regressão linear, SQR/MSE, derivada parcial nem de vários parâmetros.",
+            "profile": [
+              "**Nível:** iniciante; usa animações simples.",
+              "**Idioma/qualidade:** português do Brasil, transcrição legível."
+            ],
+            "verdict": "aprovar só os trechos 00:50–05:46 e 06:20–06:47."
+          }
+        },
+        {
+          "id": "a5-v9",
+          "type": "video",
+          "title": "Gradiente Descendente e Regressão Linear | Machine Learning: Fundamentos (Parte 2) [MLF2]",
+          "channel": "Apoena Stack - Iury Rosal",
+          "duration": "23:55",
+          "url": "https://www.youtube.com/watch?v=8NloB9J2WTc",
+          "goals": [
+            "Entender a fórmula de atualização do gradiente descendente e o papel do sinal da derivada (slides 28 a 35).",
+            "Entender taxa de aprendizado pequena × grande, convergir e passos que diminuem sozinhos (slides 35, 39, 40 e 44).",
+            "Ver a atualização de dois parâmetros (α e β) ao mesmo tempo (slides 32 e 33)."
+          ],
+          "warnings": [
+            "Usa β0 e β1 e a função de custo com 1/(2m); nos slides: m e b, ou α e β, e SQR/MSE.",
+            "Aos 13:47 ele diz que divergir é 'demorar para chegar': errado. Divergir é o erro crescer ou oscilar sem convergir; a taxa pequena só deixa lento (aos 12:22–13:00 a explicação da taxa pequena está certa).",
+            "Usa uma função convexa (um único mínimo). Em outros modelos pode haver mínimos locais.",
+            "O slide 40 diz que taxa alta 'leva a um mínimo local'; o vídeo (e a literatura) diz que passa do mínimo e oscila ou diverge. Na prova, atenção à redação do slide.",
+            "Entre 06:32 e 11:05 ele deriva a fórmula passo a passo (cálculo): pode pular.",
+            "Os valores típicos citados (0,01; 0,001; 0,03) conferem com o slide 40."
+          ],
+          "clips": [
+            {
+              "start": 39,
+              "end": 392,
+              "slides": "28, 29, 30, 35",
+              "note": "Fórmula de atualização; o sinal da derivada decide para que lado o parâmetro anda; derivada zero no mínimo; função convexa."
+            },
+            {
+              "start": 665,
+              "end": 1022,
+              "slides": "35, 39, 40, 44",
+              "note": "Taxa de aprendizado: pequena = lento, alta = oscila e não converge; passos diminuem sozinhos porque a derivada diminui; valores típicos 0,01 e 0,001."
+            },
+            {
+              "start": 1062,
+              "end": 1200,
+              "slides": "32, 33",
+              "note": "Dois parâmetros atualizados ao mesmo tempo."
+            },
+            {
+              "start": 1281,
+              "end": 1390,
+              "slides": "36, 42, 44",
+              "note": "Animação da reta e do erro caindo, com passos grandes no início e menores perto do mínimo."
+            }
+          ],
+          "transcript": "../transcripts/8NloB9J2WTc.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:39–01:35 — Fórmula de atualização: parâmetro antigo − α × derivada parcial; α é a taxa de aprendizado (slides 30 e 35)",
+              "02:50–05:34 — Derivada = inclinação; inclinação positiva faz o parâmetro diminuir, negativa faz aumentar, zero no mínimo (slides 26, 28 e 35)",
+              "05:46–06:32 — Mínimo local igual ao global em função convexa",
+              "11:05–14:20 — Taxa pequena (lenta) e grande (oscila e não converge); escolher meio-termo (slides 39 e 40)",
+              "14:25–16:25 — Passos diminuem sozinhos perto do mínimo porque a inclinação tende a zero (slide 44)",
+              "16:29–17:03 — Valores comuns de taxa de aprendizado: 0,01; 0,001; 0,03 (slide 40)",
+              "17:42–20:00 — Atualização simultânea de β0 e β1 (slides 32 e 33)",
+              "21:21–23:05 — Animação do gradiente descendente em regressão com dois parâmetros (slide 36)"
+            ],
+            "notCovered": "Não cobre OLS × GD, SQR na notação dos slides, o gradiente na regressão múltipla, nem as imagens dos slides 42 a 44 (50 iterações, taxa 0,01 e 0,9).",
+            "profile": [
+              "**Nível:** iniciante a intermediário; pede noção básica de derivada, que ele revisa.",
+              "**Idioma/qualidade:** português do Brasil, fala clara e pausada; vídeo longo, use só os trechos."
+            ],
+            "verdict": "aprovar só os trechos 00:39–06:32, 11:05–17:03, 17:42–20:00 e 21:21–23:05 (pular a derivação em 06:32–11:05)."
+          }
+        },
+        {
+          "id": "a5-v10",
+          "type": "video",
+          "title": "Regressão linear - Explicando gradiente - PYTHON",
+          "channel": "pythonando",
+          "duration": "3:28",
+          "url": "https://www.youtube.com/watch?v=4M7PU-juavg",
+          "goals": [
+            "Ver na prática o que acontece com taxa de aprendizado 0,5 (saltos grandes) e 0,1 (passos curtos) (slides 40 a 44)."
+          ],
+          "warnings": [
+            "Vídeo curto de um curso de Python; a imagem (curva do erro com uma bolinha) está no vídeo, não na transcrição.",
+            "Usa W0 e W1 como parâmetros e 'erro' como altura da curva.",
+            "Diz que com 0,5 a bolinha não chega ao menor erro possível: é a ideia do salto grande, mas 0,5 é só um exemplo, não um valor a decorar.",
+            "Termina na complexidade computacional (milhões de casas) sem concluir."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 178,
+              "slides": "40, 42, 43",
+              "note": "A bolinha desce na curva do erro: taxa maior dá saltos grandes e não chega ao mínimo; taxa menor precisa de mais iterações."
+            }
+          ],
+          "transcript": "../transcripts/4M7PU-juavg.json",
+          "review": {
+            "badge": "transcrição lida · trecho indicado",
+            "covers": [
+              "00:00–00:40 — Curva do erro: quanto mais alto, maior o erro; começa em valores aleatórios de W0 e W1 (slide 24)",
+              "00:43–01:40 — Taxa 0,5: saltos grandes, desce rápido mas não chega ao menor erro (slide 43)",
+              "01:42–02:44 — Taxa 0,1: chega ao mínimo, mas com muito mais iterações (slides 40 e 42)",
+              "02:57–03:17 — Com muitos dados e variáveis o custo computacional cresce (slide 41)"
+            ],
+            "notCovered": "Não explica a derivada, a fórmula de atualização nem o gradiente com vários parâmetros.",
+            "profile": [
+              "**Nível:** iniciante.",
+              "**Idioma/qualidade:** português do Brasil; fala corrida e com pequenos tropeços, 3:28 no total."
+            ],
+            "verdict": "aprovar o trecho 00:00–02:58."
+          }
+        },
+        {
+          "id": "a5-v11",
+          "type": "video",
+          "title": "Learning Rate: O Parâmetro Que Define o Sucesso da IA",
+          "channel": "Nerd dos Dados",
+          "duration": "16:48",
+          "url": "https://www.youtube.com/watch?v=vEAtjqMLrUQ",
+          "goals": [
+            "Reforçar a taxa de aprendizado pequena × grande com a analogia de descer uma montanha (slides 39 e 40)."
+          ],
+          "warnings": [
+            "O vídeo fala de redes neurais (épocas, retropropagação): leia como 'ajustar os coeficientes'.",
+            "Aos 05:06 chama 0,1 de 'alta' e 0,01 de 'ideal'; o slide 40 lista 0,001 a 0,3 como valores comuns. São ordens de grandeza, não regras.",
+            "Entre 13:00 e 15:30 a explicação do 'buraco' e de 'o gradiente não pode chegar a zero nem passar de zero' é confusa e errada: pule.",
+            "Exageros ('seis meses para treinar') e propaganda do canal."
+          ],
+          "clips": [
+            {
+              "start": 287,
+              "end": 590,
+              "slides": "39, 40",
+              "note": "Taxa alta: o erro sobe e desce e não estabiliza; taxa baixa: demora; analogia de descer a montanha de olhos vendados; comparação de taxa alta, ideal e baixa."
+            }
+          ],
+          "transcript": "../transcripts/vEAtjqMLrUQ.json",
+          "review": {
+            "badge": "transcrição lida · trecho indicado",
+            "covers": [
+              "04:47–06:00 — Taxa de aprendizado = quanto o modelo muda a cada erro; exemplos 0,1, 0,001 e 0,01 (slide 40)",
+              "06:02–09:00 — Analogia da montanha; taxa alta oscila e nunca estabiliza; taxa baixa demora (slides 39 e 40)",
+              "09:01–09:50 — Comparativo das três taxas (slides 42 a 44)"
+            ],
+            "notCovered": "Não trata de regressão linear, derivada nem da fórmula de atualização.",
+            "profile": [
+              "**Nível:** iniciante.",
+              "**Idioma/qualidade:** português do Brasil; boa dicção, vídeo de 16:48 com muita repetição."
+            ],
+            "verdict": "aprovar só o trecho 04:47–09:50 (complemento)."
+          },
+          "optional": true
+        },
+        {
+          "id": "a5-v12",
+          "type": "video",
+          "title": "Regularização II: Regressão Ridge - Aula 12 (TEF1 - 2020.1)",
+          "channel": "Saulo Reis",
+          "duration": "10:46",
+          "url": "https://www.youtube.com/watch?v=eYnBR4EVdX4",
+          "goals": [
+            "Entender o que é regularização: penalizar coeficientes para reduzir o overfitting sem abandonar o modelo complexo (slide 45).",
+            "Ver a regularização Ridge (L2): somar λ × soma dos quadrados dos coeficientes ao custo, e o papel de λ (slides 45 e 46)."
+          ],
+          "warnings": [
+            "Notação θ (nos slides: β) e função de custo de Andrew Ng.",
+            "Só trata de Ridge (L2): Lasso (L1) e a seleção de variáveis do slide 46 não aparecem.",
+            "Usa exemplo de polinômio de grau 6 e menciona PCA e SVM de passagem (01:26–01:55).",
+            "A regra de atualização do gradiente com λ (09:00–10:30) é cálculo e não está nos slides: pule."
+          ],
+          "clips": [
+            {
+              "start": 120,
+              "end": 530,
+              "slides": "45, 46",
+              "note": "Regularização = penalizar parâmetros de menor importância; Ridge soma λ·Σθ² ao custo; λ grande demais dá underfitting, λ zero pode dar overfitting."
+            }
+          ],
+          "transcript": "../transcripts/eYnBR4EVdX4.json",
+          "review": {
+            "badge": "transcrição lida · trecho indicado",
+            "covers": [
+              "02:00–03:07 — Regularização reduz a influência de features por penalidade, mantendo modelos complexos sem overfitting (slide 45)",
+              "04:01–06:00 — Somar termos quadráticos dos parâmetros ao custo obriga o gradiente a diminuí-los (slide 45)",
+              "06:29–08:49 — Ridge: λ × Σθj²; λ muito grande dá modelo constante (underfitting), λ zero pode dar overfitting (slides 45 e 46)"
+            ],
+            "notCovered": "Não trata Lasso (L1), seleção de variáveis, elastic net, nem a geometria da penalidade.",
+            "profile": [
+              "**Nível:** iniciante a intermediário (aula universitária).",
+              "**Idioma/qualidade:** português do Brasil; transcrição com alguns erros, legível."
+            ],
+            "verdict": "aprovar só o trecho 02:00–08:50."
+          }
+        },
+        {
+          "id": "a5-v13",
+          "type": "video",
+          "title": "Regressão de Lasso, Ridge e Elastic Net",
+          "channel": "ProfDanilo_DS",
+          "duration": "6:23",
+          "url": "https://www.youtube.com/watch?v=LuttGjfSQCc",
+          "goals": [
+            "Ver Lasso (L1) como a penalidade que pode zerar coeficientes, e Ridge (L2) que encolhe sem zerar (slide 46).",
+            "Saber que λ é um hiperparâmetro e que Elastic Net mistura L1 e L2."
+          ],
+          "warnings": [
+            "A transcrição automática está ruim ('rede' = ridge, 'baia' = viés, trechos sem sentido em 05:30–05:50): confira pelo áudio; as ideias abaixo foram lidas em trechos legíveis.",
+            "Fala de viés e variância (02:20–02:58) e de multicolinearidade com um exemplo de peso (01:33–02:06): serve como contexto, não é o foco.",
+            "Não mostra o 'sossega-leão' nem a geometria; o código em Python anunciado no fim não aparece no vídeo.",
+            "Diz que Lasso seleciona variáveis (compatível com o slide 46: 'pode ser usado para seleção de features')."
+          ],
+          "clips": [
+            {
+              "start": 60,
+              "end": 312,
+              "slides": "45, 46",
+              "note": "Multicolinearidade; regularizadores adicionam viés; Lasso (L1) pode zerar coeficientes (seleção de variáveis); Ridge (L2) encolhe mas não reduz o número de variáveis; λ é hiperparâmetro."
+            }
+          ],
+          "transcript": "../transcripts/LuttGjfSQCc.json",
+          "review": {
+            "badge": "transcrição lida · trecho indicado (transcrição ruim)",
+            "covers": [
+              "01:33–02:20 — Multicolinearidade: variáveis de entrada relacionadas entre si (slide 8)",
+              "02:08–02:30 — Regularizadores adicionam viés para reduzir variância (slide 45)",
+              "02:58–03:44 — Lasso (L1): valor absoluto dos coeficientes; λ adequado anula alguns, os não anulados são os importantes (slide 46)",
+              "04:10–05:10 — Ridge (L2): encolhe os coeficientes sem reduzir o número de variáveis (slide 46)",
+              "05:10–05:50 — Elastic Net combina L1 e L2 com λ e α"
+            ],
+            "notCovered": "Não explica por que a L1 zera (geometria), não mostra como escolher λ e não compara os dois lado a lado com gráfico.",
+            "profile": [
+              "**Nível:** iniciante a intermediário; muito resumido.",
+              "**Idioma/qualidade:** português do Brasil; transcrição automática muito ruim neste vídeo."
+            ],
+            "verdict": "aprovar só o trecho 01:33–05:12, com a ressalva da qualidade da transcrição."
+          },
+          "optional": true
+        },
+        {
+          "id": "a5-v14",
+          "type": "video",
+          "title": "Introdução à Machine Learning - 06 Regularização Ridge/L2, LASSO/L1 e Elastic Net",
+          "channel": "Abel Siqueira",
+          "duration": "21:06",
+          "url": "https://www.youtube.com/watch?v=QXy5GTb7pwE",
+          "goals": [
+            "Ver Ridge (L2) e Lasso (L1) com gráficos: Ridge puxa todos os coeficientes para perto de zero, Lasso zera rápido (slide 46).",
+            "Ver que a regularização ajuda no overfitting e que λ é escolhido por validação (slide 45)."
+          ],
+          "warnings": [
+            "Aula mais matemática: a primeira parte (00:00–07:00) fala de matriz mal-condicionada e XᵀX; pule.",
+            "Entre 12:00 e 12:35 a transcrição repete 'L1' sem sentido (erro do reconhecimento).",
+            "Diz que o scikit-learn usa regularização por padrão em alguns modelos (03:14–03:27).",
+            "Usa λ e polinômio de grau 10; os slides não têm essas figuras."
+          ],
+          "clips": [
+            {
+              "start": 427,
+              "end": 475,
+              "slides": "45, 46",
+              "note": "Ridge = custo original + λ × soma dos quadrados dos coeficientes; λ é hiperparâmetro."
+            },
+            {
+              "start": 600,
+              "end": 700,
+              "slides": "45",
+              "note": "Polinômio de grau alto com overfitting; a regularização suaviza; regularizar demais puxa tudo para zero."
+            },
+            {
+              "start": 761,
+              "end": 816,
+              "slides": "46",
+              "note": "Lasso (L1): soma dos módulos; manda alguns parâmetros para zero."
+            },
+            {
+              "start": 930,
+              "end": 1050,
+              "slides": "46",
+              "note": "Lasso zera os coeficientes de uma vez; Ridge puxa todos para perto de zero devagar."
+            },
+            {
+              "start": 1058,
+              "end": 1160,
+              "slides": "45",
+              "note": "λ é hiperparâmetro: escolher por validação, vendo treino e teste."
+            }
+          ],
+          "transcript": "../transcripts/QXy5GTb7pwE.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "07:13–07:57 — Ridge: custo original + λ × Σβ² (slides 45 e 46)",
+              "10:00–11:50 — Polinômio de grau alto: regularizar suaviza o overfitting; demais puxa tudo para zero (slide 45)",
+              "12:41–13:36 — Lasso (L1): soma dos módulos, manda alguns parâmetros para zero (slide 46)",
+              "15:30–17:30 — Lasso zera rápido e Ridge encolhe todos devagar (slide 46)",
+              "17:38–19:30 — Escolher λ por validação: treino x teste (slide 45)"
+            ],
+            "notCovered": "Não dá a intuição simples de 'penalidade por coeficiente grande' sem matriz; mostra o Elastic Net só de passagem (19:27–20:20).",
+            "profile": [
+              "**Nível:** intermediário; pressupõe álgebra linear.",
+              "**Idioma/qualidade:** português do Brasil; transcrição legível, mas com trechos confusos."
+            ],
+            "verdict": "aprovar só como complemento, nos trechos 07:13–07:57, 10:00–11:50, 12:41–13:36, 15:30–17:30 e 17:38–19:30."
+          },
+          "optional": true
+        },
+        {
+          "id": "a5-v4",
+          "type": "video",
+          "title": "Ridge vs Lasso Regression, Visualized!!!",
+          "channel": "StatQuest with Josh Starmer",
+          "duration": "9 min",
+          "url": "https://www.youtube.com/watch?v=Xm2C_gTAl8c",
+          "optional": true,
+          "goals": [
+            "Ridge (L2) × Lasso (L1) em um exemplo visual com um único coeficiente (slides 45 a 46)"
+          ],
+          "warnings": [
+            "Em INGLÊS. A transcrição em português da pasta é uma mistura automática de inglês e português; confira pelo áudio ou pelas legendas do YouTube.",
+            "Pressupõe que você já conhece Ridge e Lasso (diz isso aos 00:23): assista depois do vídeo em português da mesma seção.",
+            "Mostra só um coeficiente (a inclinação); a ideia vale para vários, mas o vídeo não generaliza."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 535,
+              "slides": "45–46",
+              "note": "Ridge encolhe o coeficiente sem zerar; Lasso chega a zero (a variável é ignorada)"
+            }
+          ],
+          "transcript": "../transcripts/Xm2C_gTAl8c.json",
+          "review": {
+            "badge": "transcrição lida · conteúdo bom, áudio em inglês",
+            "covers": [
+              "00:00–02:15 monta o gráfico: soma dos resíduos quadrados para cada inclinação, uma parábola cujo fundo é o melhor ajuste.",
+              "02:15–05:30 Ridge (penalidade L2, chamada de 'penalidade quadrada'): quanto maior o λ, mais o mínimo se aproxima de zero, mas não chega a zero.",
+              "06:00–08:30 Lasso (penalidade L1, 'valor absoluto'): a penalidade cria uma quina em zero; com λ = 40 o ótimo é exatamente zero e o peso é ignorado.",
+              "08:15–08:50 resumo da diferença: L2 encolhe, L1 pode zerar."
+            ],
+            "notCovered": "Regressão múltipla, escolha do λ, padronização e a fórmula de custo completa.",
+            "profile": [
+              "**Nível:** intermediário; é uma visualização, não uma introdução.",
+              "**Idioma:** inglês, tradução automática ruim na transcrição."
+            ],
+            "verdict": "Opcional, em inglês: a melhor intuição visual da diferença entre Ridge e Lasso. Reavaliado pelo agente principal em 11/10 (antes descartado só pela transcrição ruim)."
+          }
+        },
+        {
+          "id": "a5-v3",
+          "type": "video",
+          "title": "Coeficiente de determinação R2 (machine learning)",
+          "channel": "Didática Tech",
+          "duration": "11:52",
+          "url": "https://www.youtube.com/watch?v=wDJjmH3JFqc",
+          "goals": [
+            "Compreender a média como modelo mais simples de comparação (slide 51).",
+            "Entender SQT, SQR e a fórmula R² = (SQT − SQR)/SQT (slides 50 e 51).",
+            "Interpretar R² = 0 e R² = 1 e '87% da variância' (slide 51)."
+          ],
+          "warnings": [
+            "O vídeo diz que o R² fica entre 0 e 1 (versão do slide 51). Na literatura, em dados de teste, o R² pode ser negativo (modelo pior que a média); na prova, responda com o slide.",
+            "A transcrição escreve 'SKT/SKRS' para SQT/SQR.",
+            "Não trata R² ajustado (slide 52, próximo vídeo da série) nem MAE/MSE (53 e 54)."
+          ],
+          "clips": [
+            {
+              "start": 45,
+              "end": 688,
+              "slides": "50, 51",
+              "note": "Modelo da média e SQT; modelo de reta e SQR; R² = (SQT − SQR)/SQT; R² = 0 (igual à média) e R² = 1 (erro zero); 0,87 = 87% da variância explicada."
+            }
+          ],
+          "transcript": "../transcripts/wDJjmH3JFqc.json",
+          "review": {
+            "badge": "transcrição lida · trecho indicado",
+            "covers": [
+              "00:45–02:00 — Gráfico preço × tamanho e o modelo da média (slide 51)",
+              "02:00–04:00 — Erro ao quadrado de cada ponto até a média: SQT (slide 51)",
+              "04:00–06:10 — Modelo de reta e SQR, soma dos quadrados dos resíduos (slide 50)",
+              "06:14–07:10 — Fórmula R² = (SQT − SQR)/SQT (slide 51)",
+              "07:10–09:00 — R² = 0 (modelo igual à média) e R² = 1 (SQR = 0) (slide 51)",
+              "09:20–11:28 — 0,87 = 87% melhor que a média / explica 87% da variância (slide 51)"
+            ],
+            "notCovered": "Não cobre R² ajustado (slide 52), MAE e MSE (53 e 54).",
+            "profile": [
+              "**Nível:** iniciante.",
+              "**Idioma/qualidade:** português do Brasil, excelente didática; o melhor vídeo da aula."
+            ],
+            "verdict": "aprovar o trecho 00:45–11:28."
+          }
+        },
+        {
+          "id": "a5-v15",
+          "type": "video",
+          "title": "Coeficiente R2 ajustado, diferenças para o R2 (machine learning)",
+          "channel": "Didática Tech",
+          "duration": "8:22",
+          "url": "https://www.youtube.com/watch?v=qoOHUCVG0Gs",
+          "goals": [
+            "Entender por que o R² sempre melhora com mais variáveis e como o R² ajustado penaliza variáveis inúteis (slide 52)."
+          ],
+          "warnings": [
+            "O exemplo (tamanho da casa a partir do preço, número de quartos) é um pouco confuso, mas só ilustra.",
+            "A parte da fórmula (03:00–07:00) é abstrata e algébrica; o essencial é a ideia (00:14–02:52) e o resumo (07:19–08:01).",
+            "Diz que o R² ajustado só aumenta se a variável nova for 'bastante relevante' (02:44–02:50); é a mesma ideia do slide (variável irrelevante derruba o R² ajustado)."
+          ],
+          "clips": [
+            {
+              "start": 14,
+              "end": 172,
+              "slides": "52",
+              "note": "Por que o R² sobe com mais variáveis e o R² ajustado penaliza a quantidade de variáveis."
+            },
+            {
+              "start": 439,
+              "end": 481,
+              "slides": "52",
+              "note": "Resumo: ao aumentar as variáveis, o R² ajustado diminui, a menos que o R² melhore bastante."
+            }
+          ],
+          "transcript": "../transcripts/qoOHUCVG0Gs.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:14–01:49 — Com várias variáveis, o R² só melhora ao adicionar variáveis, mesmo as pouco importantes (slide 52)",
+              "01:49–02:52 — R² ajustado penaliza a quantidade de variáveis e só aumenta se a nova variável for relevante (slide 52)",
+              "07:19–08:01 — Resumo: com mais variáveis o R² ajustado cai, a menos que o R² melhore bastante (slide 52)"
+            ],
+            "notCovered": "Não cobre a comparação de modelos com 5 × 3 variáveis do slide em exemplo concreto, nem MAE e MSE.",
+            "profile": [
+              "**Nível:** iniciante a intermediário.",
+              "**Idioma/qualidade:** português do Brasil; boa dicção, transcrição legível."
+            ],
+            "verdict": "aprovar só os trechos 00:14–02:52 e 07:19–08:01."
+          }
+        },
+        {
+          "id": "a5-v16",
+          "type": "video",
+          "title": "Erro médio absoluto x Erro médio quadrático (MAE x MSE)",
+          "channel": "Didática Tech",
+          "duration": "9:58",
+          "url": "https://www.youtube.com/watch?v=_pJX2SFoFtY",
+          "goals": [
+            "Entender o que são MAE e MSE e como se calculam (slides 53 e 54).",
+            "Entender a diferença: o MSE penaliza muito mais os erros grandes (slide 54)."
+          ],
+          "warnings": [
+            "O exemplo usa notas de duas turmas e o 'erro' é a diferença para a média da turma, não para uma previsão do modelo; a ideia é a mesma.",
+            "Ele soma os erros (6 e 14; 10 e 62) em vez de tirar a média: o MAE/MSE de verdade divide por n.",
+            "Não fala de RMSE nem diz que o MSE 'não se compara com o MAE' (slide 54); o slide sugere comparar o MSE só com o MSE de outro modelo.",
+            "A parte de cálculo (01:00–04:30) é simples; a prova não tem cálculo, mas serve para entender."
+          ],
+          "clips": [
+            {
+              "start": 3,
+              "end": 578,
+              "slides": "53, 54",
+              "note": "MAE = média do módulo dos erros; MSE = média dos erros ao quadrado; o MSE penaliza muito os erros grandes; qual escolher."
+            }
+          ],
+          "transcript": "../transcripts/_pJX2SFoFtY.json",
+          "review": {
+            "badge": "transcrição lida · trecho indicado",
+            "covers": [
+              "01:03–02:45 — Calcula o erro absoluto de duas turmas (soma 6 e 14) (slide 53)",
+              "03:14–04:20 — Erro quadrático: eleva ao quadrado cada erro (10 e 62) (slide 54)",
+              "05:11–06:05 — O MSE penaliza muito mais os valores distantes da média (slide 54)",
+              "07:00–09:40 — Quando usar MAE (tolera erros grandes raros) e quando usar MSE (não tolera erros grosseiros)"
+            ],
+            "notCovered": "Não cobre RMSE, R² ajustado nem as métricas de classificação.",
+            "profile": [
+              "**Nível:** iniciante.",
+              "**Idioma/qualidade:** português do Brasil, boa explicação, transcrição legível."
+            ],
+            "verdict": "aprovar o trecho 00:03–09:38."
+          }
+        },
+        {
+          "id": "a5-md",
+          "type": "markdown",
+          "title": "Leitura: Aula 5 do zero",
+          "path": "aula-5-do-zero.md",
+          "goals": [
+            "Cobertura integral dos 55 slides da Aula 5",
+            "Regressão simples e múltipla, hiperplanos e notação dos pesos",
+            "Correlação de Pearson vs causalidade e multicolinearidade",
+            "Mínimos Quadrados Ordinários (OLS) vs Gradiente Descendente",
+            "Taxa de aprendizado, curvas de perda e convergência",
+            "Regularização Ridge (L2) vs Lasso (L1)",
+            "Métricas MAE, MSE, RMSE, R² e R² ajustado (incluindo a divergência do R² negativo)"
+          ]
+        },
+        {
+          "id": "a5-q",
+          "type": "questions",
+          "title": "Questões da Aula 5 (16)",
+          "path": "lesson-5-questions.json"
+        }
+      ]
+    },
+    {
+      "id": "aula-6",
+      "title": "Aula 6 · k-NN (k-Nearest Neighbors)",
+      "items": [
+        {
+          "id": "a6-v1",
+          "type": "video",
+          "title": "O que é o K-NN? Entenda o algoritmo mais simples de Machine Learning!",
+          "channel": "Sandeco",
+          "duration": "10:39",
+          "url": "https://www.youtube.com/watch?v=gJK4fmCvcWY",
+          "goals": [
+            "Entender a ideia: dados semelhantes ficam na mesma região do espaço, então o vizinho decide a classe (slides 4 e 6).",
+            "Seguir o passo a passo: calcular a distância euclidiana do ponto novo a todos, ordenar, escolher K e votar (slides 8, 10 e 22).",
+            "Ver o efeito de K=1, 2, 3 e 4 na votação e a regra do K ímpar (slides 8, 12 e 13)."
+          ],
+          "warnings": [
+            "Aos 08:47 diz que o K ideal é 'log de n': regra pouco usual (a mais citada é a raiz de n) e o slide 12 diz que não existe valor único; teste vários K.",
+            "Aos 09:46 diz que o valor padrão de n_neighbors no scikit-learn é 3: o padrão real é 5.",
+            "Não fala de escala/padronização nem de maldição da dimensionalidade (slides 11 e 20): isso fica na leitura e em outros vídeos desta aula."
+          ],
+          "clips": [
+            {
+              "start": 52,
+              "end": 180,
+              "slides": "3, 4, 6",
+              "note": "Ideia central: dados semelhantes ficam próximos no espaço; serve para classificação e regressão."
+            },
+            {
+              "start": 180,
+              "end": 452,
+              "slides": "10, 22",
+              "note": "Passo a passo: distância euclidiana do novo ponto a todos os pontos (2D, 3D, n dimensões) e ordenação."
+            },
+            {
+              "start": 452,
+              "end": 610,
+              "slides": "8, 12, 13",
+              "note": "Escolher K e votar: K=1, 2 (empate), 3, 4; K ímpar para evitar empate; uso no scikit-learn."
+            }
+          ],
+          "transcript": "../transcripts/gJK4fmCvcWY.json",
+          "review": {
+            "badge": "transcrição lida · aprovado com ressalvas",
+            "covers": [
+              "00:55–02:20 — O k-NN é baseado em distância; hipótese de que dados similares ficam na mesma região (exemplo das flores Iris) (slide 6)",
+              "02:20–03:05 — Intuição de objetos relacionados serem parecidos; serve para classificação e para regressão (slide 4)",
+              "03:12–04:04 — Monta o exemplo: círculos, quadrados e um objeto novo (asterisco) a classificar (slide 6)",
+              "04:04–05:56 — Passo 1: distância euclidiana em 2D, 3D e n dimensões (slide 22)",
+              "05:56–07:20 — Passo 2: distâncias a todos os objetos, ordenadas da menor para a maior (slide 10)",
+              "07:20–08:47 — Passo 3: escolher K e votar; K=1, K=2 (empate), K=3, K=4 (slide 8)",
+              "08:47–09:22 — Escolha de K: 'log n' (ressalva) e K ímpar para evitar empate (slides 12 e 13)",
+              "09:22–10:14 — KNeighborsClassifier(n_neighbors=...), fit e predict no scikit-learn (slide 34, só n_neighbors)"
+            ],
+            "notCovered": "Não trata de escala/padronização, maldição da dimensionalidade, vantagens e desvantagens, outras distâncias, K pequeno × grande (overfitting/underfitting) nem dos hiperparâmetros algorithm, p, metric e weights.",
+            "profile": [
+              "**Nível:** iniciante; desenha o exemplo na hora e fala devagar.",
+              "**Foco:** mecânica do algoritmo (distância, ordenar, votar).",
+              "**Idioma/qualidade:** português do Brasil; a legenda automática erra nomes (KNN, scikit-learn, 'cetosa') mas dá para acompanhar."
+            ],
+            "verdict": "Aprovar os trechos 00:52–10:10, com os avisos acima (K ideal 'log n' e padrão 3 estão errados/imprecisos)."
+          }
+        },
+        {
+          "id": "a6-v2",
+          "type": "video",
+          "title": "CLASSIFICAÇÃO com k-vizinhos mais próximos (K-NN) | Machine Learning #07",
+          "channel": "Programação Dinâmica",
+          "duration": "11 min",
+          "url": "https://www.youtube.com/watch?v=DeAuVrhKw58",
+          "optional": true,
+          "goals": [
+            "Espaço de atributos e votação dos K vizinhos (slides 3 a 8); k-NN no scikit-learn em prática"
+          ],
+          "warnings": [
+            "Usa a base Iris e K = 10; não discute como escolher o K nem os hiperparâmetros.",
+            "Remete a vídeos anteriores da série (SVM, relatório de classificação): ignore essas partes.",
+            "O trecho de código usa o relatório de classificação da Aula 7 (acurácia 93%)."
+          ],
+          "clips": [
+            {
+              "start": 45,
+              "end": 525,
+              "slides": "3–8",
+              "note": "ideia do k-NN no espaço de atributos, votação e código com scikit-learn"
+            }
+          ],
+          "transcript": "../transcripts/DeAuVrhKw58.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:45–01:30 o que é k-NN (k vizinhos mais próximos), algoritmo não paramétrico que serve para classificação e regressão.",
+              "01:30–04:30 espaço de atributos (uma dimensão por atributo, Iris em 3D) e como um ponto novo é posicionado nele.",
+              "04:30–05:30 votação: calcula a distância euclidiana aos K pontos e a classe mais frequente vence (exemplo 6 contra 4 com K = 10).",
+              "05:30–08:45 código com scikit-learn: train_test_split, KNeighborsClassifier(n_neighbors=10), fit, predict e acurácia de 93%."
+            ],
+            "notCovered": "Escolha de K, distâncias além da euclidiana, escala dos atributos, vantagens e desvantagens.",
+            "profile": [
+              "**Nível:** iniciante; bom para ver o k-NN em um espaço de atributos e rodar o código."
+            ],
+            "verdict": "Opcional: complementa as aulas de mecânica com a visualização do espaço de atributos. Reavaliado pelo agente principal em 11/10 (antes descartado como 'só código')."
+          }
+        },
+        {
+          "id": "a6-v6",
+          "type": "video",
+          "title": "KNN - K-Nearest Neighbors - Explicação completa, exemplos e demo em Python.",
+          "channel": "Tech&Dados by @italleiras",
+          "duration": "18:02",
+          "url": "https://www.youtube.com/watch?v=6nEVitKTntY",
+          "goals": [
+            "Ver a intuição com um exemplo de clientes (renda × idade) e o efeito de K=3 contra K=7 (slides 6, 8 e 13).",
+            "Entender o voto ponderado pelo inverso da distância (slide 16).",
+            "Comparar distância euclidiana, Manhattan e a fórmula de Minkowski (com p=1 e p=2), com números (slides 22 a 24).",
+            "Saber por que os dados precisam ser numéricos e padronizados (slides 19, 20 e 22) e resumir vantagens e desvantagens (slides 17 a 20)."
+          ],
+          "warnings": [
+            "No voto ponderado (04:25) usa o inverso da distância (1/d). O slide 16 fala do inverso do quadrado (1/d²); o scikit-learn com weights='distance' usa 1/d.",
+            "Aos 06:33 o locutor se atrapalha ao somar os quarteirões ('vai dar 7 aqui'); a conta correta é a que ele refaz aos 07:12 (3 + 4 = 7; Euclidiana = 5).",
+            "A explicação de 'não paramétrico' (11:30) é solta ('não precisa gerar coeficientes'); o slide 4 define como 'não faz exigências sobre a distribuição dos rótulos'.",
+            "A parte de código (13:30 em diante) usa o Iris com K=5 e acurácia: pode ser ignorada."
+          ],
+          "clips": [
+            {
+              "start": 57,
+              "end": 215,
+              "slides": "6, 8, 13",
+              "note": "Intuição com clientes (renda × idade): objetos próximos definem a decisão; o K muda o resultado (K=3 × K=7)."
+            },
+            {
+              "start": 215,
+              "end": 295,
+              "slides": "16",
+              "note": "Voto ponderado: vizinhos mais próximos pesam mais (soma dos inversos das distâncias)."
+            },
+            {
+              "start": 300,
+              "end": 465,
+              "slides": "22, 23, 24",
+              "note": "Euclidiana (mais curta) × Manhattan (quarteirões) e a fórmula de Minkowski que generaliza as duas (p=1 e p=2), com números."
+            },
+            {
+              "start": 475,
+              "end": 637,
+              "slides": "10, 19, 20, 22",
+              "note": "Passo a passo (distâncias, ordenar, pegar os K primeiros) e premissas: dados numéricos e padronizados, com exemplo gráfico."
+            },
+            {
+              "start": 639,
+              "end": 780,
+              "slides": "5, 17, 18, 19, 20",
+              "note": "Vantagens e desvantagens: sem treino (lazy), simples, regressão, não paramétrico; dimensões, escolha de K, escala e custo de predição."
+            }
+          ],
+          "transcript": "../transcripts/6nEVitKTntY.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "00:57–02:35 — Exemplo de clientes (renda, idade, comprou?) e a intuição do vizinho: objetos próximos definem a decisão (slide 6)",
+              "03:00–03:35 — Parâmetro K: com K=3 a classe é uma, com K=7 muda (slides 8 e 13)",
+              "03:35–04:55 — Votação ponderada pela distância (soma dos inversos) (slide 16)",
+              "05:00–05:55 — Distância euclidiana (caminho mais curto) × Manhattan (quarteirões) e a fórmula de Minkowski como generalização (slides 22 a 24)",
+              "06:00–07:45 — Cálculo com números: Manhattan = 7 (p=1) e Euclidiana = 5 (p=2) (slides 22 a 24)",
+              "07:55–08:40 — Mecânica: distância a todos, lista ordenada, K primeiros, voto majoritário (slide 10)",
+              "08:40–10:37 — Premissas: dados numéricos e padronizados; gráfico de renda × idade antes e depois de igualar as escalas (slides 19, 20 e 22)",
+              "10:39–11:45 — Vantagens: sem treino (lazy), simples, incremental, regressão pela média dos vizinhos, não paramétrico (slides 4, 5, 17 e 18)",
+              "11:45–12:58 — Desvantagens: muitas dimensões, K difícil (pequeno → overfit, grande → generaliza demais), escala, predição cara (slides 13, 19 e 20)"
+            ],
+            "notCovered": "Não cobre a maldição da dimensionalidade em detalhe, Hamming, Mahalanobis, usos não supervisionados nem os hiperparâmetros algorithm/p/metric (só mostra weights no código, 15:56–16:10).",
+            "profile": [
+              "**Nível:** iniciante; usa desenhos animados e exemplos numéricos curtos.",
+              "**Foco:** intuição + distâncias + prós e contras; código só no final.",
+              "**Idioma/qualidade:** português do Brasil, fala clara; legenda com alguns erros ('wayfis' = weights)."
+            ],
+            "verdict": "Aprovar 00:57–12:58 (os cinco trechos indicados). É o vídeo mais completo da aula; ignorar o código a partir de 13:30."
+          }
+        },
+        {
+          "id": "a6-v5",
+          "type": "video",
+          "title": "COMO FUNCIONA O MODELO KNN? APRENDA EM MENOS DE 15 MIN",
+          "channel": "Andre Kuniyoshi",
+          "duration": "16:03",
+          "url": "https://www.youtube.com/watch?v=gmrMAbNgboE",
+          "goals": [
+            "Ver a mecânica do k-NN num conjunto de dados com tabela e gráfico, incluindo um caso em que ele erra por ruído (slides 6, 8 e 10).",
+            "Ver que o k-NN também faz regressão (média dos vizinhos) e quais parâmetros existem: K, métrica de distância e peso dos vizinhos (slides 4, 16 e 31 a 34).",
+            "Entender prós e contras (maldição da dimensionalidade, custo computacional, ruído, interpretabilidade) e por que o k-NN 'não treina' (slides 5 e 17 a 20)."
+          ],
+          "warnings": [
+            "O exemplo usa colunas em escalas diferentes (renda em mil reais × tempo no site) sem padronizar; o slide 22 diz que a distância euclidiana exige padronização. O vídeo NÃO menciona escala.",
+            "Usa K=5 sem comentar a escolha; não discute K pequeno × grande, overfitting nem K ímpar (slides 12 e 13). Só diz que K=1 'não vai ser bom' (04:15).",
+            "Aos 12:47 dá uma opinião pessoal ('nunca vi k-NN em produção'): não faz parte da matéria.",
+            "Chama de 'treino' os dados de referência e diz que o tempo está em horas num ponto e segundos em outro (00:43 e 01:36): detalhe do exemplo, sem importância."
+          ],
+          "clips": [
+            {
+              "start": 239,
+              "end": 462,
+              "slides": "6, 8, 10",
+              "note": "Mecânica: distância do ponto novo a todos, ordenar, pegar os K=5 mais próximos e votar; segundo exemplo em que o k-NN erra (ruído)."
+            },
+            {
+              "start": 540,
+              "end": 654,
+              "slides": "4, 16, 31, 33, 34",
+              "note": "k-NN também faz regressão (média dos vizinhos); parâmetros: K, métrica de distância e peso dos vizinhos (voto ponderado)."
+            },
+            {
+              "start": 654,
+              "end": 840,
+              "slides": "11, 17, 18, 19, 20",
+              "note": "Contras: maldição da dimensionalidade, custo computacional alto, sensível a ruído. Prós: simples e interpretável."
+            },
+            {
+              "start": 876,
+              "end": 960,
+              "slides": "5, 17",
+              "note": "Por que o k-NN 'não treina': guarda os dados e calcula distâncias na hora (lazy)."
+            }
+          ],
+          "transcript": "../transcripts/gmrMAbNgboE.json",
+          "review": {
+            "badge": "transcrição lida · aprovado com ressalvas",
+            "covers": [
+              "00:00–03:57 — Dataset fictício (renda, tempo no site, comprou casa?), tabela e gráfico; ideia de prever quem comprou (apoio ao slide 6)",
+              "03:57–06:19 — Mecânica: calcular a distância a todos, ordenar, pegar os K=5 mais próximos e votar (slides 6, 8 e 10)",
+              "06:19–08:50 — Segundo exemplo em que o vizinho majoritário erra (ruído) e acurácia de 90% (9 de 10) com K=5 (slide 8)",
+              "09:04–09:50 — k-NN para regressão: média dos valores dos vizinhos (slides 4 e 18)",
+              "09:50–10:50 — Parâmetros: K, métrica de distância (euclidiana, Manhattan) e peso dos vizinhos (voto ponderado) (slides 16, 31, 33 e 34)",
+              "10:54–12:47 — Contras: maldição da dimensionalidade, custo computacional ('10 bilhões de distâncias'), sensível a ruído (slides 11, 19 e 20)",
+              "13:19–14:12 — Prós: simples e muito interpretável; bom para começar a estudar (slides 17 e 18)",
+              "14:36–15:50 — k-NN não tem treinamento: só guarda os dados e calcula na hora (lazy) (slide 5)"
+            ],
+            "notCovered": "Não cobre escala/padronização, escolha de K (ímpar, pequeno × grande), Minkowski/Hamming/Mahalanobis, usos não supervisionados nem o hiperparâmetro algorithm/p do scikit-learn.",
+            "profile": [
+              "**Nível:** iniciante; muito bom para fixar a mecânica e os prós e contras.",
+              "**Foco:** conceito com exemplo numérico e gráficos; sem código.",
+              "**Idioma/qualidade:** português do Brasil; legenda boa."
+            ],
+            "verdict": "Aprovar os quatro trechos indicados (03:59–07:42, 09:00–10:54, 10:54–14:00 e 14:36–16:00), com os avisos."
+          }
+        },
+        {
+          "id": "a6-v12",
+          "type": "video",
+          "title": "16. Aula 16 - Regressão com Árvore de Decisão e KNN",
+          "channel": "Professor Máiron Chaves",
+          "duration": "4:32",
+          "url": "https://www.youtube.com/watch?v=x5MRHYrr4Zo",
+          "optional": true,
+          "goals": [
+            "Ver o k-NN aplicado à regressão: o valor previsto é a média dos valores dos K vizinhos mais próximos, e K muda a previsão (slides 4 e 18)."
+          ],
+          "warnings": [
+            "Os primeiros 2 minutos são de árvore de decisão (Aula 8): pule até 02:09.",
+            "Na fala, o locutor mistura 'altura' e 'volume' ao dizer o que está sendo previsto (02:09 a 02:40); a conta mostrada é a média do volume dos vizinhos.",
+            "Fala em 'distância euclidiana (Pitágoras)' mas não mostra o cálculo; remete à aula anterior."
+          ],
+          "clips": [
+            {
+              "start": 129,
+              "end": 255,
+              "slides": "4, 18",
+              "note": "Regressão com k-NN: média dos K vizinhos mais próximos; com K=3 a previsão é 15,03 e com K=4 vira 18,02."
+            }
+          ],
+          "transcript": "../transcripts/x5MRHYrr4Zo.json",
+          "review": {
+            "badge": "transcrição lida · só o trecho indicado",
+            "covers": [
+              "02:09–04:15 — k-NN para regressão: calcula as distâncias, pega os 3 vizinhos mais próximos e faz a média; com 4 vizinhos a média muda (slides 4 e 18)"
+            ],
+            "notCovered": "Tudo o que não é regressão com k-NN; não explica a distância, a escolha de K nem escala.",
+            "profile": [
+              "**Nível:** iniciante a intermediário.",
+              "**Foco:** regressão com k-NN, em 2 minutos.",
+              "**Idioma/qualidade:** português do Brasil; transcrição boa."
+            ],
+            "verdict": "Aprovar só 02:09–04:15, como complemento curto."
+          }
+        },
+        {
+          "id": "a6-v7",
+          "type": "video",
+          "title": "O Dilema do K no algoritmo KNN: K menor vs K maior?",
+          "channel": "GabaritoAqui",
+          "duration": "7:45",
+          "url": "https://www.youtube.com/watch?v=kqIE-1DlKm8",
+          "goals": [
+            "Entender o que acontece com K pequeno (fronteira irregular, decora o ruído: overfitting, variância alta) e com K grande (suaviza demais: underfitting, viés alto) (slide 13).",
+            "Ver por que a escolha de K é um equilíbrio e como testar vários valores com validação cruzada (slides 12 e 15)."
+          ],
+          "warnings": [
+            "Áudio sintético (voz de narração gerada), estilo resumo: a explicação é só falada; o vídeo menciona gráficos de erro de treino e validação (04:05–05:36) que não puderam ser conferidos pela transcrição.",
+            "NÃO fala do K ímpar para evitar empate (slides 12 e 13): isso está no a6-v1 (trecho sobre escolha de K) e no a6-v16 (K par e empate).",
+            "Usa o vocabulário viés × variância, que vai além do slide 13 ('suavização excessiva' e 'sensível a outliers'), mas é coerente com ele.",
+            "Cita 'K de 1 a 5' como exemplo de busca em dados médicos (06:40): é só ilustração."
+          ],
+          "clips": [
+            {
+              "start": 62,
+              "end": 137,
+              "slides": "4, 8",
+              "note": "k-NN é supervisionado e não paramétrico, mede distâncias e vota entre os K vizinhos (4 passos)."
+            },
+            {
+              "start": 137,
+              "end": 336,
+              "slides": "13, 15",
+              "note": "K pequeno → overfitting (variância alta); K grande → underfitting (viés alto); erro de treino × validação."
+            },
+            {
+              "start": 336,
+              "end": 417,
+              "slides": "12",
+              "note": "Como escolher K: testar vários valores com validação cruzada (cross-validation)."
+            }
+          ],
+          "transcript": "../transcripts/kqIE-1DlKm8.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "01:04–02:17 — k-NN é supervisionado e não paramétrico; passos: definir K, achar os K vizinhos, estimar a probabilidade de cada classe, votar (slides 4 e 8)",
+              "02:17–03:00 — K muito pequeno (K=1): fronteiras complexas, decora ruído, overfitting, variância alta (slide 13)",
+              "03:00–03:35 — K muito grande: perde as nuances locais, fronteiras simplificadas, underfitting, viés alto (slide 13)",
+              "03:35–04:05 — O dilema: cabo de guerra entre viés e variância (slide 13)",
+              "04:05–05:36 — Curvas de erro: K pequeno dá erro de treino baixo e de validação alto; K grande dá erro alto nos dois (slides 13 e 15)",
+              "05:36–06:57 — Validação cruzada: dividir em folds, testar em cada um e tirar a média para escolher K (slide 12)"
+            ],
+            "notCovered": "K ímpar para evitar empate; padrão do scikit-learn; distâncias; escala; hiperparâmetros.",
+            "profile": [
+              "**Nível:** iniciante a intermediário; fala rápida e com vocabulário técnico.",
+              "**Foco:** só a escolha de K (o ponto principal dos slides 12 a 15).",
+              "**Idioma/qualidade:** português do Brasil, voz sintética; transcrição boa."
+            ],
+            "verdict": "Aprovar 01:02–06:57. É o único vídeo encontrado que explica o trade-off de K em português."
+          }
+        },
+        {
+          "id": "a6-v8",
+          "type": "video",
+          "title": "Ciência de Dados: k-vizinhos mais próximos (teoria e prática com Python)",
+          "channel": "Prof. Francisco Rodrigues",
+          "duration": "23:27",
+          "url": "https://www.youtube.com/watch?v=7WySJWL2o_4",
+          "optional": true,
+          "goals": [
+            "Ver a escolha de K (K=3 × K=5 muda a classe), overfitting com K pequeno e underfitting com K grande, e a busca de K por validação cruzada (slides 8, 12 e 13).",
+            "Rever Euclidiana, Minkowski (generalização) e Manhattan com números, e a ideia de distância para dados nominais e ordinais (slides 22 a 25).",
+            "Entender por que é preciso normalizar (exemplo 1000 × 1) e que o k-NN 'não aprende um modelo, só memoriza' (slides 5, 20 e 22)."
+          ],
+          "warnings": [
+            "Aos 00:12 diz que o método foi proposto em artigos das décadas de 1940-50; o slide 3 cita Fukunaga e Narendra (1975). Irrelevante para a prova.",
+            "Aos 13:02 justifica 'não paramétrico' porque 'K é ajustado pelo usuário': raciocínio impreciso (o slide 4 define como 'não faz exigências sobre a distribuição dos rótulos').",
+            "A explicação de distância para dados nominais (08:00–08:09) sai confusa na legenda ('1 se for igual e 0 se for diferente' parece trocado): é a ideia do Hamming (0 se igual, 1 se diferente).",
+            "Não fala de K ímpar. Boa parte do vídeo (15:30–20:30) é código Python próprio e holdout 70/30; 02:30–05:00 e 06:00–07:30 são distâncias de similaridade (cosseno, Pearson), fora dos slides.",
+            "A legenda erra 'k vizinhos' como 'cavizinhos'."
+          ],
+          "clips": [
+            {
+              "start": 291,
+              "end": 355,
+              "slides": "22, 23",
+              "note": "Euclidiana (Pitágoras) e Minkowski como generalização: com p=2 é a euclidiana."
+            },
+            {
+              "start": 454,
+              "end": 515,
+              "slides": "22, 24, 25",
+              "note": "Manhattan (soma das diferenças em módulo; 5) e distância para dados nominais e ordinais."
+            },
+            {
+              "start": 515,
+              "end": 635,
+              "slides": "8, 10",
+              "note": "Algoritmo: achar os K vizinhos, contar por classe, votar (K=3 dá vermelho; K=5 dá azul)."
+            },
+            {
+              "start": 696,
+              "end": 800,
+              "slides": "12, 13, 15",
+              "note": "K pequeno → fronteira irregular, overfitting; K grande → suave demais, underfitting; escolher K por validação cruzada."
+            },
+            {
+              "start": 800,
+              "end": 930,
+              "slides": "20, 22, 34",
+              "note": "Comparar distâncias (euclidiana, Manhattan, Chebyshev, Minkowski) com grid search e a necessidade de padronizar (exemplo 1000 × 1)."
+            },
+            {
+              "start": 1260,
+              "end": 1315,
+              "slides": "5, 17, 20",
+              "note": "Propriedades: não aprende um modelo (só memoriza), K é hiperparâmetro, não linear, precisa normalizar."
+            }
+          ],
+          "transcript": "../transcripts/7WySJWL2o_4.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "04:51–05:55 — Distância euclidiana (Pitágoras) e Minkowski como generalização: p=2 é a euclidiana (slides 22 e 23)",
+              "07:34–07:50 — Manhattan: soma das diferenças em módulo (4−2 + 5−2 = 5) (slide 24)",
+              "08:00–08:35 — Distância para dados nominais e ordinais (ideia do Hamming) (slide 25)",
+              "08:35–10:34 — Algoritmo: K vizinhos, contar por classe, votar; K=3 → vermelho, K=5 → azul; K é hiperparâmetro (slides 8 e 10)",
+              "11:36–13:20 — K=1 fronteira irregular e sensível a ruído; K pequeno → overfitting, K grande → underfitting; K por validação cruzada (K=15 no exemplo) (slides 12, 13 e 15)",
+              "13:20–13:50 — Comparar métricas de distância e usar grid search (slides 31 e 34)",
+              "13:55–15:30 — Normalizar: exemplo 1000 × 1 em que o segundo atributo praticamente não muda a distância (slides 20 e 22)",
+              "21:00–21:55 — 'Não aprende um modelo, só memoriza'; K hiperparâmetro; classificador não linear; precisa normalizar (slides 4, 5 e 20)"
+            ],
+            "notCovered": "K ímpar, Mahalanobis, usos não supervisionados, algorithm (kd_tree/ball_tree), weights.",
+            "profile": [
+              "**Nível:** intermediário (professor universitário); mistura conceito, fórmulas e código.",
+              "**Foco:** teoria completa do k-NN e prática em Python.",
+              "**Idioma/qualidade:** português do Brasil; legenda com erros ('cavizinhos')."
+            ],
+            "verdict": "Aprovar só os trechos indicados, como complemento (opcional)."
+          }
+        },
+        {
+          "id": "a6-v4",
+          "type": "video",
+          "title": "8. Aula 8 - Normalização e Padronização",
+          "channel": "Professor Máiron Chaves",
+          "duration": "6:19",
+          "url": "https://www.youtube.com/watch?v=xU0Yq-j0Djs",
+          "goals": [
+            "Entender por que variáveis com unidades diferentes (metros, reais, percentual) distorcem a distância no k-NN e em clusterização (slides 20 e 22).",
+            "Ver as duas soluções com um número: Min-Max (vai para [0, 1]) e padronização z-score (média 0, desvio padrão 1) (slides 20 e 22)."
+          ],
+          "warnings": [
+            "É um trecho de uma aula gravada (começa respondendo a um aluno) e não é específico de k-NN: só diz que k-NN e agrupamento usam distância.",
+            "Faz as contas à mão: não mostra código, MinMaxScaler/StandardScaler nem a regra de ajustar (fit) só no treino. Isso fica na leitura.",
+            "O vídeo termina em 06:11. A legenda erra 'min-max' (MIMAX) e 'padronização' (padronilização)."
+          ],
+          "clips": [
+            {
+              "start": 3,
+              "end": 191,
+              "slides": "20, 22",
+              "note": "Por que escalar: unidades diferentes (metros, reais, %) fazem a de maior variância dominar a distância; Min-Max leva tudo para [0, 1]."
+            },
+            {
+              "start": 191,
+              "end": 371,
+              "slides": "20, 22",
+              "note": "Padronização z-score: (valor − média) / desvio padrão; o resultado fica em 'desvios padrão da média'."
+            }
+          ],
+          "transcript": "../transcripts/xU0Yq-j0Djs.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "00:03–00:57 — Variáveis em metros, reais e percentual; o k-NN e os algoritmos de agrupamento calculam distância, então é preciso remover a unidade para a de maior variância não dominar (slides 20 e 22)",
+              "00:57–03:11 — Normalização Min-Max: (x − mínimo) / (máximo − mínimo), tudo entre 0 e 1 (slides 20 e 22)",
+              "03:11–05:33 — Padronização z-score: (x − média) / desvio padrão; interpretação em 'desvios padrão da média' (slides 20 e 22)",
+              "05:33–06:11 — Recapitulação das duas técnicas"
+            ],
+            "notCovered": "Código; vazamento (fit só no treino); outliers; não é específico de k-NN.",
+            "profile": [
+              "**Nível:** iniciante.",
+              "**Foco:** por que e como escalar, com um número.",
+              "**Idioma/qualidade:** português do Brasil; legenda com pequenos erros de termos."
+            ],
+            "verdict": "Aprovar 00:03–06:11. Bom e curto para os slides 20 e 22."
+          }
+        },
+        {
+          "id": "a6-v9",
+          "type": "video",
+          "title": "SAD - Aula 7 - Parte 6 - Distâncias Manhatan, Euclidiana e Suprema",
+          "channel": "Rafael Rossi",
+          "duration": "19:37",
+          "url": "https://www.youtube.com/watch?v=3QzNv-pseoQ",
+          "goals": [
+            "Entender, com dois atributos (idade e peso), a distância de Manhattan (somar as diferenças em módulo, como andar por quarteirões) e a euclidiana (linha reta, Pitágoras) (slides 22 e 24).",
+            "Ver que a fórmula de Minkowski generaliza as duas: expoente 1 dá Manhattan e expoente 2 dá a euclidiana (slide 23)."
+          ],
+          "warnings": [
+            "Aos 07:00 diz que a distância de Manhattan é 70, mas 40 + 20 = 60; o próprio vídeo usa 60 aos 11:17 ('menor que o nosso 60').",
+            "Usa a letra 'h' para o expoente de Minkowski; o slide 23 chama de 'r'. É o mesmo parâmetro.",
+            "NÃO diz quando usar Manhattan (alta dimensão, menos sensível a outliers: slide 24). A parte da distância suprema/Chebyshev (15:20–19:25) não está nos slides: pule.",
+            "Os primeiros 3 minutos (idade e módulo) são uma introdução com um atributo."
+          ],
+          "clips": [
+            {
+              "start": 204,
+              "end": 740,
+              "slides": "22, 24",
+              "note": "Dois atributos: Manhattan (soma das diferenças em módulo) e euclidiana (hipotenusa) com o mesmo exemplo (idade e peso)."
+            },
+            {
+              "start": 765,
+              "end": 915,
+              "slides": "23",
+              "note": "Minkowski: expoente 1 é Manhattan, expoente 2 é euclidiana."
+            }
+          ],
+          "transcript": "../transcripts/3QzNv-pseoQ.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:00–03:24 — Um atributo: distância é a diferença em módulo (não existe distância negativa) (apoio ao slide 22)",
+              "03:24–07:00 — Dois atributos (idade e peso): diferença em cada eixo e soma (apoio ao slide 24)",
+              "07:00–08:50 — Manhattan ou 'City Block': como andar por quarteirões, soma das diferenças em módulo (slide 24)",
+              "08:50–11:47 — Euclidiana: hipotenusa pelo teorema de Pitágoras (√(40² + 20²) = 44,72, menor que a soma 60) (slide 22)",
+              "12:19–13:55 — Euclidiana para n atributos e a fórmula geral com objetos I e J (slide 22)",
+              "13:55–15:15 — Minkowski (norma L): com expoente 1 dá Manhattan e com 2 dá euclidiana (slide 23)"
+            ],
+            "notCovered": "Quando usar Manhattan (alta dimensão, outliers), Hamming, Mahalanobis, escala. A distância suprema (15:20–19:25) está fora dos slides.",
+            "profile": [
+              "**Nível:** iniciante; aula de universidade com quadro e conta passo a passo.",
+              "**Foco:** cálculo das distâncias Manhattan, euclidiana e Minkowski.",
+              "**Idioma/qualidade:** português do Brasil; legenda boa, fala longa e com muita repetição."
+            ],
+            "verdict": "Aprovar 03:24–12:20 e 12:45–15:15, atentando ao erro 70 × 60 aos 07:00."
+          }
+        },
+        {
+          "id": "a6-v10",
+          "type": "video",
+          "title": "Lec29: k-NN Solved Example - Hamming distance as distance metric",
+          "channel": "Engineering Wing",
+          "duration": "8:50",
+          "url": "https://www.youtube.com/watch?v=mHXvkaZCV5s",
+          "optional": true,
+          "note": "Vídeo em inglês: é o único que encontrei ligando a distância de Hamming ao k-NN. Se não entender o áudio, use a legenda traduzida do YouTube.",
+          "goals": [
+            "Entender a distância de Hamming para atributos categóricos/binários: 0 se os valores são iguais e 1 se são diferentes, somando atributo por atributo (slide 25).",
+            "Ver o k-NN com K=3 e voto majoritário usando essa distância num exemplo resolvido (slides 8 e 25)."
+          ],
+          "warnings": [
+            "Áudio em INGLÊS (não encontrei vídeo em português que ligue Hamming ao k-NN); a transcrição é em inglês, com sotaque. Use a legenda traduzida do YouTube se precisar.",
+            "O exemplo tem um empate de distância (dois vizinhos com distância 1) que o vídeo resolve olhando as classes; no scikit-learn o desempate depende da ordem dos dados.",
+            "O slide 25 fala de vetores binários (one-hot); o vídeo usa atributos sim/não, que é o mesmo caso."
+          ],
+          "clips": [
+            {
+              "start": 15,
+              "end": 225,
+              "slides": "25",
+              "note": "Quando usar Hamming (categórico/binário) e a regra: iguais = 0, diferentes = 1."
+            },
+            {
+              "start": 255,
+              "end": 480,
+              "slides": "8, 25",
+              "note": "Exemplo resolvido com K=3: calcula a distância de Hamming a cada linha, pega os 3 menores e vota."
+            }
+          ],
+          "transcript": "../transcripts/mHXvkaZCV5s.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados (inglês)",
+            "covers": [
+              "00:10–00:50 — Euclidiana para atributos contínuos; Hamming para categóricos ou binários (slide 25)",
+              "02:10–03:40 — Regra: se os valores são iguais a distância é 0, se diferentes é 1 (slide 25)",
+              "04:15–06:35 — Aplica a regra linha por linha e soma (distâncias 1, 3, 0, 1, 3) (slide 25)",
+              "06:35–07:50 — K=3: pega as 3 menores distâncias e faz voto majoritário; 2 'true' × 1 'false' → true (slide 8)",
+              "07:50–08:35 — O voto é igual com qualquer distância; Hamming para categóricos, euclidiana para contínuos (slide 25)"
+            ],
+            "notCovered": "Não relaciona com one-hot nem com Minkowski; não fala de escala.",
+            "profile": [
+              "**Nível:** iniciante; exemplo passo a passo.",
+              "**Foco:** Hamming dentro do k-NN.",
+              "**Idioma/qualidade:** inglês; transcrição boa."
+            ],
+            "verdict": "Aprovar 00:15–07:50 como complemento opcional, avisando que é em inglês."
+          }
+        },
+        {
+          "id": "a6-v11",
+          "type": "video",
+          "title": "Distância de Mahalanobis em Aprendizagem Automática e Visão Computacional",
+          "channel": "Hemerson Pistori",
+          "duration": "26:56",
+          "url": "https://www.youtube.com/watch?v=0tMw0X_Efrw",
+          "optional": true,
+          "goals": [
+            "Entender por que a distância euclidiana ignora o espalhamento (desvio padrão) dos dados e como Mahalanobis corrige isso (slide 26).",
+            "Ver a generalização para vários atributos: o desvio padrão vira a matriz de variância e covariância (slide 26)."
+          ],
+          "warnings": [
+            "Não é k-NN: o professor usa um classificador simples que compara a distância à média de cada classe. Serve só para entender a distância.",
+            "Aos 14:06 diz que Mahalanobis 'sempre funciona melhor' que a euclidiana: exagero. Aos 14:01 diz que a euclidiana é um caso particular (vale quando o espalhamento é igual e sem correlação), o que combina com o slide 26.",
+            "O slide 26 diz 'quando as variáveis são correlacionadas'. O vídeo foca em espalhamento (desvio padrão) e direção; a correlação aparece como a 'direção' do espalhamento em 2D (19:11–20:00).",
+            "Os trechos de matriz (21:00–25:55: transposta, inversa, 'custo de inverter 500 × 500') vão além do que a prova cobra; é opcional."
+          ],
+          "clips": [
+            {
+              "start": 595,
+              "end": 915,
+              "slides": "26",
+              "note": "Por que a euclidiana falha quando os grupos têm espalhamentos diferentes e como o desvio padrão entra na fórmula (1 atributo)."
+            },
+            {
+              "start": 990,
+              "end": 1260,
+              "slides": "26",
+              "note": "Com dois atributos o espalhamento tem direção; a euclidiana ignora isso."
+            },
+            {
+              "start": 1260,
+              "end": 1560,
+              "slides": "26, 27",
+              "note": "Fórmula com vetores e matriz de variância e covariância; custo de inverter a matriz."
+            }
+          ],
+          "transcript": "../transcripts/0tMw0X_Efrw.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "09:55–10:48 — Exemplo (leveduras viáveis e inviáveis): a euclidiana classifica o valor 6 como viável mesmo sem nenhuma viável com 6 (slide 26)",
+              "10:48–11:38 — O que a euclidiana desconsidera: o espalhamento em torno da média (viáveis de 3 a 5; inviáveis de 6 a 12) (slide 26)",
+              "11:38–13:00 — Mahalanobis para uma variável: a diferença é dividida pelo desvio padrão (slide 26)",
+              "12:48–13:58 — Desvios padrão 0,82 e 2,58; distâncias de Mahalanobis 2,45 e 1,16: o 6 passa a ficar mais perto das inviáveis (slide 26)",
+              "14:01–15:15 — A euclidiana é um caso particular; custo extra de calcular o desvio padrão (slide 26)",
+              "16:26–21:00 — Com dois atributos o espalhamento tem direção; a euclidiana, olhando só o centro, classifica errado (slide 26)",
+              "21:00–25:55 — Fórmula vetorial com média, matriz de variância e covariância e sua inversa; custo de inverter a matriz (slides 26 e 27)"
+            ],
+            "notCovered": "k-NN; não usa a palavra 'correlação' como o slide; não mostra o código (scikit-learn/scipy).",
+            "profile": [
+              "**Nível:** intermediário (professor universitário); começa pelo caso de uma variável, o que ajuda.",
+              "**Foco:** intuição da distância de Mahalanobis, com exemplo de visão computacional.",
+              "**Idioma/qualidade:** português do Brasil; legenda com erros de nome (Marlanóbis)."
+            ],
+            "verdict": "Aprovar 09:55–21:00 como intuição; 21:00–26:00 é opcional (matemática). O vídeo todo é complemento."
+          }
+        },
+        {
+          "id": "a6-v13",
+          "type": "video",
+          "title": "Detecção de Anomalias com Local Outlier Factor LOF   Projeto CPAD 2026",
+          "channel": "erikvgl",
+          "duration": "22:59",
+          "url": "https://www.youtube.com/watch?v=9essjyA7fxs",
+          "optional": true,
+          "goals": [
+            "Ver a ideia de usar vizinhos sem rótulos: comparar a densidade de um ponto com a dos vizinhos para achar anomalias (outliers), no LOF (slides 28 e 29)."
+          ],
+          "warnings": [
+            "É uma apresentação de trabalho de aluno de graduação, com hesitações e frases soltas; a legenda confunde palavras (por exemplo 'loft' = LOF, 'cavizinhos' = k vizinhos).",
+            "Aos 05:10–06:00 explica o score: perto de 1 é normal e maior que 1 é anomalia (correto, mas dito de forma confusa).",
+            "A comparação com DBSCAN (10:08–14:20) e o código em R com o conjunto de árvores (14:40–20:30) estão fora dos slides.",
+            "Não explica o cálculo da densidade local nem o parâmetro K de forma precisa; para o cálculo existe vídeo em inglês melhor (What is the Local Outlier Factor, Aric LaBarr), mas ele usa 'densidade' ao contrário do que um iniciante espera."
+          ],
+          "clips": [
+            {
+              "start": 93,
+              "end": 410,
+              "slides": "28, 29",
+              "note": "LOF: compara a densidade de um ponto com a dos vizinhos; baixa densidade local = anomalia; vê anomalias locais, não só globais."
+            }
+          ],
+          "transcript": "../transcripts/9essjyA7fxs.json",
+          "review": {
+            "badge": "transcrição lida · só o trecho indicado",
+            "covers": [
+              "00:44–01:30 — O problema: detectar anomalias (fraudes, sensores com defeito, planilha com dado errado) (slide 29)",
+              "01:33–03:00 — Densidade: pontos agrupados com vizinhos próximos = alta densidade (normal); distantes = baixa densidade (slide 29)",
+              "02:21–02:55 — LOF compara a densidade do ponto com a dos vizinhos; menor que a da vizinhança = anomalia; é não supervisionado (slides 28 e 29)",
+              "04:00–04:45 — Anomalia local × global: pontos próximos de um grupo denso mas isolados localmente (slide 29)",
+              "05:10–06:00 — Score do LOF: perto de 1 normal, maior que 1 provavelmente anomalia (slide 29)",
+              "06:09–06:40 — Limitações: custo computacional e sensível ao valor de K (slide 29)"
+            ],
+            "notCovered": "KNN Imputer e t-SNE/UMAP (slide 29); cálculo exato do LOF; DBSCAN e o código em R não fazem parte dos slides.",
+            "profile": [
+              "**Nível:** iniciante a intermediário, mas pouco polido.",
+              "**Foco:** LOF (Local Outlier Factor).",
+              "**Idioma/qualidade:** português do Brasil; transcrição confusa em vários pontos."
+            ],
+            "verdict": "Aprovar só 01:33–06:50 como complemento opcional."
+          }
+        },
+        {
+          "id": "a6-v14",
+          "type": "video",
+          "title": "Missing Data Imputation: Mean, Median & KNN Explained",
+          "channel": "TileStats",
+          "duration": "11:58",
+          "url": "https://www.youtube.com/watch?v=lCKQaxDPDXY",
+          "optional": true,
+          "note": "Vídeo em inglês: é o que encontrei de mais claro sobre o KNN Imputer. Use a legenda traduzida do YouTube se precisar.",
+          "goals": [
+            "Ver como o KNN Imputer preenche um valor que falta: acha os K vizinhos mais próximos pelas outras variáveis e usa a média (ou mediana) deles (slide 29)."
+          ],
+          "warnings": [
+            "Áudio em INGLÊS; não encontrei vídeo em português que explique o KNN Imputer. Use a legenda traduzida do YouTube se precisar.",
+            "Padroniza as variáveis antes de calcular as distâncias (06:04–06:25), o que combina com o slide 22.",
+            "A parte do pacote VIM em R e da distância de Gower (08:55–11:00) vai além do slide: pule.",
+            "Os primeiros 4 minutos (média, mediana e regressão) são imputação em geral."
+          ],
+          "clips": [
+            {
+              "start": 260,
+              "end": 500,
+              "slides": "29",
+              "note": "KNN Imputer: acha os K vizinhos mais próximos (distância euclidiana, dados padronizados) e preenche com a média ou mediana deles."
+            }
+          ],
+          "transcript": "../transcripts/lCKQaxDPDXY.json",
+          "review": {
+            "badge": "transcrição lida · só o trecho indicado (inglês)",
+            "covers": [
+              "00:00–04:20 — Imputação em geral: média, mediana e regressão, e seus problemas (reduzem a variância) (apoio ao slide 29)",
+              "04:20–05:30 — K nearest neighbors imputation: procura os K vizinhos pelas outras variáveis e usa a média; K=5 por padrão (slide 29)",
+              "05:30–06:25 — Distância euclidiana e necessidade de padronizar (slides 22 e 29)",
+              "06:25–08:20 — Exemplo numérico: 3 vizinhos mais próximos e média do IMC (28,33) (slide 29)"
+            ],
+            "notCovered": "t-SNE e UMAP (slide 29); código com KNNImputer do scikit-learn.",
+            "profile": [
+              "**Nível:** intermediário.",
+              "**Foco:** imputação com vizinhos, com exemplo numérico.",
+              "**Idioma/qualidade:** inglês; transcrição boa."
+            ],
+            "verdict": "Aprovar 04:20–08:20 como complemento opcional, avisando que é em inglês."
+          }
+        },
+        {
+          "id": "a6-v15",
+          "type": "video",
+          "title": "#71: Scikit-learn 68:Supervised Learning 46: Intuition- brute force, KD & Ball tree",
+          "channel": "learndataa",
+          "duration": "14:18",
+          "url": "https://www.youtube.com/watch?v=FnJj28u7rF0",
+          "optional": true,
+          "note": "Vídeo em inglês: é o único que encontrei explicando brute, kd_tree e ball_tree juntos. Use a legenda traduzida do YouTube se precisar.",
+          "goals": [
+            "Entender, com desenhos, as três formas de achar o vizinho mais próximo: força bruta (brute), kd_tree e ball_tree (slides 31 e 32)."
+          ],
+          "warnings": [
+            "Áudio em INGLÊS; é o único vídeo que encontrei com os três algoritmos juntos. Use a legenda traduzida se precisar.",
+            "Não diz que o ball_tree é melhor para muitas dimensões (slide 31) nem cita o parâmetro algorithm='auto' do scikit-learn; mostra só a ideia de cada estrutura.",
+            "No exemplo da kd_tree o eixo de corte é escolhido de forma simples (aleatória/alternada); implementações reais podem escolher de outro modo.",
+            "Os detalhes de construção das árvores são mais profundos do que a prova deve exigir: assista com o objetivo de entender a ideia 'organizar os pontos para não calcular todas as distâncias'."
+          ],
+          "clips": [
+            {
+              "start": 35,
+              "end": 470,
+              "slides": "31, 32",
+              "note": "Brute force (distância a todos) e kd_tree (dividir os pontos pela mediana e descer na árvore para achar o vizinho sem calcular tudo)."
+            },
+            {
+              "start": 472,
+              "end": 820,
+              "slides": "31",
+              "note": "ball_tree: agrupa os pontos em círculos (bolas) aninhados e procura primeiro na bola mais próxima."
+            }
+          ],
+          "transcript": "../transcripts/FnJj28u7rF0.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados (inglês)",
+            "covers": [
+              "00:35–01:20 — Força bruta: calcula a distância a todos os pontos e fica com a menor (slide 32)",
+              "01:35–04:15 — kd_tree: escolhe uma variável, divide pela mediana, repete alternando as variáveis e monta a árvore (slides 31 e 32)",
+              "04:15–07:45 — Busca na kd_tree: desce a árvore, calcula a distância dentro da região e confere as regiões vizinhas só se o círculo cruzar a partição (slide 32)",
+              "08:00–13:40 — ball_tree: constrói bolas (círculos) aninhadas com centroide e raio e busca a bola mais próxima (slide 31)"
+            ],
+            "notCovered": "algorithm='auto'; recomendação de ball_tree para muitas dimensões; parâmetros do scikit-learn.",
+            "profile": [
+              "**Nível:** intermediário; diagramas passo a passo.",
+              "**Foco:** intuição de brute, kd_tree e ball_tree.",
+              "**Idioma/qualidade:** inglês; transcrição boa."
+            ],
+            "verdict": "Aprovar 00:35–13:40 como complemento opcional, avisando que é em inglês."
+          }
+        },
+        {
+          "id": "a6-v16",
+          "type": "video",
+          "title": "O KNN (K-Nearest Neighbors) - Algoritmos de Aprendizado de Máquinas",
+          "channel": "Hashtag Programação",
+          "duration": "30:49",
+          "url": "https://www.youtube.com/watch?v=HJAChG-GRyA",
+          "goals": [
+            "Ver os hiperparâmetros do KNeighborsClassifier na documentação do scikit-learn: n_neighbors (padrão 5), weights, metric e p (slides 31, 33 e 34).",
+            "Entender o aprendizado preguiçoso (tudo é calculado na hora da previsão), o voto ponderado pelos vizinhos mais próximos e o aviso de escala (slides 5, 16 e 22).",
+            "Ver por que K par pode dar empate e que, com distâncias iguais e classes diferentes, o resultado depende da ordem dos dados (slide 13)."
+          ],
+          "warnings": [
+            "Passa rápido pelo parâmetro algorithm (12:20–12:40): diz que existem algoritmos que otimizam a busca, mas não nomeia kd_tree, ball_tree nem brute (slides 31 e 32); veja o a6-v15.",
+            "Sobre p: só explica o padrão (metric='minkowski', p=2 = euclidiana). Não mostra p=1 = Manhattan, como diz o slide 33.",
+            "Aos 07:11 diz que o padrão é 5 vizinhos, mas usa 3 no exemplo (por isso não confunda).",
+            "O vídeo tem 30 minutos; só 6 trechos interessam. O resto (16:00–29:30) é código com o conjunto Iris, divisão treino/teste e matriz de confusão (Aula 7).",
+            "A legenda erra 'weights' como 'waves'."
+          ],
+          "clips": [
+            {
+              "start": 141,
+              "end": 312,
+              "slides": "5, 16, 20, 22",
+              "note": "Lazy: tudo é processado na hora da previsão; pesos para vizinhos mais próximos (weights); radius neighbors; aviso de escala."
+            },
+            {
+              "start": 425,
+              "end": 480,
+              "slides": "31, 34",
+              "note": "Documentação: n_neighbors (padrão 5), weights e metric."
+            },
+            {
+              "start": 665,
+              "end": 765,
+              "slides": "31, 33, 34",
+              "note": "metric (padrão minkowski) e p (p=2 = euclidiana); existe também a escolha do algoritmo de busca."
+            },
+            {
+              "start": 780,
+              "end": 955,
+              "slides": "13",
+              "note": "Empate: distâncias iguais com rótulos diferentes dependem da ordem dos dados; evitar K par."
+            }
+          ],
+          "transcript": "../transcripts/HJAChG-GRyA.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:21–02:20 — Intuição 'diga-me com quem andas' com dois pontos coloridos (slide 6)",
+              "02:21–03:00 — Aprendizado preguiçoso: todo o processamento é feito na previsão (slides 5 e 17)",
+              "03:05–03:55 — Por padrão todos os K pesam igual; hiperparâmetro weights para os mais próximos pesarem mais (slides 16 e 34)",
+              "04:00–04:30 — Sempre usa K pontos; RadiusNeighborsClassifier usa todos os pontos num raio (extra)",
+              "04:35–05:12 — Cuidado com variáveis em escalas muito diferentes: ajustar a escala antes do k-NN (slides 20 e 22)",
+              "07:05–07:55 — Documentação: n_neighbors (padrão 5), weights, metric (slides 31 e 34)",
+              "11:05–11:50 — metric (padrão minkowski) e p (p=2 = euclidiana) (slides 33 e 34)",
+              "12:18–12:40 — Existem algoritmos que otimizam a busca de vizinhos (slide 31, sem nomear)",
+              "13:00–15:55 — Aviso da documentação: distâncias iguais com rótulos diferentes dependem da ordem dos dados; evitar K par (slide 13)"
+            ],
+            "notCovered": "kd_tree/ball_tree/brute por nome; Manhattan com p=1; Minkowski com outros p; Hamming; Mahalanobis; usos não supervisionados; K pequeno × grande.",
+            "profile": [
+              "**Nível:** iniciante; aula de um curso de Python, com código ao vivo.",
+              "**Foco:** uso do KNeighborsClassifier e seus parâmetros; conceito no começo.",
+              "**Idioma/qualidade:** português do Brasil; fala clara, bastante repetição."
+            ],
+            "verdict": "Aprovar só os trechos indicados (02:21–05:12, 07:05–07:55, 11:05–12:45 e 13:00–15:55). É a melhor cobertura em português dos hiperparâmetros."
+          }
+        },
+        {
+          "id": "a6-md",
+          "type": "markdown",
+          "title": "Leitura: Aula 6 do zero",
+          "path": "aula-6-do-zero.md",
+          "goals": [
+            "Cobertura integral dos 34 slides da Aula 6",
+            "Taxonomia: supervisionado, não paramétrico, memory-based e lazy learner",
+            "Por que dividir em treino e teste mesmo sendo lazy (K=1 no treino)",
+            "Trade-off de K (overfitting vs underfitting e a regra do K ímpar)",
+            "Distâncias: Euclidiana, Manhattan, Minkowski, Hamming e Mahalanobis",
+            "Sensibilidade à escala e maldição da dimensionalidade",
+            "Usos não supervisionados: LOF, KNNImputer e t-SNE",
+            "Hiperparâmetros no scikit-learn: brute, kd_tree e ball_tree"
+          ]
+        },
+        {
+          "id": "a6-q",
+          "type": "questions",
+          "title": "Questões da Aula 6 (16)",
+          "path": "lesson-6-questions.json"
+        }
+      ]
+    },
+    {
+      "id": "aula-8",
+      "title": "Aula 8 · Árvores de Decisão",
+      "items": [
+        {
+          "id": "a8-v1",
+          "type": "video",
+          "title": "O algoritmo de Árvore de Decisão",
+          "channel": "Inteligência Artificial na Saúde",
+          "duration": "7:43",
+          "url": "https://www.youtube.com/watch?v=asyLr0NUf3Q",
+          "goals": [
+            "Ver a árvore de decisão como uma sequência de perguntas que leva a uma decisão, com exemplos do cotidiano e do SAMU (slides 5 e 6).",
+            "Saber que uma árvore sozinha tem variância alta (overfitting) e é instável (slide 45).",
+            "Saber que árvores servem para classificação e para regressão (slide 12)."
+          ],
+          "warnings": [
+            "Os termos raiz, nó, folha e ramo NÃO aparecem: é só analogia por perguntas. A estrutura formal (slide 3) está no vídeo de terminologia e na leitura.",
+            "De 02:50 a 07:04 o vídeo explica bagging, Random Forest e boosting/XGBoost (comitês): fora do escopo do Bloco 2, não assista. Há erros de fala nesse trecho (por exemplo, boosting aumenta o peso das amostras mal classificadas, não das 'features').",
+            "Não explica como a árvore escolhe o atributo (entropia, Gini), nem poda, nem interpretabilidade/vantagens."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 170,
+              "slides": "3, 5, 6, 45",
+              "note": "Árvore como sequência de perguntas (tempo, energia elétrica, protocolo do SAMU); no fim, árvores sozinhas têm variância alta e são instáveis."
+            },
+            {
+              "start": 443,
+              "end": 463,
+              "slides": "12",
+              "note": "Árvores servem para classificação e para regressão."
+            }
+          ],
+          "transcript": "../transcripts/asyLr0NUf3Q.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:00–01:32 — Árvore de decisão como perguntas encadeadas (vai chover? tem energia?) e exemplo médico do SAMU (slides 5 e 6)",
+              "01:32–02:15 — Cada resposta leva a um ramo diferente da árvore, até uma decisão (slides 3 e 6)",
+              "02:20–02:50 — Uma árvore sozinha tem variância alta (overfitting) e é instável: depende de qual atributo é escolhido primeiro (slide 45)",
+              "07:23–07:43 — Servem para classificação e para regressão (slide 12)"
+            ],
+            "notCovered": "Não define raiz/nó/folha, não explica critério de divisão, entropia, Gini, poda nem interpretabilidade. De 02:50 a 07:04 trata de comitês (fora do Bloco 2).",
+            "profile": [
+              "**Nível:** iniciante.",
+              "**Foco:** só a analogia inicial é útil (cerca de 3 minutos).",
+              "**Qualidade:** português do Brasil, legível; salto brusco em 02:20 (falta contexto)."
+            ],
+            "verdict": "Aprovar só 00:00–02:50 e 07:23–07:43, como complemento opcional; o resto é sobre comitês."
+          },
+          "optional": true
+        },
+        {
+          "id": "a8-v6",
+          "type": "video",
+          "title": "28 Aprendizado com Árvores de Decisão - Terminologia",
+          "channel": "Michel Janos",
+          "duration": "4:19",
+          "url": "https://www.youtube.com/watch?v=7FnfYukQKUQ",
+          "goals": [
+            "Aprender os nomes da árvore: nó raiz, nó de decisão, nó folha (terminal), ramificação, nó pai e filho (slides 3 e 4).",
+            "Entender que cada nó é um teste e cada ramo uma resposta, aplicados de forma recursiva (slides 4 e 11).",
+            "Conhecer os algoritmos ID3, C4.5, CART e CHAID e no que diferem (slide 11)."
+          ],
+          "warnings": [
+            "Define 'poda' como remover sub-nós de um nó de decisão (poda depois de construída). Os slides 33 a 37 tratam de limites durante a construção.",
+            "A legenda automática erra os nomes ('SER-4.5' = C4.5; 'detecção automática da interação Q²' = CHAID, que usa o teste qui-quadrado).",
+            "É só descrição falada: não há exemplo numérico nem a árvore sendo construída. Quem lê o slide 3 acompanha melhor."
+          ],
+          "clips": [
+            {
+              "start": 30,
+              "end": 255,
+              "slides": "3, 4, 11, 12",
+              "note": "Terminologia (raiz, nó de decisão, folha, pai/filho, poda), nó = teste e aresta = resposta, e os algoritmos ID3, C4.5, CART e CHAID."
+            }
+          ],
+          "transcript": "../transcripts/7FnfYukQKUQ.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "00:00–01:00 — Árvores servem para classificação e regressão; prevê-se a classe ou o valor aprendendo regras simples (slide 12)",
+              "01:00–02:30 — Percurso da raiz ao nó terminal; nó raiz (toda a amostra), divisão, nó de decisão, nó folha ou terminal, poda, ramificação ou sub-árvore, nó pai e filhos (slides 3 e 4)",
+              "02:30–03:00 — Cada nó é um teste sobre um atributo e cada aresta uma resposta possível; processo recursivo em cada sub-árvore (slides 4 e 11)",
+              "03:00–03:30 — Descer na árvore aumenta a pureza dos nós; a divisão escolhida é a que gera os sub-nós mais homogêneos (slides 4 e 17)",
+              "03:30–04:18 — Algoritmos ID3, C4.5, CART e CHAID: diferem no critério de divisão, em regressão x classificação, no combate ao overfitting e no tratamento de valores ausentes (slide 11)"
+            ],
+            "notCovered": "Não faz conta de entropia ou Gini, não mostra uma árvore concreta, não trata de hiperparâmetros.",
+            "profile": [
+              "**Nível:** iniciante.",
+              "**Foco:** vocabulário (slides 3, 4 e 11).",
+              "**Qualidade:** curto e objetivo; legenda com erros de nomes."
+            ],
+            "verdict": "Aprovar o vídeo (trecho 00:30–04:15). É a única fonte em vídeo da terminologia raiz/nó/folha."
+          }
+        },
+        {
+          "id": "a8-v7",
+          "type": "video",
+          "title": "[Aprendizado de Máquina - Aula 2 tópico 4] Arvore de Decisão - Infogain (Ganho de Informação)",
+          "channel": "Daniel Hasan Dalip",
+          "duration": "5:14",
+          "url": "https://www.youtube.com/watch?v=8nV6lICu-l8",
+          "goals": [
+            "Entender a intuição da entropia: quanto mais previsível o dado, menor a entropia (slides 16 e 17).",
+            "Ver um exemplo de entropia condicional (37,5% / 62,5% dá 0,95) e a ideia de ganho de informação como redução da entropia (slide 18)."
+          ],
+          "warnings": [
+            "Define entropia como a 'quantidade mínima de informação para representar o dado' (visão da teoria da informação); o slide 16 diz 'aleatoriedade'. É a mesma ideia: quanto mais misturado, mais difícil de prever.",
+            "A legenda automática escreve 'ganho de formação' e 'entropia e nos diz': leia como ganho de informação.",
+            "Não calcula o ganho com pesos nem fecha o exemplo; para a conta completa use o vídeo seguinte (Michel Janos)."
+          ],
+          "clips": [
+            {
+              "start": 30,
+              "end": 313,
+              "slides": "16, 17, 18",
+              "note": "Intuição de entropia (100% verde = previsível = baixa; mistura = alta), exemplo 0,95 e redução da entropia = ganho de informação."
+            }
+          ],
+          "transcript": "../transcripts/8nV6lICu-l8.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "00:30–02:30 — Entropia como quantidade mínima de informação necessária: três figuras A (100% verde), B e C (misturadas); a mais previsível é a mais fácil de descrever (slide 16)",
+              "02:30–03:30 — Entropia é baixa com 100% de uma classe, um pouco maior com 80/20 e cresce conforme a distribuição fica mais uniforme: maior entropia, menos previsível (slides 16 e 17)",
+              "03:30–04:30 — Exemplo com 37,5% de aprovados e 62,5% de reprovados: entropia 0,95, fórmula −Σ p log p apenas citada (slide 16)",
+              "04:30–05:13 — Filtrando renda = alta o dado fica mais previsível (entropia menor); essa redução é o ganho de informação (slide 18)"
+            ],
+            "notCovered": "Não faz a conta com logaritmos, não mostra a ponderação pelos tamanhos dos ramos e não escolhe atributo (o vídeo termina onde começa a criação da árvore).",
+            "profile": [
+              "**Nível:** iniciante.",
+              "**Foco:** intuição de entropia, quase sem matemática.",
+              "**Qualidade:** clara, mas fala hesitante e a legenda tem erros."
+            ],
+            "verdict": "Aprovar o vídeo (trecho 00:30–05:13)."
+          }
+        },
+        {
+          "id": "a8-v8",
+          "type": "video",
+          "title": "25 Entropia e Ganho de Informação",
+          "channel": "Michel Janos",
+          "duration": "8:21",
+          "url": "https://www.youtube.com/watch?v=Plynx5N-urc",
+          "goals": [
+            "Entender entropia como medida de desordem/incerteza e a fórmula H = −Σ pᵢ log₂ pᵢ (slides 16 e 17).",
+            "Ver o gráfico da entropia (0 quando puro, máximo em 50/50) e um valor numérico (30/70 ≈ 0,88) (slides 16 e 20).",
+            "Acompanhar um exemplo completo de ganho de informação escolhendo o atributo da raiz (slides 18 a 24)."
+          ],
+          "warnings": [
+            "O exemplo é o do tênis (14 dias, 9 sim e 5 não), não o de Salário/Localização/Função dos slides 19 a 24; a lógica é a mesma (escolher o atributo de maior ganho).",
+            "Há deslizes de fala/legenda: diz 'H = 0,970' para 9 sim e 5 não e logo depois usa 0,940 (o valor correto é 0,94); a conta da urna (10, 5 e 4 bolas) tem frações que não fecham.",
+            "Os rótulos 'umidade normal/alta' parecem trocados em relação ao conjunto clássico, mas as entropias (0,985 e 0,592) e o ganho 0,151 conferem (cálculo meu, fora do vídeo).",
+            "Não trata de Gini nem de poda."
+          ],
+          "clips": [
+            {
+              "start": 30,
+              "end": 495,
+              "slides": "16, 17, 18, 19, 20, 24",
+              "note": "Entropia (intuição, fórmula e gráfico), ganho de informação e exemplo do tênis com o ganho de cada atributo."
+            }
+          ],
+          "transcript": "../transcripts/Plynx5N-urc.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "00:30–01:30 — Entropia como desordem/incerteza; objetivo do aprendizado é reduzi-la (slides 16 e 17)",
+              "01:30–02:30 — Distribuições equiprováveis têm entropia maior; caixa só de bolas pretas tem entropia zero (pureza total) (slide 16)",
+              "02:30–03:30 — Fórmula H = −Σ pᵢ log₂ pᵢ; gráfico para duas classes: zero nos extremos e máximo no meio (slides 16 e 20)",
+              "03:30–04:30 — 30 bolas brancas e 70 pretas dão entropia ≈ 0,88; o máximo depende do número de classes (2 classes: 1; 4: 2; 8: 3)",
+              "04:30–05:30 — Ganho de informação = redução da entropia (slide 18)",
+              "05:30–08:10 — Exemplo do jogo de tênis: ganho de tempo 0,248, umidade 0,151, vento 0,048, temperatura 0,029; maior ganho vira a raiz, repete-se no nível seguinte, nem toda folha precisa ser pura (slides 18 a 24)"
+            ],
+            "notCovered": "Não usa ponderação escrita na fórmula do ganho (só aplica nos números), não trata de atributos contínuos nem de Gini.",
+            "profile": [
+              "**Nível:** iniciante a intermediário.",
+              "**Foco:** intuição de entropia + um exemplo numérico completo.",
+              "**Qualidade:** boa, com pequenos erros de fala."
+            ],
+            "verdict": "Aprovar o vídeo (trecho 00:30–08:10). É o melhor exemplo numérico de entropia e ganho em português encontrado."
+          }
+        },
+        {
+          "id": "a8-v9",
+          "type": "video",
+          "title": "[Aprendizado de Máquina - Aula 2 Tópico 5] Árvore de decisão - Definição e Criação",
+          "channel": "Daniel Hasan Dalip",
+          "duration": "10:11",
+          "url": "https://www.youtube.com/watch?v=fzGCkpHBZEo",
+          "goals": [
+            "Ver uma árvore concreta (crédito aprovado, renda e dependentes) e como ela corta o plano em regiões (slides 3, 13 e 14).",
+            "Acompanhar a escolha do atributo de maior ganho e a repetição do processo no subconjunto (slides 17 a 24).",
+            "Entender por que escolher pelo ganho produz árvores menores e mais fáceis de ler (slide 17)."
+          ],
+          "warnings": [
+            "Os números ditos em voz alta são inconsistentes entre este vídeo e o anterior da série: aqui a entropia geral é 1; no vídeo de entropia (8nV6lICu-l8) o mesmo conjunto dava 0,95, e '75% aprovados' não bate com entropia 0,72 (que corresponde a 80/20). Use o vídeo pela ideia (maior ganho vira o nó; repete no subconjunto), não para conferir contas.",
+            "A legenda escreve 'ganho de formação' (= ganho de informação) e tropeça em frações ('0,65', '0,62,5'); a conta certa é ganho(renda) = 1 − (5/8 · 0,72 + 3/8 · 0) ≈ 0,55.",
+            "Cita de passagem Random Forest e poda (fora do escopo deste vídeo).",
+            "Usa o ID3 (um ramo por valor); no scikit-learn as divisões são binárias (slide 41)."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 605,
+              "slides": "3, 4, 13, 17, 18, 24",
+              "note": "Árvore de crédito, ganho de informação por atributo, escolha do maior e repetição no subconjunto."
+            }
+          ],
+          "transcript": "../transcripts/fzGCkpHBZEo.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "00:00–01:30 — Nó interno = condição, folha = resultado; exemplo de crédito (renda e dependentes) e a mesma árvore como cortes no plano (slides 3, 13 e 14)",
+              "01:30–03:00 — Como escolher a ordem dos atributos: ganho de informação; objetivo é uma árvore menor, mais legível e com menos erro no treino (slides 4 e 17)",
+              "03:30–06:00 — Entropia geral 1; ganho de renda ≈ 0,55 como média ponderada dos ramos; ganho de dependente menor; escolhe-se renda para a raiz (slides 18 a 24)",
+              "06:30–08:30 — Segundo nível: dentro de renda alta escolhe-se o próximo atributo; folha com 2/3 de 'sim' e como a poda poderia simplificar (slide 24)",
+              "08:30–10:04 — Exemplo com três atributos: filtra por renda, depois idade (maior ganho) e depois dependente (slide 24)"
+            ],
+            "notCovered": "Não explica por que a entropia é calculada assim (veja v7/v8), não trata de Gini nem de atributos contínuos.",
+            "profile": [
+              "**Nível:** iniciante a intermediário.",
+              "**Foco:** construção passo a passo com o ganho.",
+              "**Qualidade:** didática, mas fala solta e números inconsistentes."
+            ],
+            "verdict": "Aprovar como complemento opcional, com a ressalva dos números."
+          },
+          "optional": true
+        },
+        {
+          "id": "a8-v3",
+          "type": "video",
+          "title": "Árvores de Decisão - Exemplo Resolvido com Gini ( Em Português )",
+          "channel": "Paulo Moura Oliveira",
+          "duration": "6:21",
+          "url": "https://www.youtube.com/watch?v=zEuU0RWRmV8",
+          "goals": [
+            "Compreender a fórmula do índice de Gini = 1 − Σ pᵢ² e calculá-lo para o conjunto inicial (slide 25).",
+            "Acompanhar o Gini ponderado dos ramos para cada atributo (slides 26 e 27).",
+            "Ver a escolha do melhor atributo e o início do segundo nível da árvore (slides 28 e 29)."
+          ],
+          "warnings": [
+            "Português de Portugal. O vídeo chama 'ganho' a diferença (Gini inicial − Gini ponderado) e escolhe o MAIOR ganho; o slide 28 diz 'escolher o atributo com menor Gini ponderado'. É o mesmo critério dito de dois jeitos.",
+            "A legenda automática erra alguns valores (0,98 deveria ser 0,48; 0,84 deveria ser 0,24; 0,032 deveria ser 0,072): confira 5/10 × 0,48 + 5/10 × 0 = 0,24 e 0,32 − 0,24 = 0,08.",
+            "O trecho do segundo nível (a partir de 04:50) é difícil de acompanhar na legenda; o que vale é a ideia de repetir o cálculo no ramo que sobrou.",
+            "Não explica o que o Gini mede (impureza) nem o limite de 0,5 (slide 25); isso está na leitura. Os slides 26 e 27 trazem os parênteses da fórmula errados (a forma correta é 1 − [p₁² + p₂²], que o vídeo usa)."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 290,
+              "slides": "25, 26, 27, 28",
+              "note": "Gini = 1 − Σ pᵢ²; Gini ponderado dos ramos para cada atributo (temperatura, dá à luz, quadrúpede, hiberna); escolher o melhor atributo."
+            },
+            {
+              "start": 290,
+              "end": 378,
+              "slides": "29",
+              "note": "Segundo nível da árvore: repetir o cálculo no ramo restante."
+            }
+          ],
+          "transcript": "../transcripts/zEuU0RWRmV8.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "00:00–00:40 — Exemplo: classificar animais como mamíferos ou não com 4 atributos (apoio ao slide 25)",
+              "00:40–01:30 — Fórmula do Gini 1 − Σ pᵢ² e Gini do conjunto inicial (2 positivos e 8 negativos) = 0,32 (slide 25)",
+              "01:30–04:30 — Para cada atributo: Gini de cada ramo, média ponderada e diferença em relação ao inicial (slides 26 e 27)",
+              "04:30–04:50 — Escolhe o atributo de maior redução de Gini (= menor Gini ponderado): quadrúpede (slide 28)",
+              "04:50–06:20 — Segundo nível: repete o cálculo no subconjunto restante e mostra a árvore resultante (slide 29)"
+            ],
+            "notCovered": "Não explica o significado do Gini (impureza), não compara com entropia (só mostra um slide de comparação) e não trata de atributos contínuos nem scikit-learn.",
+            "profile": [
+              "**Nível:** intermediário (conta passo a passo).",
+              "**Foco:** cálculo do índice de Gini.",
+              "**Qualidade:** boa e concisa; legenda erra números."
+            ],
+            "verdict": "Aprovar o vídeo, com as ressalvas de wording (maior ganho x menor Gini) e de legenda."
+          }
+        },
+        {
+          "id": "a8-v10",
+          "type": "video",
+          "title": "COMO FUNCIONA UMA ÁRVORE DE DECISÃO •  ANDRE KUNIYOSHI",
+          "channel": "Andre Kuniyoshi",
+          "duration": "25:26",
+          "url": "https://www.youtube.com/watch?v=MMpeBCWBjhc",
+          "goals": [
+            "Ver uma árvore sendo construída do zero com Gini, nomeando raiz, nós e folhas (slides 3 e 4).",
+            "Entender que a árvore escolhe a melhor pergunta calculando o Gini ponderado e ficando com o menor (slides 26 a 28).",
+            "Usar a árvore pronta para classificar um dado novo e ver por que ela é interpretável (slides 4 e 44)."
+          ],
+          "warnings": [
+            "Mais longo (25 min): os primeiros 1:30 são propaganda de workshop; assista só os trechos indicados.",
+            "Diz que o Gini 'mais perto de 1' é mais bagunçado (11:00). Com duas classes o máximo é 0,5 (slide 25).",
+            "Lê a fórmula como 'um menos p₀ ao quadrado mais p₁ ao quadrado'; o certo é 1 − (p₀² + p₁²) (os slides 26 e 27 têm o mesmo problema de parênteses). A conta que ele faz (0,44) está correta.",
+            "Resolve o empate de Gini escolhendo 'porque quis' (15:30); na prática o scikit-learn escolhe uma regra interna.",
+            "Usa Gini (padrão do scikit-learn); não faz a conta com entropia nem fala de poda (adiada para 'temas futuros')."
+          ],
+          "clips": [
+            {
+              "start": 60,
+              "end": 150,
+              "slides": "12",
+              "note": "Classificação (resposta categórica) x regressão (resposta numérica): a árvore é basicamente a mesma."
+            },
+            {
+              "start": 150,
+              "end": 1020,
+              "slides": "3, 4, 25, 26, 27, 28, 30",
+              "note": "Árvore como perguntas sim/não, raiz, fórmula do Gini, Gini de cada pergunta possível e escolha do menor Gini ponderado."
+            },
+            {
+              "start": 1020,
+              "end": 1440,
+              "slides": "3, 29, 44",
+              "note": "Folhas (nó puro), repetição no nó seguinte e classificação de um dado novo; árvore explicável."
+            }
+          ],
+          "transcript": "../transcripts/MMpeBCWBjhc.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "01:00–02:10 — Classificação (resposta categórica) x regressão (resposta numérica); a árvore é praticamente a mesma (slide 12)",
+              "02:10–04:30 — Árvore = fluxo de perguntas sim/não (analogia do jogo de adivinhação); há perguntas boas e ruins; a árvore calcula a melhor com Gini, entropia ou ganho (slides 4 e 17)",
+              "04:30–06:00 — Fórmula do Gini (slide 25) e dados do exemplo (empréstimo: estado civil e renda mensal)",
+              "07:00–08:30 — A raiz é o primeiro nó, com todos os dados (slide 3)",
+              "08:30–15:30 — Gini de cada pergunta possível (é solteiro?, renda < 2.000, 3.500, 4.000, 5.000), média ponderada e escolha do menor (slides 26 a 28 e 30)",
+              "16:00–18:00 — Divide em dois nós; nó só com uma classe vira folha (slides 3 e 33)",
+              "18:00–22:30 — Repete o processo no nó que sobrou até chegar só em folhas (slide 29)",
+              "22:30–24:00 — Classifica um dado novo (casada, renda 1.000) percorrendo as perguntas; árvore explicável (slides 4 e 44)",
+              "24:00–25:25 — Custo de calcular tudo na mão; validação cruzada e poda ficam para outro vídeo"
+            ],
+            "notCovered": "Não trata de entropia numérica, atributos contínuos com corte ótimo, hiperparâmetros nem de regressão com MSE.",
+            "profile": [
+              "**Nível:** iniciante.",
+              "**Foco:** construção completa de uma árvore com Gini.",
+              "**Qualidade:** muito didática e lenta; um pouco repetitiva."
+            ],
+            "verdict": "Aprovar só os trechos 01:00–24:00, como complemento opcional (vale mais para quem quer ver a árvore inteira nascer)."
+          },
+          "optional": true
+        },
+        {
+          "id": "a8-v4",
+          "type": "video",
+          "title": "[Aprendizado de Máquina - Aula 2 Tópico 6] Criação de árvores com atributos numéricos e poda",
+          "channel": "Daniel Hasan Dalip",
+          "duration": "5:02",
+          "url": "https://www.youtube.com/watch?v=TQccXuLg75g",
+          "goals": [
+            "Ver como atributos numéricos contínuos são divididos por cortes binários e como a árvore reparte o plano em regiões (slides 13, 14, 30 e 31).",
+            "Perceber o overfitting quando uma região fica com um único ponto (slides 33 e 34).",
+            "Entender as regras de parada/pré-poda: parar com 80% de uma classe, mínimo de instâncias para dividir e profundidade máxima (slides 35 a 37)."
+          ],
+          "warnings": [
+            "O vídeo escolhe o corte pelo ganho de informação (entropia), não pelo Gini; no scikit-learn o padrão é Gini.",
+            "Chama de 'poda' as regras de parada (pré-poda): é o uso do slide 33.",
+            "Não cita os nomes min_samples_split e max_depth (slides 36 e 37) nem que o scikit-learn só faz divisões binárias (slide 41); a 'regressão com MSE' (slide 32) não aparece.",
+            "Assume que o ID3 já foi visto (começa com 'agora vamos falar de atributos numéricos')."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 138,
+              "slides": "13, 14, 30, 31, 43",
+              "note": "Atributos numéricos: testar cortes (x < 2, y < 3,5…), escolher o de maior ganho; a árvore divide o plano em regiões e pode reusar o mesmo atributo."
+            },
+            {
+              "start": 138,
+              "end": 184,
+              "slides": "33, 34",
+              "note": "Overfitting: uma região minúscula com um único ponto é decorar o treino."
+            },
+            {
+              "start": 184,
+              "end": 297,
+              "slides": "35, 36, 37",
+              "note": "Pré-poda: parar quando 80% é de uma classe, mínimo de instâncias para dividir, profundidade máxima."
+            }
+          ],
+          "transcript": "../transcripts/TQccXuLg75g.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "00:00–01:30 — Atributo contínuo: testar vários cortes em x e em y e ficar com o de maior ganho de informação (slides 30 e 31)",
+              "01:30–02:15 — Continua cortando; o mesmo atributo (y) é usado várias vezes; superfície de decisão em regiões (slides 13, 14 e 43)",
+              "02:15–03:00 — Overfitting: região com um único ponto vermelho, pequena variação nos dados mudaria a classe (slides 33 e 34)",
+              "03:00–04:30 — Pré-poda: parar com 80% de uma classe, mínimo de instâncias para dividir um nó (por exemplo 10) e nível máximo; menos sensível a ruído e generaliza melhor (slides 35 a 37)"
+            ],
+            "notCovered": "Não cita os nomes dos hiperparâmetros do scikit-learn, não calcula entropia e não trata de árvore de regressão.",
+            "profile": [
+              "**Nível:** intermediário prático.",
+              "**Foco:** atributos contínuos e regras de parada.",
+              "**Qualidade:** curta e direta, com desenho do plano x-y."
+            ],
+            "verdict": "Aprovar o vídeo inteiro."
+          }
+        },
+        {
+          "id": "a8-v11",
+          "type": "video",
+          "title": "Machine Learning 08: Árvore de Decisão - Regressão",
+          "channel": "Téo Me Why",
+          "duration": "14:59",
+          "url": "https://www.youtube.com/watch?v=pPWxZpSkt1s",
+          "goals": [
+            "Entender que na árvore de regressão cada folha prevê a média dos alvos do seu grupo (slide 32).",
+            "Ver como se escolhe o corte: o que deixa o erro quadrático total menor (slides 31 e 32).",
+            "Ver o efeito da profundidade: poucos níveis dão degraus largos e muitos níveis fazem overfitting (slides 34 e 36)."
+          ],
+          "warnings": [
+            "Fala em 'soma do erro quadrático' do grupo; não pronuncia 'MSE' nem pondera pelo tamanho dos grupos como o slide 31. O sentido é o mesmo: menor erro depois do corte.",
+            "Aula ao vivo, informal, com linguagem de chat e um palavrão curto; o áudio e a legenda têm erros ('MaxDef' = max_depth).",
+            "Usa uma só variável explicativa (cervejas) e o termo 'max_depth' falado, sem outros hiperparâmetros."
+          ],
+          "clips": [
+            {
+              "start": 60,
+              "end": 870,
+              "slides": "31, 32, 34, 36",
+              "note": "Previsão = média do grupo, testar todos os cortes e ficar com o de menor erro, e o efeito da profundidade (escada)."
+            }
+          ],
+          "transcript": "../transcripts/pPWxZpSkt1s.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "01:00–03:30 — Sem a variável, o melhor palpite é a média (minimiza a distância aos pontos); média x mediana (slide 32)",
+              "03:30–05:30 — Árvore de regressão: corta a variável contínua (duas ou mais cervejas) e prevê a média de cada grupo (slide 32)",
+              "05:30–09:30 — Testa todos os cortes possíveis, calcula o erro (soma dos quadrados) com as duas médias e escolhe o de menor erro (slides 31 e 32)",
+              "09:30–11:00 — A busca é exaustiva; no limite haveria um nó por valor (slide 31)",
+              "11:00–14:30 — Profundidade 1, 2 e mais níveis: a previsão vira uma escada; muitos níveis ajustam até o ruído (overfitting) (slides 34 e 36)",
+              "14:30–14:58 — Como saber quando parar: usar uma base de teste (fora dos slides)"
+            ],
+            "notCovered": "Não fala de MSE pelo nome nem de ponderação, não cita outros hiperparâmetros e não compara com a árvore de classificação.",
+            "profile": [
+              "**Nível:** iniciante.",
+              "**Foco:** intuição da árvore de regressão (média por grupo e erro).",
+              "**Qualidade:** muito didática, só informal."
+            ],
+            "verdict": "Aprovar o trecho 01:00–14:30. É a única explicação em português da árvore de regressão do slide 32."
+          }
+        },
+        {
+          "id": "a8-v5",
+          "type": "video",
+          "title": "Árvores de Decisão - Overfitting e Atributos numéricos",
+          "channel": "Born to be AI",
+          "duration": "10:32",
+          "url": "https://www.youtube.com/watch?v=pocz0bWjp_o",
+          "goals": [
+            "Compreender por que uma árvore sem limite memoriza o treino (folhas com 1 a 3 instâncias) e perde a generalização (slides 33 e 34).",
+            "Entender como a poda troca uma subárvore pelo rótulo majoritário e o custo disso (slides 33 a 35).",
+            "Entender como atributos numéricos usam pontos de corte binários em vez de um ramo por valor (slides 30 a 32 e 41)."
+          ],
+          "warnings": [
+            "O vídeo descreve poda DEPOIS de construir a árvore (pós-poda); os slides 35 a 37 tratam de limites DURANTE a construção (pré-poda: max_depth, min_samples_leaf etc.). O conceito de 'decorar' é o mesmo.",
+            "Continua um vídeo sobre o ID3 (assume o algoritmo já visto); não cita nomes de hiperparâmetros do scikit-learn.",
+            "Exemplos com atributos categóricos usam um ramo por valor (ID3); no scikit-learn as divisões são sempre binárias (slide 41).",
+            "A legenda tem erros ('o contrador' = computador)."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 280,
+              "slides": "33, 34, 35",
+              "note": "Overfitting em árvore: folhas com 1 a 3 instâncias decoram o treino; solução: podar e usar o rótulo majoritário (cuidado em detecção de fraude)."
+            },
+            {
+              "start": 280,
+              "end": 629,
+              "slides": "30, 31, 32, 41",
+              "note": "Atributos numéricos: não há um ramo por valor; usa-se ponto de corte (x1 < 0,42) com dois ramos, recursivamente; escolher o corte que melhor separa."
+            }
+          ],
+          "transcript": "../transcripts/pocz0bWjp_o.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "00:00–01:30 — Overfitting = decorar o treino: folha com uma única instância; com 1.000 instâncias e folhas de 3, a árvore só acerta o que é muito parecido com o treino (slide 34)",
+              "01:30–04:40 — Poda: trocar uma subárvore pelo rótulo majoritário (99 sim e 1 não); em fraude a exceção importa (slides 33 a 35)",
+              "04:40–07:00 — Atributos numéricos: não dá para ter um ramo por valor (infinitos valores) (slide 31)",
+              "07:00–10:00 — Ponto de corte binário (x1 < 0,42, x2 < 0,48) e recursão; ordenar os valores e escolher o corte que melhor separa (slides 30 a 32 e 41)"
+            ],
+            "notCovered": "Não cita nomes de hiperparâmetros, não trata de Gini nem de árvore de regressão com MSE.",
+            "profile": [
+              "**Nível:** intermediário visual.",
+              "**Foco:** overfitting/poda e cortes em variáveis numéricas.",
+              "**Qualidade:** muito didática (desenho à mão, exemplo que cresce)."
+            ],
+            "verdict": "Aprovar o vídeo inteiro, lembrando que a poda descrita é pós-poda."
+          }
+        },
+        {
+          "id": "a8-v12",
+          "type": "video",
+          "title": "Machine Learning: O Guia Prático da Árvore de Decisão",
+          "channel": "Engenheiro Moderno",
+          "duration": "16:22",
+          "url": "https://www.youtube.com/watch?v=Ka_GeDmjq8w",
+          "goals": [
+            "Ler uma árvore do scikit-learn: pergunta, Gini, amostras e classe de cada nó; divisões sempre binárias (slides 4 e 41).",
+            "Ver o custo de cada divisão como média ponderada das impurezas dos dois lados, com Gini ou entropia (slides 25 a 28 e 31).",
+            "Conhecer os nomes dos hiperparâmetros de regularização (slides 36 e 37) e como a árvore de regressão usa o MSE e prevê a média (slides 31 e 32)."
+          ],
+          "warnings": [
+            "O vídeo começa no meio de uma aula (a parte do código e dos dados não está nele).",
+            "O nó raiz do exemplo tem Gini 0,667 (três classes de iris); o slide 25 diz [0, 0,5], válido para duas classes.",
+            "Diz que o ganho de informação é 'o inverso do grau de impureza' (09:00); o certo é a redução da entropia (slide 18).",
+            "A legenda erra os nomes dos parâmetros ('MaxDiffNode' = max_leaf_nodes; 'MinSamplesDiff' = min_samples_leaf); ele não cita splitter nem min_impurity_decrease.",
+            "A frase final (15:00) sobre não precisar normalizar os dados está confusa; o que o slide 44 diz é que árvores normalmente não precisam de normalização."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 270,
+              "slides": "4, 25, 28, 41",
+              "note": "Como ler uma árvore do scikit-learn (binária, pergunta, Gini, amostras) e a escolha da pergunta de menor impureza."
+            },
+            {
+              "start": 420,
+              "end": 555,
+              "slides": "18, 25, 26, 27, 28, 31",
+              "note": "Custo da divisão = média ponderada das impurezas dos dois lados; Gini x entropia; ganho de informação."
+            },
+            {
+              "start": 570,
+              "end": 720,
+              "slides": "34, 35, 36, 37",
+              "note": "Hiperparâmetros: max_depth, min_samples_split, min_samples_leaf, max_leaf_nodes, max_features; árvore grande demais decora e fica difícil de explicar."
+            },
+            {
+              "start": 720,
+              "end": 870,
+              "slides": "12, 31, 32",
+              "note": "Árvore de regressão: DecisionTreeRegressor, CART, custo com MSE ponderado e previsão pela média da folha."
+            },
+            {
+              "start": 870,
+              "end": 935,
+              "slides": "44, 45",
+              "note": "Resumo: CART, instável a variações nos dados, sem normalização."
+            }
+          ],
+          "transcript": "../transcripts/Ka_GeDmjq8w.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:00–01:30 — Lê uma árvore do scikit-learn: árvore binária (duas ramificações por nó), pergunta do nó, valor de Gini e número de amostras (slides 4 e 41)",
+              "01:30–04:30 — Nó puro vira folha; impureza = 1 − Σ pᵢ²; em cada nó escolhe-se a pergunta de menor impureza (slides 25 e 28)",
+              "05:00–05:30 — Processo iterativo de 'dividir para conquistar' com critério Gini ou entropia (slides 11 e 37)",
+              "07:00–08:30 — Função de custo: média das impurezas esquerda e direita ponderada pelo número de amostras; fórmula da entropia (slides 26 a 28 e 31)",
+              "08:30–09:30 — Gini (impureza) x entropia (incerteza); o ganho de informação deve ser maximizado (slide 18)",
+              "09:30–11:30 — Hiperparâmetros para regularizar: max_depth, min_samples_split, min_samples_leaf, min_weight_fraction_leaf, max_leaf_nodes, max_features; árvore muito grande decora e fica difícil de explicar (slides 34 a 37)",
+              "11:30–14:00 — Árvore de regressão com DecisionTreeRegressor e CART: valor numérico no nó, custo com MSE ponderado e previsão pela média da folha (slides 31 e 32)",
+              "14:30–15:40 — Resumo: CART faz classificação e regressão; instável a variações nos dados; sem normalização (slides 44 e 45)"
+            ],
+            "notCovered": "Não explica entropia com intuição, não diferencia pré e pós-poda, não cita splitter nem min_impurity_decrease, não mostra exemplo numérico de ganho.",
+            "profile": [
+              "**Nível:** intermediário.",
+              "**Foco:** leitura de árvore do scikit-learn e hiperparâmetros.",
+              "**Qualidade:** objetiva; fala corrida e legenda com erros nos nomes."
+            ],
+            "verdict": "Aprovar os trechos 00:00–04:30, 07:00–14:00 e 14:30–15:40; ignorar predict_proba (05:30–06:30) e o fechamento."
+          }
+        },
+        {
+          "id": "a8-v13",
+          "type": "video",
+          "title": "Decision Trees na Prática (Scikit-learn / Python)",
+          "channel": "Mario Filho",
+          "duration": "30:18",
+          "url": "https://www.youtube.com/watch?v=BDqejVlCfvc",
+          "goals": [
+            "Entender por que uma árvore sem limite decora o treino e como a profundidade controla isso (slides 33 e 34).",
+            "Conhecer, com exemplo, max_depth, min_samples_leaf, min_samples_split, max_leaf_nodes e min_impurity_decrease (slide 36).",
+            "Ver numa árvore de regressão do scikit-learn que a previsão da folha é a média do grupo (slide 32)."
+          ],
+          "warnings": [
+            "O exemplo usa DecisionTreeRegressor (critério MSE por padrão), mas ele diz que os mesmos hiperparâmetros valem para classificação (26:00).",
+            "Boa parte do vídeo é código no Colab (e o plot_tree da árvore gigante trava 5 minutos); assista só os trechos indicados.",
+            "O autor diz que não usa muito max_leaf_nodes e min_impurity_decrease, e não explica ccp_alpha; não fala de splitter nem de criterion além do padrão (MSE).",
+            "Os nomes são falados em inglês e a legenda escreve 'minsempos slip' etc. (min_samples_split)."
+          ],
+          "clips": [
+            {
+              "start": 420,
+              "end": 750,
+              "slides": "31, 33, 34",
+              "note": "Árvore profunda decora: cada nó busca o melhor corte por feature pela pureza (MSE no exemplo); sem limite vai até um exemplo por nó."
+            },
+            {
+              "start": 750,
+              "end": 1110,
+              "slides": "32, 36",
+              "note": "max_depth: profundidade 1 e 2 com plot_tree; a previsão de cada nó é a média dos exemplos dele."
+            },
+            {
+              "start": 1290,
+              "end": 1740,
+              "slides": "36, 37",
+              "note": "min_samples_leaf (pensar de baixo para cima), min_samples_split, max_leaf_nodes e min_impurity_decrease."
+            }
+          ],
+          "transcript": "../transcripts/BDqejVlCfvc.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:00–01:00 — Motivação: usar a árvore sem mudar parâmetros leva a overfitting (e Random Forest sozinha não resolve)",
+              "07:00–09:30 — Árvore profunda overfita: para cada feature, procura o melhor ponto de corte medindo a pureza (MSE por padrão em regressão) (slides 31 e 34)",
+              "09:30–12:30 — Sem limite ela divide até sobrar um exemplo por nó; analogia de decidir pelo primeiro apartamento que viu (slides 33 e 34)",
+              "12:30–16:00 — max_depth = 1: um único corte; plot_tree mostra a previsão do nó como a média dos exemplos dele (slides 32 e 36)",
+              "16:00–18:30 — max_depth = 2; o erro cai porque a árvore captura mais complexidade (slide 36)",
+              "18:30–21:00 — Testar vários max_depth: o melhor (8) não é o mais raso nem o ilimitado (slides 34 e 36)",
+              "21:30–26:00 — min_samples_leaf: mínimo de exemplos por folha; evita folhas de poucos exemplos/outliers (slide 36)",
+              "26:00–27:00 — min_samples_split: mínimo de exemplos no nó atual para poder dividir (slides 36 e 37)",
+              "27:30–29:00 — max_leaf_nodes (máximo de folhas) e min_impurity_decrease (redução mínima da impureza) (slide 36)"
+            ],
+            "notCovered": "Não explica splitter, não compara Gini e entropia, não trata de pré x pós-poda pelo nome e não faz a conta de ganho.",
+            "profile": [
+              "**Nível:** intermediário (com código).",
+              "**Foco:** hiperparâmetros de poda no scikit-learn.",
+              "**Qualidade:** boa explicação, vídeo longo com bastante código."
+            ],
+            "verdict": "Aprovar só os trechos 07:00–21:00 e 21:30–29:00. É o único vídeo em português que trata dos cinco parâmetros do slide 36."
+          }
+        },
+        {
+          "id": "a8-v14",
+          "type": "video",
+          "title": "[Aprendizado de Máquina - Aula 2 Tópico 7] Vantagens e  Desvantagens da árvore de decisão",
+          "channel": "Daniel Hasan Dalip",
+          "duration": "7:09",
+          "url": "https://www.youtube.com/watch?v=7Czuid5o_50",
+          "goals": [
+            "Entender a alta interpretabilidade da árvore ('caixa branca') com um exemplo de crédito (slide 44).",
+            "Saber que árvores exigem pouco pré-processamento (sem normalizar) e têm custo de predição baixo (slide 44).",
+            "Reconhecer a instabilidade: pequenas diferenças nos dados geram árvores muito diferentes (slide 45)."
+          ],
+          "warnings": [
+            "De 03:20 a 04:30 fala de Random Forest (comitê), fora do escopo; de 04:30 a 05:30 fala de balanceamento de classes (não está nos slides); depois é bibliografia.",
+            "Não cita overfitting, variáveis redundantes, valores faltantes nem múltiplos rótulos (outros pontos dos slides 44 e 45).",
+            "A legenda deixa frases confusas ('é logo do tamanho das instâncias' = custo logarítmico na predição)."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 200,
+              "slides": "44, 45",
+              "note": "Interpretabilidade, pouco pré-processamento, custo de predição baixo e instabilidade a pequenas mudanças nos dados."
+            }
+          ],
+          "transcript": "../transcripts/7Czuid5o_50.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:00–02:30 — Alta interpretabilidade (modelo de caixa branca): dá para explicar por que o resultado saiu assim, com exemplo de crédito aprovado (slide 44)",
+              "02:30–03:00 — Pouco pré-processamento, sem precisar normalizar; custo computacional de predição pequeno (slide 44)",
+              "03:00–03:20 — Desvantagem: pequenas diferenças nos dados podem gerar árvores/resultados completamente diferentes (slide 45)",
+              "03:20–04:30 — Random Forest como remédio (fora do escopo)",
+              "04:30–05:30 — Necessidade de balancear as classes no treino (fora dos slides)"
+            ],
+            "notCovered": "Não fala de overfitting, variáveis redundantes, valores faltantes nem de múltiplos rótulos.",
+            "profile": [
+              "**Nível:** iniciante.",
+              "**Foco:** interpretabilidade, simplicidade e instabilidade.",
+              "**Qualidade:** clara e curta, mas informal."
+            ],
+            "verdict": "Aprovar só 00:00–03:20 (vantagens e instabilidade)."
+          }
+        },
+        {
+          "id": "a8-v15",
+          "type": "video",
+          "title": "28 Aprendizado com Árvores de Decisão - Hiperparâmetros",
+          "channel": "Michel Janos",
+          "duration": "7:19",
+          "url": "https://www.youtube.com/watch?v=Vzj0LaHTk80",
+          "goals": [
+            "Ver como max_depth controla overfitting e underfitting (slides 34 e 36).",
+            "Reunir as vantagens e a desvantagem principal das árvores: interpretável, sem normalização, resistente a outliers e colinearidade, instável (slides 44 e 45).",
+            "Entender a ideia de decisão gulosa: escolher a melhor divisão local em cada nó (slide 31)."
+          ],
+          "warnings": [
+            "Só cita max_depth e max_features; não fala de min_samples_split, min_samples_leaf nem dos demais parâmetros do slide 36.",
+            "A legenda escreve 'Max Fitters' (max_features) e 'Gini ou lente formação' (Gini ou entropia).",
+            "Os últimos 30 s (troco em moedas) são só exemplo de algoritmo guloso."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 180,
+              "slides": "34, 36, 37",
+              "note": "max_depth e overfitting/underfitting; max_features; a escolha usa Gini ou entropia."
+            },
+            {
+              "start": 180,
+              "end": 435,
+              "slides": "31, 44, 45",
+              "note": "Vantagens (interpretável, sem normalização, resistente a outlier e colinearidade), instabilidade e decisão gulosa."
+            }
+          ],
+          "transcript": "../transcripts/Vzj0LaHTk80.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:00–01:00 — Hiperparâmetros precisam de ajuste; Grid Search escolhe a melhor combinação (slide 36)",
+              "01:00–02:30 — max_depth: maior = mais complexo e mais overfitting; erro de treino só cai; baixo demais causa underfitting (slides 34 e 36)",
+              "02:30–03:00 — max_features: quantos preditores avaliar a cada divisão; escolhe-se o de menor impureza (Gini) ou entropia (slide 37)",
+              "03:00–05:00 — Vantagens: simples de interpretar, regressão e classificação, remove preditores irrelevantes, sem normalização, aceita colinearidade, outlier não compromete a divisão (slide 44)",
+              "05:00–05:30 — Desvantagem: pequena mudança nos dados pode gerar outra árvore (instabilidade) (slide 45)",
+              "05:30–07:00 — Treino pode ser caro; os algoritmos fazem escolhas gulosas (melhor divisão em cada nó), sem testar todas as árvores (slide 31)"
+            ],
+            "notCovered": "Não cobre min_samples_split, min_samples_leaf, max_leaf_nodes nem splitter.",
+            "profile": [
+              "**Nível:** iniciante a intermediário.",
+              "**Foco:** max_depth e lista de vantagens/desvantagens.",
+              "**Qualidade:** correta; fala lida e legenda com erros."
+            ],
+            "verdict": "Aprovar como complemento opcional: 00:00–05:30 e 05:30–07:00."
+          },
+          "optional": true
+        },
+        {
+          "id": "a8-md",
+          "type": "markdown",
+          "title": "Leitura: Aula 8 do zero",
+          "path": "aula-8-do-zero.md",
+          "goals": [
+            "Cobertura integral dos 47 slides da Aula 8",
+            "Anatomia da árvore (raiz, internos, folhas) e estratégia dividir para conquistar",
+            "Particionamento do espaço: regiões disjuntas com cobertura total (U)",
+            "Árvores de regressão (folha com média aritmética e critério MSE)",
+            "Entropia e Ganho de Informação vs Índice de Gini (maior ganho vs menor Gini)",
+            "CART e busca gulosa em atributos numéricos contínuos",
+            "Reuso de atributos: contínuos podem ser reusados; binários não",
+            "Overfitting e parâmetros de poda no scikit-learn (max_depth, min_samples_leaf)",
+            "Vantagens (sem necessidade de normalização, interpretável) e Desvantagens (alta variância)"
+          ]
+        },
+        {
+          "id": "a8-q",
+          "type": "questions",
+          "title": "Questões da Aula 8 (16)",
+          "path": "lesson-8-questions.json"
+        }
+      ]
+    },
+    {
+      "id": "codigo",
+      "title": "Fechamento · Leitura de Código do Bloco 2",
+      "items": [
+        {
+          "id": "b2-cod-md",
+          "type": "markdown",
+          "title": "Guia: Como ler código do Bloco 2",
+          "path": "guia-ler-codigo-bloco-2.md",
+          "goals": [
+            "Os 4 verbos do scikit-learn aplicados a Regressão, k-NN e Árvores",
+            "Ordem das ações obrigatória: split antes da escala, fit_transform no treino e transform no teste",
+            "Onde a escala é indispensável (k-NN, Ridge, Lasso) vs onde é desnecessária (Árvores)",
+            "Incompatibilidade clássica de métricas e modelos contínuos vs discretos",
+            "Parâmetros de poda de árvores no código e identificação de overfitting",
+            "Checklist prático de 6 passos para resolver questões de código na prova"
+          ]
+        },
+        {
+          "id": "b2-cod-q",
+          "type": "questions",
+          "title": "Questões de Código do Bloco 2 (25)",
+          "path": "code-questions.json"
+        }
+      ]
+    }
+  ]
+}

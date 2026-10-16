@@ -1,135 +1,243 @@
-# study-app
+# k_study
 
-App local de estudo: uma **interface web + API HTTP** que serve aulas (vídeos, leituras e questões) a partir de uma **pasta de dados** e guarda o seu progresso em **um único arquivo**. Também traz as **ferramentas de linha de comando** usadas para montar as aulas (busca no YouTube, legendas, transcrição local e validação do conteúdo).
+Servidor local de **trilhas de aprendizagem**: cursos com vídeos recortados, leituras explicadas do zero e questões com todas as alternativas comentadas. As trilhas são **criadas por agentes de IA** (como o Claude Code) que rodam no computador de quem cria, a partir do assunto que a pessoa quer aprender e do material que ela tiver. Cada aluno tem conta e progresso próprios; o administrador importa trilhas, ativa e desativa trilhas e vê estatísticas de uso.
 
-- O app usa **somente a biblioteca padrão do Python**. As dependências pesadas (reconhecimento de fala) são opcionais.
-- **Código e dados ficam separados.** Este repositório guarda só código. A pasta de dados (aulas, figuras, transcrições, `progress.json`) fica em outro lugar (por exemplo, uma pasta sincronizada) e é escolhida na primeira execução.
-- **Fonte única de verdade.** A interface não guarda estado: conteúdo e progresso passam somente pela API, e a API é a única a gravar o `progress.json`.
-- Código, identificadores, nomes de arquivos e chaves JSON são em inglês. O texto da interface e os arquivos Markdown que o estudante lê são em português.
+- Para **estudar** ou **administrar**, você só precisa de Python 3.10+. Não instala nada.
+- Para **criar uma trilha nova**, o administrador baixa as **specs** pelo próprio servidor, abre um agente de IA numa pasta vazia e pede a trilha. O agente entrega um pacote `.zip`, que o administrador **importa** pelo servidor.
 
-## Instalação
+## O fluxo completo
 
-```bash
-git clone git@github.com:klawdyo/estudos.git
-cd estudos
-python -m venv .venv
-.venv\Scripts\activate                # Windows   (Linux/macOS: source .venv/bin/activate)
-pip install -e .                      # só o app
-pip install -e ".[all]"               # + legendas + transcrição local (yt-dlp, faster-whisper)
+```text
+ servidor (/admin/)            computador de quem cria              servidor (/admin/)
+ ─────────────────             ────────────────────────             ──────────────────
+ 1. Baixar specs  ──────────►  2. Abrir um agente de IA numa
+    (um .zip)                     pasta vazia e descompactar
+                                  as specs; pedir a trilha
+                               3. O agente faz a entrevista, busca
+                                  e transcreve vídeos, escreve
+                                  leituras e questões, valida
+                               4. kstudy pack <slug>  ───────────►  5. Importar trilha (.zip)
+                                  gera <slug>.zip                      (e ativar para os alunos)
 ```
 
-Extras: `captions` (youtube-transcript-api), `transcribe` (yt-dlp + faster-whisper), `gpu` (bibliotecas CUDA da NVIDIA), `all`, `dev` (pytest). Para transcrever com GPU: `pip install -e ".[captions,transcribe,gpu]"`.
+A criação acontece **fora do servidor**: ele não tem botão de criar trilha, só de **importar**.
 
-## Primeira execução: escolher a pasta de dados
+## Começando (para estudar e administrar)
 
-```bash
-study serve
-```
+1. **Clone o projeto.**
 
-Abra <http://localhost:8765/>. Se nenhuma pasta de dados estiver configurada, o app mostra a tela **"Onde estão os arquivos do curso?"** com uma dica de onde a pasta fica. Você tem duas formas de informar o local, e **o app nunca lista o disco**:
+   ```bash
+   git clone https://github.com/klawdyo/k_study.git k_study
+   cd k_study
+   ```
 
-1. **Escolher o arquivo `config.json`** na janela de seleção do próprio sistema operacional (o servidor abre o seletor no seu desktop; no Linux pode ser preciso instalar `python3-tk`);
-2. **colar o caminho** da pasta no campo de texto.
+2. **Suba o servidor.**
 
-Depois clique em **Usar esta pasta**. A escolha fica salva **neste computador**, fora da pasta de dados (porque o caminho muda de um computador para outro):
+   ```bash
+   py main.py serve
+   ```
 
-| Sistema | Arquivo de configurações |
+   No Linux/macOS, use `python3 main.py serve`. Na primeira vez ele cria o arquivo `.env` com um segredo (veja "Contas e segurança").
+
+3. **Abra no navegador:** <http://localhost:8765/>. A tela pede o seu **e-mail**. Como ainda não existe nenhuma conta, você cria a sua (nome, senha e confirmação): **a primeira conta criada vira a administradora**.
+
+4. **Escolha uma trilha** na grade e comece pela primeira aula. A trilha de exemplo (`aprendizagem-de-maquina`) já vem incluída.
+
+5. **Administradora?** Na grade de trilhas aparece o botão **Administração** (`/admin/`): estatísticas, ativar e desativar trilhas, importar trilhas e baixar as specs.
+
+## Requisitos
+
+| Para | Precisa de |
 | :-- | :-- |
-| Windows | `%APPDATA%\study-app\settings.json` |
-| Linux / macOS | `~/.config/study-app/settings.json` (ou `$XDG_CONFIG_HOME/study-app/settings.json`) |
-
-Para trocar depois, use o botão **"Trocar a pasta de dados"** no fim do menu lateral, ou `study data-dir CAMINHO` na linha de comando.
-
-Ordem de precedência (a primeira que existir vence):
-
-1. `--data-dir CAMINHO` (parâmetro de qualquer comando);
-2. variável de ambiente `STUDY_DATA_DIR`;
-3. a pasta salva neste computador (tela de escolha ou `study data-dir`).
-
-Quando a pasta vem do parâmetro ou da variável de ambiente, ela fica **fixa** e a interface não oferece a troca. `STUDY_WORK_DIR` define a pasta temporária do áudio baixado (padrão: pasta temporária do sistema; nunca a coloque dentro de uma pasta sincronizada). `STUDY_SETTINGS_FILE` muda o local do arquivo de configurações (usado nos testes).
+| Estudar e administrar | Python 3.10 ou superior. Nada mais (só a biblioteca padrão) |
+| Criar trilhas | um agente de IA com acesso ao terminal (Claude Code), o comando `kstudy` (instala-se com `pip install -e .`) e o projeto irmão **k_transcriptor** para transcrever vídeos (ele instala o que precisa) |
+| Transcrição rápida (opcional) | placa NVIDIA com CUDA; sem ela roda na CPU, mais devagar |
 
 ## Comandos
 
-```bash
-study serve [--port 8765] [--lan]      # API + interface em http://localhost:8765/ (--lan: também na rede interna)
-study data-dir [CAMINHO]             # mostra ou salva a pasta de dados deste computador
-study validate                       # confere a pasta de dados (rode antes de dar um bloco por pronto)
-study search TERMOS...               # busca no YouTube: id | duração | canal | título | visualizações
-study captions ID... [--pause 6]     # baixa as legendas do YouTube para <dados>/transcripts (o YouTube limita)
-study captions --text ID             # imprime uma transcrição guardada, com minutagem
-study transcribe ID... [--model small] [--language pt|en|auto] [--device auto|cpu|cuda]
-                       [--downloads 1] [--workers 2] [--pause 4] [--overwrite] [--no-wait]
-                                     # reconhecimento de fala local (GPU se houver); baixa vários áudios adiantados e
-                                     # transcreve vários ao mesmo tempo; os áudios FICAM guardados até você rodar `study clean`
-study queue                          # mostra a fila compartilhada (pendentes, falhas, se há executor ativo)
-study clean [--force]                # apaga os áudios temporários (só este comando apaga; recusa se há executor ativo)
-```
+Sem instalar nada: `py main.py <comando>`. Com `pip install -e .` o comando `kstudy` faz o mesmo (`kstudy --help` lista tudo, em português).
 
-`python -m study_app <comando>` também funciona (use `PYTHONPATH=src` ao rodar de um clone sem instalar).
-
-### Sobre `study transcribe`
-
-Um **downloader** baixa **só o áudio** (m4a, cerca de 1 MB por minuto), de um vídeo por vez e já adiantado em relação à transcrição, numa pasta temporária (`STUDY_WORK_DIR`), enquanto um ou mais **transcritores** rodam o faster-whisper e gravam `<dados>/transcripts/<id>.json`. **Nenhum áudio é apagado automaticamente**: cada um fica em `<STUDY_WORK_DIR>/<id do vídeo>/` (cerca de 1 MB por minuto) até alguém rodar `study clean`. Quem chama o `study transcribe` (por exemplo, o agente) é quem deve rodar `study clean` quando terminar. Os termos do YouTube em geral proíbem guardar o áudio: limpe depois de usar.
-
-**Fila única:** cada chamada de `study transcribe` apenas **adiciona** seus vídeos a uma fila em disco (dentro de `STUDY_WORK_DIR`). Uma só chamada por vez vira o *executor* (arquivo de trava com batimento) e esvazia a fila inteira, inclusive o que outras chamadas adicionarem enquanto isso; as demais esperam. Assim, chamadas em vários terminais nunca baixam nem transcrevem ao mesmo tempo, e um vídeo nunca é feito duas vezes. Cada chamada só termina quando os **seus** vídeos terminam (`--no-wait` devolve o controle logo após enfileirar, se já houver executor). Se o executor cair, a trava vence em 60 s e a próxima chamada assume. Se o YouTube bloquear, a fila para (`BLOCKED`, saída 3) e a próxima chamada, depois de trocar de rede, retoma de onde parou.
-
-- **GPU:** com `--device auto` (padrão) usa CUDA quando o CTranslate2 enxerga uma placa NVIDIA. No Windows são necessárias as bibliotecas `nvidia-cublas-cu12` e `nvidia-cudnn-cu12` (pip); o app localiza as DLLs sozinho em qualquer pasta do `sys.path` que tenha `nvidia/*/bin`. Sem GPU, cai para CPU (cerca de 4 vezes a duração do vídeo com o modelo `small`).
-- **Acompanhamento:** o terminal mostra a fila inteira, colorida e redesenhada no lugar: para cada vídeo, a fase (NA FILA, BAIXANDO, ÁUDIO PRONTO, TRANSCREVENDO, CONCLUÍDO, FALHOU), o título, a barra de progresso e o tempo de áudio já transcrito; ★ marca os vídeos da chamada atual. Todas as chamadas leem os mesmos arquivos de estado, então mostram a **mesma fila**, inclusive vídeos adicionados por outro terminal. `study queue` mostra um retrato da fila e `study queue --watch` a acompanha ao vivo, de qualquer terminal. Sem terminal interativo (arquivo de log, agente), sai uma linha por mudança de fase; `NO_COLOR=1` desliga as cores. O log técnico do executor fica em `<STUDY_WORK_DIR>/_queue/runner.log`.
-- **Paralelismo:** `--downloads` (padrão **1**: os downloads são feitos um de cada vez) e `--workers` (padrão 2: só a transcrição roda em paralelo). Cada downloader espera `--pause` segundos entre os seus downloads.
-- **Cuidado com o YouTube:** um `403` é repetido depois; um `429` ou "confirme que não é robô" **para tudo** e o log diz `BLOCKED` (código de saída 3): troque de rede ou espere. Os termos de uso do YouTube em geral proíbem baixar vídeos sem autorização do autor: use para estudo pessoal, poucos vídeos, e nunca guarde nem compartilhe o áudio.
-- `--language auto` deixa o Whisper detectar o idioma (útil para vídeos dublados).
-
-`study captions` é bem mais rápido, mas o YouTube bloqueia o IP depois de cerca de 15 consultas seguidas (`IpBlocked`); quando isso acontecer, use `transcribe`.
-
-## Pasta de dados
-
-```
-config.json                   lista de blocos
-progress.json                 gravado SOMENTE pela API
-transcripts/<videoId>.json    {lang, generated, duration, source, title, segments: [[segundo, "texto"], ...]}
-figures/                      imagens usadas pelas leituras e pelas questões
-block-1/block.json            seções -> itens (video | markdown | pdf | link | questions)
-block-1/*.md, *.pdf           leituras
-block-1/*-questions.json      conjuntos de questões
-```
-
-Todo caminho é relativo ao arquivo que o contém e precisa ficar dentro da pasta de dados. Esquema completo: [docs/data-model.md](docs/data-model.md).
-
-## API
-
-| Rota | O que faz |
+| Comando | Para quê |
 | :-- | :-- |
-| `GET /api/setup` | situação da pasta de dados: `{configured, dataDir, source, home, sep, savedDir}` |
-| `POST /api/setup/pick` | abre o seletor de arquivos do sistema e devolve a pasta do `config.json` escolhido (não grava; `409` se a pasta estiver fixada) |
-| `PUT /api/setup` | `{"path": "..."}` escolhe e salva a pasta de dados (recusa se não houver `config.json`; `409` se a pasta estiver fixada por parâmetro ou variável de ambiente) |
-| `GET /api/config` | devolve o `config.json` (`409` enquanto não houver pasta configurada) |
-| `GET /api/content/<caminho>` | lê um arquivo dentro da pasta de dados (nunca fora dela) |
-| `GET /api/progress` | estado completo `{items, answers, notes}` |
-| `PUT /api/progress/items/<bloco>/<item>` | `{"done": true}` |
-| `PUT /api/progress/answers/<bloco>/<item>/<questão>` | `{"chosen": ["a"], "correct": true}` |
-| `DELETE /api/progress/answers/<bloco>/<item>/<questão>` | apaga a resposta |
-| `PUT /api/progress/notes/<bloco>/<item>` | `{"text": "..."}` (texto vazio apaga a anotação) |
+| `serve [--port 8765] [--host H] [--lan] [--content-dir D] [--db F] [--env F]` | sobe o servidor (alunos em `/`, administração em `/admin/`) |
+| `validate [slug]` | valida uma trilha (ou todas); erros reprovam, avisos só avisam |
+| `new-trail SLUG --title T [--description D]` | cria `content/<slug>/` com a estrutura mínima |
+| `pack SLUG [--out FILE]` | valida e gera o pacote `.zip` importável |
+| `import-trail ARQUIVO.zip [--replace]` | importa um pacote (o mesmo que o administrador faz pela interface) |
+| `sync [--force]` | reindexa `content/` no banco |
+| `trails` | lista as trilhas e seus números |
+| `set-admin EMAIL` | torna uma conta existente administradora (recuperação) |
+| `reset-password EMAIL` | define uma nova senha para uma conta (digitada no terminal, sem eco) |
+| `import-progress --email E --trail SLUG ARQUIVO.json` | importa um `progress.json` antigo para uma conta existente |
 
-Toda gravação de progresso salva o `progress.json` de forma atômica e devolve o estado completo atualizado. **Limites (por decisão):** só `127.0.0.1`, sem autenticação, um único usuário, a última gravação vence (o app não lista o disco; pedidos cujo cabeçalho `Host` não seja `localhost`, `127.0.0.1` ou `::1` são recusados com `403`, contra ataques de DNS rebinding; mesmo assim, não exponha o servidor na rede). Renomear o id de um item ou de uma questão faz o progresso dela sumir (a chave muda). A API não edita conteúdo: o conteúdo se edita como arquivo. A transcrição é de propósito um comando, e não uma rota da API.
+Códigos de saída: 0 ok, 1 problemas de validação, 2 erro de uso ou de ambiente.
 
-## Comportamento da interface
+## Contas e segurança
 
-- **Estado do item como selo.** No topo e no fim de cada página há dois controles compactos: o selo de estado ("Pendente" / "Feito", que se **inverte com um clique**) e o botão "Próximo item ›". Abrir um item com um clique o marca como feito (dá para voltar a "Pendente" no selo).
-- **Contadores.** O topo e cada seção contam **todo item feito**, opcional ou não; ao passar o mouse aparece o detalhamento (obrigatórios e opcionais). Itens opcionais não bloqueiam o "PRÓXIMO".
-- **Questões, uma por vez.** Abrir um conjunto de questões **não** o marca como feito: ele só fica concluído quando **todas** forem respondidas (e volta a pendente se você refizer alguma). Cada questão aparece sozinha, com navegação por pontos (verde = acertou, vermelho = errou); depois de responder, a explicação de todas as alternativas aparece na hora. Ao concluir, e **sempre que você voltar a um conjunto concluído**, a tela mostra o **resumo**: acertos e erros, a alternativa que você marcou, o gabarito e a explicação de cada opção, com "Refazer esta questão" e "Refazer todas".
-- Quando a aba volta a ter foco, a interface relê o estado da API; se a API estiver fora do ar, aparece uma faixa vermelha e nada é salvo.
+- **Entrar:** a tela pede o e-mail (e, se o Google estiver configurado, mostra também o botão **Entrar com o Google**); se a conta existe, pede a senha; se não existe, pede senha, confirmação e nome. **Não há confirmação por e-mail.** O nome e o e-mail aparecem juntos no topo e nas telas do administrador.
+- **O primeiro cadastro vira administrador.** Depois, ninguém vira administrador pela interface; quem tem acesso ao computador usa `py main.py set-admin EMAIL`.
+- **Senhas:** 8 a 128 caracteres, diferentes do e-mail; guardadas só como hash (`scrypt` combinado com um segredo do servidor).
+- **O segredo fica no `.env`** (`K_STUDY_SECRET`), criado automaticamente no primeiro uso e **nunca versionado** (está no `.gitignore`). **Faça backup do `.env` junto com o banco**: sem o mesmo segredo, as senhas deixam de valer (cada pessoa recebe uma nova com `reset-password`).
+- **Limite de tentativas**, sessão com validade e logout no servidor, proteção contra CSRF, política de segurança de conteúdo e conteúdo das trilhas sempre escapado: a auditoria completa (modelo de ameaças, OWASP, riscos residuais) está em `docs/seguranca.md`.
+- **Rede local (`--lan`):** `py main.py serve --lan` aceita também computadores da sua rede privada (por exemplo, o notebook do sofá abrindo `http://IP-DO-COMPUTADOR:8765/`). O firewall pode pedir permissão. Todos entram com e-mail e senha.
+- **HTTPS:** o servidor fala HTTP. Para uso fora do seu computador, ponha um proxy reverso com HTTPS na frente e defina `K_STUDY_HTTPS=1` (cookies `Secure`). **Não o exponha direto na internet.**
 
-## Desenvolvimento
+Outras opções: `--port`, `--content-dir` (pasta das trilhas, padrão `./content`), `--db` (arquivo do banco, padrão `./data/k_study.db`) e `--env` (arquivo do segredo, padrão `./.env`).
+
+## Entrar com o Google (opcional)
+
+O botão **Entrar com o Google** só aparece quando o servidor está configurado para isso. As duas variáveis nascem **vazias** no `.env` (e estão no `.env.example`); enquanto estiverem vazias, a tela de entrada não mostra o botão.
+
+1. No [console do Google](https://console.cloud.google.com/apis/credentials), crie um **ID do cliente OAuth** do tipo "Aplicativo da Web".
+2. Em **URIs de redirecionamento autorizados**, informe o endereço do seu servidor seguido de `/auth/oauth/google/callback`. Por exemplo:
+   - `http://localhost:8765/auth/oauth/google/callback`
+   - `https://estudos.seudominio.com/auth/oauth/google/callback`
+3. Preencha no `.env` (ou como variáveis de ambiente) `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` e reinicie o servidor. Ao subir, ele diz se a entrada com o Google está ativa.
+
+O endereço de retorno **não vai no `.env`**: ele é fixo no sistema (`/auth/oauth/google/callback`) e só é informado no Google. A pessoa entra com o e-mail verificado pelo Google; a conta criada assim não tem senha (e não pode ser "reivindicada" por quem souber o e-mail). Detalhes de segurança em `docs/seguranca.md`.
+
+## Docker (para subir em um servidor)
+
+O `Dockerfile` roda o servidor sem precisar de Python na máquina. Não há dependências para instalar.
 
 ```bash
-pip install -e ".[dev]"
-pytest
+docker build -t k_study .
+docker run -d --name k_study -p 8765:8765 -v k_study_data:/data k_study
 ```
 
-## Acessar de outro computador (rede interna)
+Abra <http://localhost:8765/>: o primeiro cadastro vira administrador. Tudo o que precisa sobreviver fica no volume `/data`: o banco (`k_study.db`), o `.env` com o segredo (criado no primeiro uso) e as trilhas importadas (`/data/content`). Importe trilhas em `/admin/` (ou monte uma pasta existente com `-v ./content:/data/content`). Detalhes:
+
+| O quê | Como |
+| :-- | :-- |
+| Entrada com o Google | `-e GOOGLE_CLIENT_ID=... -e GOOGLE_CLIENT_SECRET=...` (no Google, a URI de retorno é `<endereço do servidor>/auth/oauth/google/callback`) |
+| Atrás de um domínio com HTTPS (proxy reverso) | `-e K_STUDY_ALLOWED_HOSTS=estudos.seudominio.com -e K_STUDY_HTTPS=1`. Sem isso o servidor só aceita `localhost` no cabeçalho `Host` |
+| Segredo fixo em vez do arquivo | `-e K_STUDY_SECRET=...` (64 caracteres hexadecimais; o ambiente vale mais que o `.env`) |
+| Backup | copie o volume `/data` inteiro (banco **e** `.env`), por exemplo `docker run --rm -v k_study_data:/data -v "$PWD":/backup alpine tar czf /backup/k_study.tgz /data` |
+| Saúde e parada | a imagem tem `HEALTHCHECK`; `docker stop` encerra em menos de um segundo |
+
+O contêiner roda como usuário sem privilégios (uid 10001) e o servidor fala **HTTP**: para expor na internet, ponha um proxy reverso com HTTPS na frente (veja `docs/seguranca.md`). O `.dockerignore` mantém `.env`, `data/` e `content/` fora da imagem.
+
+## O que o aluno vê
+
+- **Entrada por e-mail e senha**, com o progresso guardado na conta (o mesmo em qualquer computador).
+- **Grade de trilhas** com capa, descrição, nível, número de aulas, minutos e quanto você já fez (a barra conta todas as aulas, obrigatórias e opcionais).
+- **Aulas** na ordem de estudo, cada uma marcada **Obrigatória** ou **Opcional** (com cores diferentes): vídeos (com trechos recomendados e avisos de onde o vídeo diverge do material), leituras explicadas do zero e questões.
+- **Vídeos** incorporados do YouTube, com botões para os trechos que importam e um cartão de **transcrição** com horários clicáveis.
+- **Questões** com resposta imediata e **explicação de todas as alternativas**, certas e erradas.
+- **Anotações** por aula e **barra de progresso** da trilha e do bloco; o botão "Próxima aula" aponta o que vem a seguir.
+
+## O que o administrador faz (`/admin/`)
+
+- **Visão geral, Alunos e Trilhas:** alunos ativos, tempo total de estudo, visitas, conclusão por trilha, tempo e abandono por aula, acertos por questão e as questões mais erradas, sempre com **nome e e-mail**. Serve para melhorar o conteúdo.
+- **Ativar e desativar trilhas:** uma trilha desativada some para os alunos; o progresso deles fica guardado.
+- **Importar trilha:** envia o `.zip` gerado pelo agente. O servidor confere tudo antes de registrar (caminhos, extensões, tamanho, conteúdo ativo, validação). Se a trilha já existir, é preciso marcar "substituir" (o progresso dos alunos é mantido).
+- **Baixar specs:** o zip que o agente local usa para criar trilhas.
+
+Detalhes em `specs/08-servidor-e-admin.md`.
+
+## Estrutura de pastas
+
+```text
+main.py                  py main.py <comando>
+.env                     segredo local e credenciais do Google (criado no primeiro uso; fora do Git)
+.env.example             modelo do .env, sem segredos (este vai para o Git)
+Dockerfile               imagem para subir o servidor (veja a seção Docker)
+CLAUDE.md                instruções de entrada para agentes de IA
+README.md                este arquivo
+specs/                   instruções detalhadas para agentes (entrevista, pipeline, vídeos, leituras, questões, pacote...)
+docs/arquitetura.md      o contrato técnico (pastas, banco, API, CLI, segurança)
+docs/modelo-de-dados.md  formato dos arquivos de uma trilha
+src/k_study/             o programa (servidor, segurança, banco, pacotes, validador, interface do aluno e administração)
+content/<slug>/          uma pasta por trilha (trail.json, blocos, leituras, questões, transcrições, capa)
+data/k_study.db          o banco (contas, progresso; fora do Git)
+tests/                   testes (pytest)
+.tasks/                  tarefas planejadas e o registro do trabalho feito
+```
+
+## Criando uma trilha com um agente
+
+O agente segue as `specs/`. Em resumo, ele conversa com você, propõe uma divisão, busca e confere vídeos, escreve as leituras e as questões, valida, empacota e entrega um `.zip`.
+
+**Passo a passo**
+
+1. No servidor, a administradora baixa as **specs** em `/admin/` e as descompacta numa **pasta vazia** do computador de quem vai criar.
+2. Nessa pasta, abre um agente de IA (por exemplo, `claude`) e diz o que quer aprender. O agente confere o ambiente (Python 3.10+, `kstudy`, k_transcriptor); se faltar algo, ele explica o que instalar.
+3. O agente faz uma **entrevista curta** (3 rodadas): assunto e objetivo, prazo e tempo por dia, o que você já sabe e o que não sabe, idioma, material que você tem, tipos de questão, formato da avaliação, tom, se quer uma capa. Para cada pergunta ele sugere um padrão; basta confirmar.
+4. Se você tem **material** (slides, PDFs, anotações), ele pede para guardar em `content/<slug>/materials/`.
+5. O agente **sugere uma divisão** em blocos e aulas, a partir do material. Você aprova ou ajusta.
+6. Ele pede **autorização para baixar o áudio** de vídeos do YouTube (só para transcrever localmente e conferir o que cada vídeo explica).
+7. Com o plano aprovado, ele trabalha sozinho: busca vídeos, transcreve, **lê as transcrições inteiras**, escolhe os melhores trechos, escreve a **leitura do zero**, cria as **questões** e monta a trilha. Pode usar vários subagentes em paralelo. Se você quiser, gera uma **capa** (1200×630, até 1 MB).
+8. Ele roda a validação e uma auditoria própria, **empacota** (`kstudy pack`) e entrega um **relatório** curto: o que ficou pronto, o que não pôde ser verificado, o que você precisa decidir, e onde está o `.zip`.
+9. A administradora abre `/admin/` → **Importar trilha** e envia o `.zip`. Os alunos já podem estudar.
+
+**Exemplo de conversa**
+
+> **Você:** Quero uma trilha sobre configuração de switches de rede.
+>
+> **Agente:** Antes de criar, algumas perguntas (sugiro o padrão em negrito): 1) Objetivo? **trabalho** / prova / hobby. 2) Prazo e horas por dia? **sem prazo, 1 h/dia**. 3) O que você já sabe de redes e o que não sabe? 4) Idioma? **português**. 5) Tem material (apostila, slides)? 6) Cai em alguma prova ou certificação? 7) Quer uma capa para a trilha? **sim**.
+>
+> **Você:** Trabalho, 3 semanas, 1 h por dia. Sou desenvolvedor, sei HTTP e IP, não sei nada de VLAN nem de camada 2. Tenho um PDF da empresa. Sem prova.
+>
+> **Agente:** Proponho 3 blocos: (1) Fundamentos de camada 2 e VLAN; (2) Trunk, STP e roteamento entre VLANs; (3) Segurança e boas práticas. Cada aula tem vídeos em português, leitura com analogias de software e ~15 questões. Posso baixar o áudio dos vídeos para transcrever e conferir? Aprova a divisão?
+>
+> **Você:** Aprovado, pode baixar.
+>
+> **Agente:** (depois de algum tempo) Pronto: 3 blocos, 9 aulas, 41 vídeos (alguns só em trechos), 9 leituras e 135 questões, cerca de 1 h 40 por aula. Não consegui vídeo bom sobre STP rápido; a leitura cobre. O pacote está em `configuracao-de-switches.zip`: peça à administradora para enviá-lo em `/admin/` → Importar trilha.
+
+O agente também registra tudo em `content/<slug>/brief.md`, para você ou outro agente retomar depois.
+
+## A trilha de exemplo
+
+`content/aprendizagem-de-maquina/` traz quatro blocos para estudar aprendizado de máquina do zero, incluindo vídeos conferidos por transcrição, leituras e questões comentadas. É o padrão de qualidade que o agente tenta repetir. Os slides da disciplina original **não** são distribuídos. Para escondê-la dos alunos, desative-a em `/admin/`; para removê-la:
 
 ```bash
-study serve --lan
+rm -r content/aprendizagem-de-maquina       # Windows PowerShell: Remove-Item -Recurse content\aprendizagem-de-maquina
+py main.py sync
 ```
 
-O terminal mostra o endereço da rede (ex.: `http://192.168.0.10:8765/`); abra-o no outro computador. Sem senha, então só aceita máquinas de rede privada (nunca a internet) e só quem está no computador do servidor pode trocar a pasta de dados. O firewall do Windows pode pedir permissão na primeira vez. O progresso fica no arquivo do servidor, então os dois computadores veem o mesmo progresso.
+## O projeto irmão: k_transcriptor
+
+Busca vídeos no YouTube, baixa **só o áudio** e transcreve localmente com o Whisper, para que o agente leia o que cada vídeo realmente diz antes de recomendá-lo. É outro repositório (`ktr` é o comando). O agente o clona e instala quando precisa (`specs/04-videos-e-k_transcriptor.md`); o repositório é `https://github.com/klawdyo/k_transcriptor.git` e a instalação é `py main.py setup`.
+
+## Dados reais e repositórios públicos
+
+`content/` pode conter **material de terceiros** (slides, textos) em `materials/` e **transcrições automáticas** de vídeos em `transcripts/`. Eles servem ao estudo pessoal e **não devem ser redistribuídos**. Se você publicar um repositório com as suas trilhas, **decida antes** se `materials/` e `transcripts/` ficam fora dele (`.gitignore`). Nunca versione o `.env`, o banco (`data/`) nem áudios. O repositório já ignora `.env`, `data/` e `*.db`.
+
+## Convenções do projeto (para quem for evoluir o código)
+
+- **Idioma:** código, arquivos de código, tabelas, colunas, chaves JSON, comandos e códigos de erro em **inglês**; specs, README, interface, mensagens para pessoas, comentários e docstrings em **português do Brasil**.
+- **Commits:** atômicos, em Conventional Commits (tipo em inglês, descrição em português). **A versão é calculada pelos commits** (SemVer): não a edite à mão.
+- **Contrato:** `docs/arquitetura.md` manda; mudou algo, mude o contrato primeiro. Testes com `pip install -e ".[dev]"` e `pytest`.
+
+## Perguntas frequentes
+
+**O que acontece com o meu e-mail?** Fica só no banco local (`data/k_study.db`). Nada é enviado a lugar nenhum.
+
+**Onde ficam os meus dados?** No arquivo `data/k_study.db` (contas, progresso, respostas, anotações, tempos) e, para as senhas, o segredo do `.env`. O conteúdo das trilhas fica em `content/`.
+
+**Como faço backup?** Com o servidor parado, copie `data/k_study.db` **e `.env`**. Com ele rodando, use `sqlite3 data/k_study.db ".backup backup.db"` e copie o `.env`.
+
+**Esqueci a minha senha.** No computador do servidor: `py main.py reset-password voce@exemplo.com`.
+
+**Fui o primeiro a me cadastrar por engano e não sou eu quem administra.** `py main.py set-admin EMAIL` torna outra conta administradora (rode no computador do servidor).
+
+**Como importo um progresso antigo?** A conta precisa existir (entre uma vez). Depois: `py main.py import-progress --email voce@exemplo.com --trail aprendizagem-de-maquina progress.json`.
+
+**Como removo uma trilha?** Desative-a em `/admin/` (some para os alunos, o progresso fica) ou apague `content/<slug>/` e rode `py main.py sync`.
+
+**Posso mudar a ordem ou o texto de uma aula?** Sim, editando os arquivos em `content/<slug>/` (ou trocando a trilha por um pacote novo com "substituir"). Não mude os `id` já publicados: o progresso dos alunos depende deles.
+
+**O agente errou algo no conteúdo.** Conserte o arquivo (ou peça ao agente). A validação (`py main.py validate`) confere a estrutura, não a qualidade; peça uma auditoria seguindo `specs/07-validacao-e-qualidade.md`.
+
+**Preciso de internet?** O servidor roda local. Os vídeos são incorporados do YouTube e exigem internet.
+
+## Limitações
+
+- Sem confirmação de e-mail: quem cria a conta primeiro com um e-mail é o dono dele. Pensado para uso pessoal ou em grupo de confiança; não é um serviço aberto na internet.
+- O conteúdo é gerado por IA a partir de fontes que o agente leu: confira o que for crítico. A transcrição automática tem erros.
+- A API não edita conteúdo; trilhas entram por pacote ou arquivo.
+- A transcrição e a busca de vídeos dependem do YouTube, que pode bloquear o IP temporariamente (o k_transcriptor orienta o que fazer).
+
+## Aviso sobre direitos de terceiros
+
+Vídeos são apenas **linkados** (incorporados do YouTube); o k_study não os hospeda. As transcrições servem ao estudo pessoal e à conferência do conteúdo e não devem ser redistribuídas. Material de terceiros (slides, livros) **não** deve ser copiado literalmente nem publicado: o agente é instruído a parafrasear, gerar as próprias figuras e a citar o link original. Os termos do YouTube em geral proíbem baixar vídeos sem autorização do autor: use o k_transcriptor só para estudo, com poucos vídeos, e nunca compartilhe o áudio.

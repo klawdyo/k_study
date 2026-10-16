@@ -1,0 +1,36 @@
+{
+  "schema": "trail/v1",
+  "id": "aprendizagem-de-maquina",
+  "title": "Aprendizado de Máquina",
+  "description": "Quatro blocos para estudar aprendizado de máquina do zero: base e dados, regressão, k-NN e árvores, métricas de avaliação, redes neurais e SVM. Vídeos conferidos por transcrição, leituras explicadas do zero e questões comentadas.",
+  "language": "pt-BR",
+  "level": "iniciante",
+  "tags": [
+    "ia",
+    "machine-learning",
+    "prova"
+  ],
+  "createdAt": "2026-10-11",
+  "blocks": [
+    {
+      "id": "block-1",
+      "title": "Bloco 1 · A base e os dados (Aulas 1, 3, 4)",
+      "file": "block-1/block.json"
+    },
+    {
+      "id": "block-2",
+      "title": "Bloco 2 · Algoritmos Supervisionados (Aulas 5, 6, 8)",
+      "file": "block-2/block.json"
+    },
+    {
+      "id": "block-3",
+      "title": "Bloco 3 · Métricas de Avaliação para Classificadores (Aula 7)",
+      "file": "block-3/block.json"
+    },
+    {
+      "id": "block-4",
+      "title": "Bloco 4 · Redes Neurais e SVM (Aulas 10, 11)",
+      "file": "block-4/block.json"
+    }
+  ]
+}

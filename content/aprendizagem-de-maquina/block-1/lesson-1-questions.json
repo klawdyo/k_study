@@ -1,0 +1,438 @@
+{
+  "schema": "questions/v2",
+  "id": "bloco-1-aula-1",
+  "title": "Aula 1 · Questões",
+  "instructions": "Responda **antes** de ler qualquer explicação. Depois de responder, leia a explicação de **todas** as alternativas, inclusive das que você acertou: é nelas que está o conteúdo. Se errar, volte à seção indicada em *Leitura: Aula 1 do zero*.",
+  "questions": [
+    {
+      "id": "q01",
+      "label": "Convencional × AM",
+      "type": "single",
+      "prompt": "Quatro equipes construíram um sistema. Em qual delas o sistema **usa aprendizado de máquina**?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A equipe escreveu um `if` que marca como spam todo e-mail com a palavra \"sorteio\".",
+          "correct": false,
+          "explanation": "Aqui a **regra foi escrita pelo programador**. Isso é algoritmo convencional, mesmo que o resultado seja \"classificar e-mails\". O que define o AM não é a tarefa, é **quem descobre a regra**."
+        },
+        {
+          "id": "b",
+          "text": "A equipe entregou 10 mil e-mails já marcados como spam ou não spam a um programa, que descobriu sozinho quais características separam uns dos outros.",
+          "correct": true,
+          "explanation": "No AM a máquina **descobre as regras a partir de exemplos** (aqui, e-mails com a resposta certa). O programador fornece os dados e o jeito de medir o desempenho, não a regra."
+        },
+        {
+          "id": "c",
+          "text": "A equipe fez uma planilha que aplica 10% de desconto a pedidos acima de R$ 500.",
+          "correct": false,
+          "explanation": "Regra fixa, conhecida e escrita à mão: convencional. Quando a regra é simples e você a conhece, não há motivo para usar AM."
+        },
+        {
+          "id": "d",
+          "text": "A equipe ordenou uma lista de clientes por data de cadastro com um algoritmo de ordenação.",
+          "correct": false,
+          "explanation": "Ordenar é um algoritmo clássico com passo a passo definido pelo programador. Nada é aprendido a partir de dados."
+        }
+      ],
+      "generalExplanation": "**Ideia central do slide 14:** no algoritmo convencional você especifica as regras que transformam entrada em saída; no AM, a máquina **descobre** essas regras. Se você consegue escrever o `if`, não precisa de AM; ele é útil quando a regra é difícil de escrever (rosto, voz, fraude)."
+    },
+    {
+      "id": "q02",
+      "label": "IA × AM",
+      "type": "single",
+      "prompt": "Sobre a relação entre Inteligência Artificial (IA) e Aprendizado de Máquina (AM), assinale a afirmação **correta**.",
+      "options": [
+        {
+          "id": "a",
+          "text": "IA e AM são sinônimos.",
+          "correct": false,
+          "explanation": "Muita gente usa como sinônimos, mas o slide 10 é explícito: o AM **não define** a IA por inteiro. Existem técnicas de IA que não aprendem com dados."
+        },
+        {
+          "id": "b",
+          "text": "A IA inclui o AM, mas o AM não define toda a IA.",
+          "correct": true,
+          "explanation": "Correto, é a frase quase literal do slide. Pense em \"veículos\" e \"carros\": o AM é uma **parte** (a que aprende a partir de dados) de um campo maior."
+        },
+        {
+          "id": "c",
+          "text": "O AM é o campo maior, e a IA é uma de suas subáreas.",
+          "correct": false,
+          "explanation": "A relação está **invertida**. O campo amplo é a IA; o AM é uma área dentro dela."
+        },
+        {
+          "id": "d",
+          "text": "IA e AM são áreas independentes, sem intersecção.",
+          "correct": false,
+          "explanation": "O AM é a parte da IA que investiga algoritmos que aprendem com dados. Há intersecção total: o AM está dentro da IA."
+        }
+      ],
+      "generalExplanation": "Decore a direção: **IA ⊃ AM**. O slide também diz que o AM é a área que \"investiga o desenvolvimento de algoritmos capazes de aprender a partir dos dados, adquirindo conhecimento de forma automática\"."
+    },
+    {
+      "id": "q03",
+      "label": "Jogo da Imitação",
+      "type": "single",
+      "prompt": "No **Jogo da Imitação** proposto por Turing em 1950, o jogador A é um computador, o jogador B é um ser humano e o jogador C é um juiz humano que não vê nenhum dos dois. Em que situação o **computador vence**?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Quando C descobre corretamente quem é o humano.",
+          "correct": false,
+          "explanation": "Isso é a **derrota** da máquina: ela não conseguiu se passar por humana."
+        },
+        {
+          "id": "b",
+          "text": "Quando C não consegue determinar, de forma coerente, quem é o humano e quem não é.",
+          "correct": true,
+          "explanation": "Esse é o critério do slide 11. Se o juiz não distingue de maneira consistente, o computador \"passou\" como humano e vence."
+        },
+        {
+          "id": "c",
+          "text": "Quando o computador resolve mais contas matemáticas que o humano.",
+          "correct": false,
+          "explanation": "Velocidade de cálculo não faz parte do jogo. O teste é sobre **parecer humano na conversa**, não sobre desempenho em tarefas."
+        },
+        {
+          "id": "d",
+          "text": "Quando B (o humano) desiste de participar.",
+          "correct": false,
+          "explanation": "O jogo não prevê vitória por desistência. O resultado depende só da capacidade de C de distinguir os jogadores."
+        }
+      ],
+      "generalExplanation": "Turing publicou *Computing Machinery and Intelligence* em **1950**. A pergunta por trás do jogo é \"uma máquina pode pensar?\", transformada em algo testável."
+    },
+    {
+      "id": "q04",
+      "label": "Dedução × indução",
+      "type": "single",
+      "prompt": "Uma criança nunca ouviu a definição de \"cachorro\". Ela vê muitos cães diferentes, ouve \"é um cachorro\" a cada um e, depois de um tempo, reconhece um cão que nunca viu. Esse processo é um exemplo de qual raciocínio, e por quê?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Dedutivo: ela parte de uma regra geral e conclui sobre um caso particular.",
+          "correct": false,
+          "explanation": "Na dedução a regra geral **já existe** e se aplica a um caso. Aqui a criança **não recebeu a regra**; ela a construiu."
+        },
+        {
+          "id": "b",
+          "text": "Indutivo: ela parte de vários exemplos particulares e chega a um conceito geral.",
+          "correct": true,
+          "explanation": "É exatamente o que o slide 18 descreve (\"é assim que as crianças aprendem\"). O AM funciona dessa forma: **aprende um conceito a partir dos exemplos apresentados**."
+        },
+        {
+          "id": "c",
+          "text": "Dedutivo, porque ela chegou a uma conclusão correta.",
+          "correct": false,
+          "explanation": "Acertar a conclusão não define o tipo de raciocínio. O que define é a **direção**: dedução vai do geral ao particular; indução vai do particular ao geral."
+        },
+        {
+          "id": "d",
+          "text": "Nenhum dos dois, pois não houve raciocínio lógico.",
+          "correct": false,
+          "explanation": "Houve: a indução é uma forma de inferência lógica (slide 18), mesmo quando é inconsciente."
+        }
+      ],
+      "generalExplanation": "**Mnemônico:** dedução = **da regra para o caso** (garantido se a regra for verdadeira). Indução = **dos casos para a regra** (uma aposta fundamentada, que pode falhar). O AM é indutivo."
+    },
+    {
+      "id": "q05",
+      "label": "Risco da indução",
+      "type": "multiple",
+      "prompt": "Segundo a aula, a inferência indutiva é um dos principais métodos para derivar conhecimento e prever eventos futuros, mas exige cuidado. Quais situações fazem as conclusões obtidas terem **pouco valor**?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O número de exemplos é insuficiente.",
+          "correct": true,
+          "explanation": "Com poucos exemplos, qualquer regra geral é uma aposta frágil: pode ser coincidência do que se viu."
+        },
+        {
+          "id": "b",
+          "text": "Os exemplos não foram bem escolhidos (não representam o problema).",
+          "correct": true,
+          "explanation": "Se a criança só viu poodles brancos, concluirá que \"cachorro é branco e pequeno\". Exemplos não representativos geram regras que falham no mundo real. Isso reaparece como **viés de amostragem** na Aula 4."
+        },
+        {
+          "id": "c",
+          "text": "Os exemplos vêm acompanhados da resposta certa (rótulo).",
+          "correct": false,
+          "explanation": "Ter rótulo é justamente o que permite o aprendizado **supervisionado**. Não prejudica a indução."
+        },
+        {
+          "id": "d",
+          "text": "O algoritmo roda em uma GPU.",
+          "correct": false,
+          "explanation": "O hardware afeta a **velocidade** do treino, não a validade das conclusões que se tira dos exemplos."
+        }
+      ],
+      "generalExplanation": "Quantidade **e** qualidade dos exemplos importam. Guarde os dois motivos do slide 19: exemplos **insuficientes** ou **mal escolhidos**."
+    },
+    {
+      "id": "q06",
+      "label": "Alvo e tarefa",
+      "type": "single",
+      "prompt": "Um hospital montou a base abaixo para ajudar na triagem. Cada linha é um paciente que já foi atendido.\n\n| Idade | Peso (kg) | Fumante | Diagnóstico |\n| :-- | :-- | :-- | :-- |\n| 52 | 80 | sim | doente |\n| 31 | 65 | não | saudável |\n| 45 | 90 | sim | doente |\n\nO objetivo é prever o diagnóstico de pacientes **novos**. Qual é o atributo alvo e qual é a tarefa?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Alvo: Diagnóstico. Tarefa: classificação.",
+          "correct": true,
+          "explanation": "O que se quer prever é o diagnóstico. Como ele só pode valer \"doente\" ou \"saudável\" (conjunto finito de classes), o alvo é **discreto**, e a tarefa supervisionada com alvo discreto é **classificação**."
+        },
+        {
+          "id": "b",
+          "text": "Alvo: Idade. Tarefa: regressão.",
+          "correct": false,
+          "explanation": "A idade é uma **entrada** (atributo preditivo), não o que se quer prever. Idade é numérica, mas ser numérica não a torna alvo."
+        },
+        {
+          "id": "c",
+          "text": "Alvo: Diagnóstico. Tarefa: regressão.",
+          "correct": false,
+          "explanation": "O alvo está certo, mas a tarefa não: regressão exige alvo **contínuo** (um número em um intervalo). \"Doente\"/\"saudável\" são categorias."
+        },
+        {
+          "id": "d",
+          "text": "Não há alvo; a tarefa é agrupamento.",
+          "correct": false,
+          "explanation": "Há uma coluna com a resposta conhecida (Diagnóstico), então a base **tem alvo** e o aprendizado é supervisionado. Agrupamento é para bases sem alvo."
+        }
+      ],
+      "generalExplanation": "Roteiro de 2 perguntas: (1) **Existe uma coluna com a resposta que quero prever?** Se sim, é supervisionado e essa coluna é o alvo. (2) **A resposta é categoria ou número contínuo?** Categoria → classificação; número → regressão."
+    },
+    {
+      "id": "q07",
+      "label": "Classificar tarefas",
+      "type": "single",
+      "prompt": "Qual dos pares \"situação → tipo de tarefa\" está **correto**?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Estimar o valor do aluguel de um apartamento a partir de área e bairro → classificação.",
+          "correct": false,
+          "explanation": "O valor do aluguel é um número em reais que pode assumir valores intermediários: **regressão**."
+        },
+        {
+          "id": "b",
+          "text": "Separar clientes em perfis parecidos, sem nenhuma categoria definida de antemão → agrupamento (não supervisionado).",
+          "correct": true,
+          "explanation": "Não há alvo; o algoritmo forma grupos por **similaridade**, e uma pessoa os nomeia depois. É o uso típico de segmentação de clientes (slide 60)."
+        },
+        {
+          "id": "c",
+          "text": "Descobrir quais produtos costumam ser comprados juntos → regressão.",
+          "correct": false,
+          "explanation": "Descobrir itens que ocorrem juntos em transações é **associação**. Não há valor contínuo a prever."
+        },
+        {
+          "id": "d",
+          "text": "Dizer se um tumor é benigno ou maligno, a partir de um histórico de casos já diagnosticados → agrupamento.",
+          "correct": false,
+          "explanation": "O histórico já traz o diagnóstico (alvo discreto): **classificação** supervisionada. Agrupamento seria usado se não houvesse rótulos."
+        }
+      ],
+      "generalExplanation": "Memorize o mapa: com alvo → **classificação** (categoria) ou **regressão** (número). Sem alvo → **agrupamento** (formar grupos) ou **associação** (itens que ocorrem juntos)."
+    },
+    {
+      "id": "q08",
+      "label": "Agrupamento × associação",
+      "type": "single",
+      "prompt": "Uma rede de supermercados tem milhões de notas fiscais. Cada nota é uma lista de itens comprados juntos. O gerente quer descobrir padrões do tipo \"quem leva fralda costuma levar cerveja\". Qual tarefa descreve isso?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Associação, uma tarefa descritiva do aprendizado não supervisionado.",
+          "correct": true,
+          "explanation": "A base é de **transações** (compras) e não tem alvo. O objetivo é achar valores/itens que ocorrem juntos no mesmo exemplo: associação (slide 63)."
+        },
+        {
+          "id": "b",
+          "text": "Agrupamento, pois os itens são reunidos por similaridade.",
+          "correct": false,
+          "explanation": "O agrupamento forma grupos de **exemplos parecidos** (por exemplo, clientes com perfil semelhante). Aqui o que se busca é a **co-ocorrência de itens**, que é associação."
+        },
+        {
+          "id": "c",
+          "text": "Classificação, pois cada compra será classificada.",
+          "correct": false,
+          "explanation": "Não há classe a prever. Sem alvo, não é classificação."
+        },
+        {
+          "id": "d",
+          "text": "Regressão, pois o gerente quer prever quanto vai vender.",
+          "correct": false,
+          "explanation": "O gerente não pediu um valor numérico previsto; pediu padrões de itens comprados juntos. Prever o total de vendas seria outra tarefa, supervisionada."
+        }
+      ],
+      "generalExplanation": "**Agrupamento** = formar grupos de exemplos parecidos. **Associação** = achar itens que aparecem juntos em transações. Ambos são não supervisionados e descritivos."
+    },
+    {
+      "id": "q09",
+      "label": "Variações do aprendizado",
+      "type": "single",
+      "prompt": "Uma equipe tem 50 mil radiografias, mas só 500 foram rotuladas por médicos, porque rotular é caro. Em vez de pedir rótulo para imagens aleatórias, o algoritmo **escolhe quais imagens** enviar aos médicos (as mais úteis e menos redundantes). Qual aprendizado é esse?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Aprendizado por reforço.",
+          "correct": false,
+          "explanation": "No reforço há um **agente** que age num ambiente e recebe recompensas e punições. Não é o caso."
+        },
+        {
+          "id": "b",
+          "text": "Aprendizado não supervisionado puro.",
+          "correct": false,
+          "explanation": "Existem 500 rótulos, então a base não é totalmente sem alvo. E o enunciado mostra o algoritmo pedindo rótulos a humanos."
+        },
+        {
+          "id": "c",
+          "text": "Aprendizado ativo.",
+          "correct": true,
+          "explanation": "É uma estratégia semissupervisionada que **seleciona interativamente** as amostras a rotular, para evitar redundância e melhorar o modelo (slide 72). A escolha das imagens é o traço decisivo."
+        },
+        {
+          "id": "d",
+          "text": "Aprendizado semissupervisionado comum, em que todos os exemplos sem rótulo são usados passivamente.",
+          "correct": false,
+          "explanation": "O semissupervisionado comum usa os rótulos disponíveis e vai rotulando os demais com o próprio modelo, sem escolher interativamente o que um humano vai rotular. O **ativo** é o caso em que o algoritmo escolhe."
+        }
+      ],
+      "generalExplanation": "**Semissupervisionado:** parte rotulada, parte não. **Ativo:** semissupervisionado em que o algoritmo **escolhe** o que rotular. **Reforço:** agente que aprende por recompensa e punição."
+    },
+    {
+      "id": "q10",
+      "label": "Ordem das etapas",
+      "type": "single",
+      "prompt": "O processo de aprendizado de máquina tem sete etapas. Qual sequência está na **ordem correta**?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Coleta de dados → preparação dos dados → seleção do modelo → treinamento → avaliação → ajuste de parâmetros → aplicação.",
+          "correct": true,
+          "explanation": "É a ordem do slide 75. Primeiro os dados (coletar e limpar), depois o modelo, o treino, a avaliação com os dados de teste, o ajuste de hiperparâmetros e, por fim, o uso real."
+        },
+        {
+          "id": "b",
+          "text": "Coleta de dados → seleção do modelo → treinamento → preparação dos dados → avaliação → aplicação → ajuste de parâmetros.",
+          "correct": false,
+          "explanation": "Prepara-se os dados **antes** de treinar: treinar com dados sujos ou sem escala adequada prejudica o modelo. Além disso, o ajuste de parâmetros vem **antes** da aplicação."
+        },
+        {
+          "id": "c",
+          "text": "Preparação dos dados → coleta de dados → treinamento → seleção do modelo → avaliação → aplicação → ajuste de parâmetros.",
+          "correct": false,
+          "explanation": "Não dá para preparar o que ainda não foi coletado, e não se treina antes de escolher o modelo."
+        },
+        {
+          "id": "d",
+          "text": "Coleta de dados → preparação dos dados → seleção do modelo → avaliação → treinamento → ajuste de parâmetros → aplicação.",
+          "correct": false,
+          "explanation": "A avaliação mede o que o treinamento produziu; sem treino não há o que avaliar. Treinamento vem **antes** da avaliação."
+        }
+      ],
+      "generalExplanation": "Decore como o pipeline de um software: **coletar → preparar → escolher → treinar → avaliar → ajustar → usar**. A regra que mais cai: a limpeza e a separação treino/teste ficam na **preparação**, antes do treino."
+    },
+    {
+      "id": "q11",
+      "label": "Treino × teste",
+      "type": "single",
+      "prompt": "Um aluno treinou um modelo com todos os seus dados e, para avaliá-lo, mediu o acerto **nos mesmos dados**. O resultado foi 100%. Ele concluiu que o modelo é excelente. O que há de errado?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Nada: 100% de acerto prova que o modelo aprendeu.",
+          "correct": false,
+          "explanation": "Um modelo pode **decorar** os exemplos de treino. Acertar o que já viu não diz nada sobre dados novos."
+        },
+        {
+          "id": "b",
+          "text": "O teste deve ser feito em dados que o modelo não viu no treinamento; senão não mede a capacidade de generalizar.",
+          "correct": true,
+          "explanation": "É a ideia dos slides 13 e 26: testar nos mesmos dados do treino é um erro metodológico. Guarda-se parte dos dados como **conjunto de teste**."
+        },
+        {
+          "id": "c",
+          "text": "O erro é usar poucos atributos; com mais colunas o resultado seria confiável.",
+          "correct": false,
+          "explanation": "Mais colunas não corrigem o problema: o defeito está em **onde** se mede, e não em quantos atributos há."
+        },
+        {
+          "id": "d",
+          "text": "O erro é usar aprendizado supervisionado; deveria ter usado não supervisionado.",
+          "correct": false,
+          "explanation": "O tipo de aprendizado não tem relação com o problema. Mesmo no supervisionado, a avaliação correta usa dados separados."
+        }
+      ],
+      "generalExplanation": "Analogia: uma prova com as **mesmas questões** do treino mede memória, não aprendizado. A nota que importa é a do **teste**, em exemplos que o modelo nunca viu."
+    },
+    {
+      "id": "q12",
+      "label": "Parâmetros × hiperparâmetros",
+      "type": "multiple",
+      "prompt": "Quais itens abaixo são **hiperparâmetros**, ou seja, controles do processo de aprendizado definidos por quem treina o modelo?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A taxa de aprendizado.",
+          "correct": true,
+          "explanation": "É o fator que controla o tamanho das mudanças nos parâmetros a cada passo (slide 81). Quem define é você, não o treino."
+        },
+        {
+          "id": "b",
+          "text": "A quantidade de repetições sobre o conjunto de treinamento.",
+          "correct": true,
+          "explanation": "Também citada no slide 81. É uma escolha sua sobre quantas vezes o algoritmo percorre os dados."
+        },
+        {
+          "id": "c",
+          "text": "O peso (w) de uma reta ajustada aos dados.",
+          "correct": false,
+          "explanation": "O peso é um **parâmetro do modelo**: o treinamento o altera para a reta se aproximar dos dados (slide 80). Quem o define é o próprio aprendizado."
+        },
+        {
+          "id": "d",
+          "text": "O viés (b) de uma reta ajustada aos dados.",
+          "correct": false,
+          "explanation": "Igual ao peso: o viés `b` é aprendido durante o treinamento, logo é parâmetro, não hiperparâmetro."
+        }
+      ],
+      "generalExplanation": "**Parâmetros** (`w`, `b`) são o que o treino **aprende**. **Hiperparâmetros** (taxa de aprendizado, repetições) são o que **você configura**. Analogia: parâmetros = variáveis que o programa calcula; hiperparâmetros = flags de linha de comando."
+    },
+    {
+      "id": "q13",
+      "label": "Generalização",
+      "type": "single",
+      "prompt": "Um modelo acerta quase tudo nos dados de treino, mas erra muito em dados novos do mesmo problema. Como a aula descreve esse modelo?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Um modelo com alta capacidade de generalização.",
+          "correct": false,
+          "explanation": "Generalizar é justamente funcionar bem em dados **novos**. Este modelo falha aí."
+        },
+        {
+          "id": "b",
+          "text": "Um especialista nos dados treinados, e não um algoritmo considerado inteligente.",
+          "correct": true,
+          "explanation": "É a frase do slide 82. O modelo se especializou nos exemplos de treino em vez de aprender o padrão. Esse fenômeno é o **overfitting**, o tema da Aula 4."
+        },
+        {
+          "id": "c",
+          "text": "Um modelo ideal, pois o erro de treino foi mínimo.",
+          "correct": false,
+          "explanation": "O erro de treino baixo, sozinho, não valida nada. O que importa é o desempenho em dados **não vistos**."
+        },
+        {
+          "id": "d",
+          "text": "Um modelo de aprendizado não supervisionado.",
+          "correct": false,
+          "explanation": "O tipo de aprendizado não tem relação com o sintoma descrito. Tanto modelos supervisionados quanto outros podem apresentar esse problema."
+        }
+      ],
+      "generalExplanation": "**Generalização** = a hipótese vale também para casos futuros. Quando o modelo só funciona no que viu, ele \"decorou\" os dados. Na Aula 4 você aprenderá a identificar isso olhando as notas de treino e de teste."
+    }
+  ],
+  "closing": "**Se errou 4 ou mais**, releia *Aula 1 do zero* nas seções indicadas e refaça só as erradas (botão \"Refazer esta questão\"). Os vídeos da Aula 1 estão neste mesmo bloco, antes das questões."
+}

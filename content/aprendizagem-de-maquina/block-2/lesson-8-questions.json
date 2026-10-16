@@ -1,0 +1,806 @@
+{
+  "schema": "questions/v2",
+  "id": "bloco-2-aula-8",
+  "title": "Aula 8 · Questões de Árvores de Decisão e Regressão",
+  "instructions": "Responda **antes** de ler qualquer explicação. Depois, leia a explicação de **todas** as alternativas, inclusive das que você acertou: é nelas que está o conteúdo. Há árvores desenhadas em texto, tabelas de dados e de critérios, ordem das ações e trechos de código scikit-learn, como na prova. Nenhuma questão exige cálculo pesado.",
+  "questions": [
+    {
+      "id": "q01",
+      "label": "Anatomia da árvore",
+      "type": "single",
+      "prompt": "Em uma Árvore de Decisão, qual é o papel dos **nós internos** em comparação com os **nós folha**?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Os nós folha escolhem o atributo de maior ganho e criam os filhos; os nós internos apenas armazenam a classe predita para a amostra.",
+          "correct": false,
+          "explanation": "Invertido. Escolher o atributo e criar filhos é função dos nós internos. A folha, por definição, não tem filhos, então não divide nada: só guarda a decisão."
+        },
+        {
+          "id": "b",
+          "text": "Os nós internos guardam a classe final de cada exemplo de treino; os nós folha são os pontos de partida usados na inferência de novas amostras.",
+          "correct": false,
+          "explanation": "O ponto de partida da inferência é a raiz, não as folhas. A amostra desce pelos testes dos nós internos até chegar a uma folha, onde termina e recebe a predição."
+        },
+        {
+          "id": "c",
+          "text": "Os nós internos aplicam um teste sobre um atributo e encaminham a amostra para um dos ramos; os nós folha não têm filhos e entregam a decisão final.",
+          "correct": true,
+          "explanation": "É a definição do slide 3: o nó raiz e os internos guardam as regras (perguntas) e o nó que não tem filho é a folha, que representa a decisão tomada (classe ou valor)."
+        },
+        {
+          "id": "d",
+          "text": "Os nós folha são testes executados só durante o treino; no teste a árvore usa apenas a raiz para decidir a classe do exemplo novo.",
+          "correct": false,
+          "explanation": "No teste a amostra percorre todo o caminho da raiz até uma folha. Usar só a raiz equivaleria a uma árvore de um único teste, o que não é o modelo descrito no slide 4."
+        }
+      ],
+      "generalExplanation": "Analogia: uma árvore de decisão é um `if/else` aninhado. Os nós internos são os `if` (cada um testa um atributo); as folhas são os `return` (o resultado). **Slide 3:** a raiz é o ponto de partida, os internos guardam regras e as folhas representam a decisão."
+    },
+    {
+      "id": "q02",
+      "label": "Regiões das folhas e cobertura do espaço",
+      "type": "single",
+      "prompt": "Uma árvore treinada com dois atributos (x1 e x2) tem a forma abaixo.\n\n```\nx1 ≤ 5 ?\n├─ sim → folha A\n└─ não → x2 ≤ 3 ?\n         ├─ sim → folha B\n         └─ não → folha C\n```\n\nChega um ponto novo, **x1 = 8 e x2 = 1**, com valores que nunca apareceram no treino. Com base nas propriedades dos slides 13 e 14, o que acontece?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Ele cai em exatamente uma folha (a folha B), porque as regiões das folhas não se sobrepõem e juntas cobrem todo o espaço dos atributos.",
+          "correct": true,
+          "explanation": "x1 = 8 não é ≤ 5, então segue o ramo não; x2 = 1 é ≤ 3, então chega à folha B. As regiões das folhas são mutuamente excludentes e a união delas cobre tudo, logo todo ponto recebe predição."
+        },
+        {
+          "id": "b",
+          "text": "Ele cai nas folhas B e C ao mesmo tempo, e a árvore resolve o conflito pela votação entre as duas regiões que se sobrepõem na fronteira.",
+          "correct": false,
+          "explanation": "Árvores não votam entre folhas. A interseção das regiões de quaisquer duas folhas é vazia (slide 14), então cada ponto pertence a uma única região."
+        },
+        {
+          "id": "c",
+          "text": "A árvore não consegue classificar o ponto, pois nenhum exemplo do treino tinha exatamente esses valores de x1 e x2 para servir de referência.",
+          "correct": false,
+          "explanation": "A árvore guarda regras (limiares), não os exemplos. Como a união das regiões é todo o espaço U, ela prevê para qualquer entrada, mesmo inédita."
+        },
+        {
+          "id": "d",
+          "text": "Ele recebe a classe da folha cuja região está mais próxima dele pela distância euclidiana, como acontece no k-NN.",
+          "correct": false,
+          "explanation": "Distância ao vizinho é a lógica do k-NN. Na árvore o ponto é roteado só pelos testes de limiar (x1 ≤ 5, x2 ≤ 3), sem calcular nenhuma distância."
+        }
+      ],
+      "generalExplanation": "Analogia: é um `switch` que cobre todos os casos e sem sobreposição, então nenhuma requisição fica sem rota. **Slides 13 e 14:** as regiões das folhas são disjuntas e sua reunião é o espaço todo, por isso a árvore prevê para qualquer exemplo. As fronteiras são retas paralelas aos eixos."
+    },
+    {
+      "id": "q03",
+      "label": "Árvore de regressão: valor da folha",
+      "type": "single",
+      "prompt": "Como uma **Árvore de Regressão** (slides 12 e 31) determina o valor numérico predito para uma amostra que chega a uma de suas folhas?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Retorna a classe mais frequente entre os exemplos de treino da folha, usando a contagem de votos.",
+          "correct": false,
+          "explanation": "Isso é classificação: a moda (classe mais votada) é a decisão da folha quando o alvo é discreto. Em regressão o alvo é um número contínuo."
+        },
+        {
+          "id": "b",
+          "text": "Retorna o valor do alvo do exemplo de treino mais próximo da amostra, como no k-NN com K igual a 1.",
+          "correct": false,
+          "explanation": "A árvore não procura vizinhos. A amostra apenas desce pelos testes até a folha, e o valor é o mesmo para todas as amostras que caem nela."
+        },
+        {
+          "id": "c",
+          "text": "Ajusta uma reta de regressão dentro de cada folha e a usa para estimar o valor da nova amostra.",
+          "correct": false,
+          "explanation": "Existem variantes assim (árvores de modelo), mas não é o que o slide descreve. Aqui a folha é um valor constante, e a previsão da árvore é uma escada de degraus."
+        },
+        {
+          "id": "d",
+          "text": "Retorna a média dos valores do alvo de todos os exemplos de treino que pertencem àquela folha.",
+          "correct": true,
+          "explanation": "Slide 32: em cada região é usada a média das previsões, e o split é escolhido para minimizar o erro quadrático. Por isso a previsão é constante dentro de cada folha."
+        }
+      ],
+      "generalExplanation": "Analogia: é um cache por faixa: cada folha guarda um número só (a média do que já viu naquela faixa). **Slides 31 e 32:** o CART testa cortes e escolhe o que minimiza o erro (MSE); a previsão da folha é a média do alvo. Por isso a regressão com árvore é em degraus e não extrapola tendências."
+    },
+    {
+      "id": "q04",
+      "label": "CART no scikit-learn",
+      "type": "single",
+      "prompt": "Sobre os algoritmos de indução de árvores (slide 11), qual característica é do **CART**, o algoritmo usado pelo scikit-learn?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O CART cria um ramo para cada categoria do atributo, como o ID3 original, e atende somente problemas de classificação.",
+          "correct": false,
+          "explanation": "Isso descreve o ID3. No CART as divisões são binárias (slide 41) e a mesma família serve também a regressão (slide 12)."
+        },
+        {
+          "id": "b",
+          "text": "O CART faz divisões estritamente binárias (valor ≤ limite contra valor > limite) e atende tanto classificação quanto regressão.",
+          "correct": true,
+          "explanation": "Slides 11, 41 e 42: o sklearn testa apenas duas direções, ≤ e >. Para classificação usa Gini ou entropia e para regressão usa MSE, tudo dentro do mesmo CART (Breiman et al., 1984)."
+        },
+        {
+          "id": "c",
+          "text": "O CART usa só entropia e ganho de informação para escolher divisões; o índice de Gini pertence exclusivamente ao ID3.",
+          "correct": false,
+          "explanation": "Ao contrário: o ID3 usa o ganho de informação (entropia), e o CART no sklearn aceita criterion gini ou entropy (slide 37), com Gini como padrão."
+        },
+        {
+          "id": "d",
+          "text": "O CART exige atributos categóricos e remove da lista o atributo usado em cada divisão, como no pseudocódigo do slide 38.",
+          "correct": false,
+          "explanation": "O slide 42 contradiz: o sklearn trata tudo como número e não remove o atributo, que pode ser reusado em outros níveis se continuar reduzindo a impureza."
+        }
+      ],
+      "generalExplanation": "Analogia: o ID3 é a versão acadêmica do `switch` (um caso por categoria); o CART é uma cadeia de `if x <= c` binários. **Slides 11, 41 e 42:** sklearn = CART, divisões binárias, sem remover atributos, classificação (Gini/entropia) e regressão (MSE)."
+    },
+    {
+      "id": "q05",
+      "label": "Entropia de Shannon",
+      "type": "single",
+      "prompt": "A entropia mede a incerteza de um nó. Em um problema com **duas classes**, quando ela é mínima e quando é máxima (slides 16 e 20)?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Mínima (H = 0) quando as duas classes estão em 50% e 50%; máxima (H = 1) quando o nó é puro, com todas as amostras da mesma classe.",
+          "correct": false,
+          "explanation": "Invertido. O nó puro é o mais previsível (incerteza zero). A mistura 50/50 é a mais imprevisível e tem entropia máxima."
+        },
+        {
+          "id": "b",
+          "text": "Mínima (H = 0) quando o nó é puro; máxima (H = 0,5) quando as classes estão em 50% e 50%, igual ao máximo do Gini.",
+          "correct": false,
+          "explanation": "O 0,5 é o máximo do índice de Gini com duas classes (slide 25). A entropia com duas classes vai de 0 até 1."
+        },
+        {
+          "id": "c",
+          "text": "Mínima (H = 0) quando o nó é puro, com 100% das amostras de uma classe; máxima (H = 1) quando as duas classes estão em 50% e 50%.",
+          "correct": true,
+          "explanation": "Slide 20: com 3 amostras de cada classe, H = -(1/2 log2 1/2 + 1/2 log2 1/2) = 1. Num nó puro não há incerteza alguma, então H = 0."
+        },
+        {
+          "id": "d",
+          "text": "Mínima no nó com menos amostras e máxima no nó com mais amostras, pois mais exemplos geram mais desordem.",
+          "correct": false,
+          "explanation": "A entropia depende das proporções das classes, não da quantidade de amostras. Um nó com 3 amostras 50/50 e outro com 3000 amostras 50/50 têm a mesma entropia."
+        }
+      ],
+      "generalExplanation": "Analogia: pense num teste de unidade que sempre passa (nó puro: nenhuma surpresa) e num que passa e falha ao acaso, 50/50 (surpresa máxima). **Slides 16 a 20:** a entropia mede a aleatoriedade do alvo, e a árvore escolhe o atributo que mais a reduz."
+    },
+    {
+      "id": "q06",
+      "label": "Tabela de ganho: qual atributo vai à raiz",
+      "type": "single",
+      "prompt": "No exemplo do slide 24, o alvo tem 3 amostras SIM e 3 NÃO, e três atributos candidatos foram avaliados com o **ganho de informação**:\n\n| Atributo | Ganho de informação |\n| :-- | :-- |\n| Salário | 0,08 |\n| Localização | 0 |\n| Função | 1 |\n\nQual atributo vai para a raiz e o que significa o ganho **zero** de Localização?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Função, por ter o maior ganho; Localização com ganho zero não reduz a entropia, e os filhos continuam tão misturados quanto o pai.",
+          "correct": true,
+          "explanation": "Ganho é a redução da entropia do pai (aqui 1). Função leva a entropia a zero nos filhos (ganho 1). Localização deixa cada filho ainda 50/50, então não ajuda em nada."
+        },
+        {
+          "id": "b",
+          "text": "Localização, pois ganho zero indica que a divisão já deixou todos os nós puros e não há mais incerteza para reduzir.",
+          "correct": false,
+          "explanation": "Confunde ganho com entropia. Entropia zero é nó puro; ganho zero é divisão inútil. Os nós puros aparecem quando o ganho é igual à entropia do pai, como em Função."
+        },
+        {
+          "id": "c",
+          "text": "Salário, pois o ganho intermediário (0,08) indica uma divisão equilibrada, sem o risco de decorar os dados.",
+          "correct": false,
+          "explanation": "O critério é o maior ganho, não um valor intermediário. Salário reduz pouco a entropia e a árvore teria de crescer bastante depois (slide 24)."
+        },
+        {
+          "id": "d",
+          "text": "Função, mas o ganho 1 indica que a entropia dos filhos aumentou em relação ao pai, o que é o objetivo da divisão.",
+          "correct": false,
+          "explanation": "O objetivo é o oposto: reduzir a entropia. Ganho 1 significa que a entropia caiu de 1 para 0 nos filhos, ou seja, a divisão os deixou puros."
+        }
+      ],
+      "generalExplanation": "Analogia: é escolher o filtro que mais reduz a lista de suspeitos. **Slides 18 a 24:** ganho = entropia do pai − média ponderada da entropia dos filhos. Escolhe-se o atributo de maior ganho. Aqui, Função (1) vence Salário (0,08) e Localização (0), e a árvore para de crescer ali porque os filhos ficam puros."
+    },
+    {
+      "id": "q07",
+      "label": "Gini ou entropia",
+      "type": "single",
+      "prompt": "O slide 25 compara o **índice de Gini** com a **entropia**. Qual afirmação está de acordo com o slide?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O Gini varia de 0 a 1 e a entropia de 0 a 0,5; o Gini é mais rápido de calcular porque não usa logaritmos.",
+          "correct": false,
+          "explanation": "As faixas estão trocadas. No slide 25 o Gini vai de 0 a 0,5 e a entropia de 0 a 1 (duas classes). Só a parte do cálculo mais rápido está certa."
+        },
+        {
+          "id": "b",
+          "text": "O Gini é mais lento porque eleva as proporções ao quadrado, mas sempre gera árvores melhores do que a entropia.",
+          "correct": false,
+          "explanation": "Elevar ao quadrado é barato; é o logaritmo da entropia que pesa. E o slide diz o contrário da qualidade: a entropia dá resultados um pouco melhores."
+        },
+        {
+          "id": "c",
+          "text": "O Gini garante que a árvore não sofra overfitting, enquanto a entropia só funciona em árvores já podadas.",
+          "correct": false,
+          "explanation": "Nenhum critério de impureza evita overfitting sozinho. Árvore sem poda decora o treino com Gini ou com entropia (slide 34)."
+        },
+        {
+          "id": "d",
+          "text": "O Gini é mais barato por dispensar logaritmos e vai de 0 a 0,5, enquanto a entropia vai de 0 a 1 e dá resultados um pouco melhores.",
+          "correct": true,
+          "explanation": "Slide 25: Gini em [0; 0,5], entropia em [0; 1]. A entropia é computacionalmente mais complexa (usa log) e o Gini é mais rápido; na prática o resultado é parecido, com leve vantagem à entropia."
+        }
+      ],
+      "generalExplanation": "Analogia: Gini é a versão de custo menor (como uma aproximação rápida) da mesma ideia: medir mistura de classes. **Slide 25:** os dois zeram no nó puro; Gini vai a no máximo 0,5 e entropia a 1; o sklearn aceita ambos em `criterion`."
+    },
+    {
+      "id": "q08",
+      "label": "Tabela de Gini ponderado",
+      "type": "single",
+      "prompt": "No slide 28, dois atributos foram avaliados. Cada divisão gerou dois filhos, e o Gini de cada um foi calculado:\n\n| Atributo | Gini do filho 1 (peso) | Gini do filho 2 (peso) | Gini ponderado |\n| :-- | :-- | :-- | :-- |\n| Var A | 0,44 (3/8) | 0,48 (5/8) | 0,46 |\n| Var B | 0,37 (4/8) | 0,37 (4/8) | 0,37 |\n\nQual atributo o algoritmo escolhe para a divisão e por quê?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A Var A, porque no Gini o objetivo é o maior valor possível, como acontece com o ganho de informação.",
+          "correct": false,
+          "explanation": "No Gini escolhe-se o menor valor: Gini alto é nó misturado. O que se maximiza é o ganho de informação, não o Gini."
+        },
+        {
+          "id": "b",
+          "text": "A Var B, porque tem o menor Gini ponderado, ou seja, filhos mais puros na média; o slide 28 manda escolher o menor índice.",
+          "correct": true,
+          "explanation": "0,37 é menor que 0,46, então a divisão por B deixa os filhos mais puros. A média ponderada pelos pesos 3/8, 5/8 e 4/8, 4/8 já considera o tamanho de cada filho."
+        },
+        {
+          "id": "c",
+          "text": "A Var B, mas só porque seus dois filhos têm o mesmo peso (4/8 e 4/8); árvore balanceada é sempre preferida, não importa o Gini.",
+          "correct": false,
+          "explanation": "Acerta a escolha pelo motivo errado. O algoritmo não busca balanceamento: se B tivesse Gini ponderado maior, perderia mesmo com pesos iguais."
+        },
+        {
+          "id": "d",
+          "text": "Nenhum dos dois, pois o Gini sozinho não permite comparar atributos; é preciso calcular antes a entropia dos filhos.",
+          "correct": false,
+          "explanation": "O Gini é um critério completo, independente da entropia. Compara-se o Gini ponderado de cada candidato e escolhe-se o menor (slide 28)."
+        }
+      ],
+      "generalExplanation": "Analogia: é escolher a refatoração que deixa os módulos mais coesos, medindo a bagunça média ponderada pelo tamanho. **Slides 26 a 28:** Gini do atributo = soma dos Gini dos filhos × pesos; menor é melhor. Atenção: ganho de informação, ao contrário, é maior-é-melhor."
+    },
+    {
+      "id": "q09",
+      "label": "Busca do melhor corte em atributo contínuo",
+      "type": "single",
+      "prompt": "Como o CART (slides 31 e 32) escolhe o ponto de corte para um atributo numérico contínuo como a Idade?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Escolhe o limite que deixa o mesmo número de amostras em cada lado (a mediana), sem olhar a impureza dos filhos.",
+          "correct": false,
+          "explanation": "Dividir ao meio ignoraria o objetivo da árvore. O corte é escolhido pela qualidade da separação das classes (impureza), não pelo equilíbrio de tamanho."
+        },
+        {
+          "id": "b",
+          "text": "Divide a faixa de valores em intervalos de mesma largura definidos antes do treino e testa só as fronteiras desses intervalos.",
+          "correct": false,
+          "explanation": "O CART não usa intervalos fixos. Ele considera os próprios valores observados do atributo como candidatos a limite."
+        },
+        {
+          "id": "c",
+          "text": "Ordena os valores, testa cada candidato como limite binário (X ≤ c) e fica com o de menor impureza, uma escolha gulosa para aquele nó.",
+          "correct": true,
+          "explanation": "Slide 31: para cada feature testa os valores como pontos de corte e escolhe a combinação de menor impureza (Gini/entropia) ou, em regressão, de menor MSE. Gulosa porque decide só olhando o nó atual."
+        },
+        {
+          "id": "d",
+          "text": "Testa os cortes em ordem aleatória e adota o primeiro que reduzir a impureza, sem comparar com os demais.",
+          "correct": false,
+          "explanation": "Isso só se aproxima do splitter 'random' do slide 37, que é uma opção, não o padrão. O padrão ('best') compara todos os candidatos."
+        }
+      ],
+      "generalExplanation": "Analogia: é um laço que testa todos os limiares possíveis de um `if idade <= c` e fica com o melhor, como um benchmark. **Slides 31 e 32:** varredura de atributos, avaliação de candidatos, cálculo da impureza e decisão gulosa. O custo desse laço é o que `splitter='random'` tenta reduzir."
+    },
+    {
+      "id": "q10",
+      "label": "Reuso de atributos (slide 43)",
+      "type": "multiple",
+      "prompt": "Segundo o slide 43, quais afirmações sobre **reusar o mesmo atributo em níveis diferentes do mesmo ramo** estão corretas?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Um atributo numérico contínuo pode ser reusado, pois vários cortes refinam a decisão (por exemplo, Idade ≤ 60 e, mais abaixo, Idade ≤ 20).",
+          "correct": true,
+          "explanation": "Cada novo corte divide uma faixa já formada em faixas menores. No exemplo, os dois cortes de Idade criam três grupos: jovem, adulto e idoso."
+        },
+        {
+          "id": "b",
+          "text": "Um atributo binário (0 ou 1) não é reusado no mesmo ramo, porque a primeira divisão já esgota toda a informação dele.",
+          "correct": true,
+          "explanation": "Depois de separar 0 e 1, cada filho só tem um valor desse atributo. Uma segunda pergunta idêntica não separaria nada novo."
+        },
+        {
+          "id": "c",
+          "text": "Um atributo categórico com muitos valores pode reaparecer no ramo, pois o sklearn só faz divisões binárias e precisa de várias perguntas sim/não para isolar cada categoria.",
+          "correct": true,
+          "explanation": "Sem ramificação múltipla, cada pergunta isola um subconjunto das categorias; separar todas exige perguntas repetidas sobre o mesmo atributo."
+        },
+        {
+          "id": "d",
+          "text": "Um atributo contínuo só pode aparecer uma vez por ramo, porque o algoritmo o remove da lista de candidatos após o primeiro uso.",
+          "correct": false,
+          "explanation": "Esse é o comportamento do pseudocódigo (linha 9 do slide 42), mas o sklearn não remove atributos: o mesmo atributo pode ser usado várias vezes se continuar reduzindo a impureza."
+        }
+      ],
+      "generalExplanation": "Analogia: dá para chamar a mesma função em níveis diferentes da recursão se o argumento (a faixa) mudou; para um flag booleano, a segunda chamada não acrescenta nada. **Slides 42 e 43:** o sklearn não remove atributos; binário não se reusa, contínuo e categórico multi-valor sim."
+    },
+    {
+      "id": "q11",
+      "label": "Overfitting e underfitting na poda",
+      "type": "single",
+      "prompt": "Os slides 33 e 34 tratam do tamanho da árvore. Qual afirmação descreve corretamente o efeito de deixá-la crescer demais ou de limitá-la demais?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Crescer até folhas puras tende a decorar ruído (overfitting), e limitar demais impede de usar a informação do treino (underfitting); ambos pioram o desempenho em dados novos.",
+          "correct": true,
+          "explanation": "Slide 34: com poucos exemplos nas folhas, a árvore captura ruído e atributos de baixo poder preditivo. Uma árvore pequena demais ignora informação disponível e erra também no treino."
+        },
+        {
+          "id": "b",
+          "text": "Uma árvore muito profunda sofre de underfitting, porque cada folha tem poucas amostras, e uma árvore rasa sofre de overfitting, porque decora poucas regras.",
+          "correct": false,
+          "explanation": "Os nomes estão trocados. Muitas regras específicas e poucas amostras por folha geram overfitting; poucas regras gerais geram underfitting."
+        },
+        {
+          "id": "c",
+          "text": "Quanto mais profunda a árvore, melhor o resultado no teste, pois cada nível extra acrescenta uma regra útil; limitar só serve para economizar memória.",
+          "correct": false,
+          "explanation": "Mais profundidade melhora o treino, mas depois de certo ponto as regras vêm de ruído e o teste piora (slide 34). A poda existe para generalizar, não para poupar memória."
+        },
+        {
+          "id": "d",
+          "text": "Overfitting e underfitting só diferem pelo tempo de treino: a árvore grande demora mais, mas as duas têm o mesmo erro no teste.",
+          "correct": false,
+          "explanation": "A diferença é de generalização, e não de tempo. O overfitting tem erro baixo no treino e alto no teste; o underfitting tem erro alto nos dois."
+        }
+      ],
+      "generalExplanation": "Analogia: uma árvore sem limite é um sistema com um `if` para cada bug já visto; uma árvore minúscula é um sistema que trata tudo igual. **Slides 33 a 35:** as regras de parada são nó puro, amostra única ou critérios de poda; o equilíbrio vem de limitar a árvore (max_depth, min_samples_leaf...)."
+    },
+    {
+      "id": "q12",
+      "label": "Parâmetros do split (slide 37)",
+      "type": "multiple",
+      "prompt": "O slide 37 lista parâmetros do `DecisionTreeClassifier` que atuam no processo de divisão. Quais associações entre parâmetro e efeito estão corretas?",
+      "options": [
+        {
+          "id": "a",
+          "text": "`criterion` define a fórmula de impureza usada para avaliar cada divisão (por exemplo, 'gini' ou 'entropy').",
+          "correct": true,
+          "explanation": "É o parâmetro que troca a métrica de qualidade do split. 'squared_error' é a opção para árvores de regressão."
+        },
+        {
+          "id": "b",
+          "text": "`splitter` define se a busca pelo melhor corte é exaustiva ('best') ou aleatória ('random').",
+          "correct": true,
+          "explanation": "Com 'best' todos os candidatos são comparados; com 'random' os cortes são sorteados, o que é mais rápido e menos otimizado."
+        },
+        {
+          "id": "c",
+          "text": "`max_features` limita quantas colunas o algoritmo enxerga e avalia em cada nó.",
+          "correct": true,
+          "explanation": "Em vez de varrer todos os atributos em cada nó, considera só um subconjunto. É a base de métodos como Random Forest."
+        },
+        {
+          "id": "d",
+          "text": "`min_samples_split` define a profundidade máxima que a árvore pode alcançar, contada a partir da raiz.",
+          "correct": false,
+          "explanation": "A profundidade máxima é `max_depth`. O `min_samples_split` decide se o nó atual tem amostras suficientes para ter permissão de se dividir."
+        }
+      ],
+      "generalExplanation": "Analogia: são flags de configuração do algoritmo de busca. **Slide 37:** criterion = fórmula; splitter = busca exaustiva ou aleatória; min_samples_split = se o nó pode se dividir; max_features = quantas colunas enxerga em cada nó. Pré-poda (slide 36): max_depth, min_samples_leaf, max_leaf_nodes, min_impurity_decrease."
+    },
+    {
+      "id": "q13",
+      "label": "Escala em árvores",
+      "type": "single",
+      "prompt": "Árvores normalmente **não precisam de normalização** dos atributos (slide 44). Por que isso acontece?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O sklearn padroniza internamente as colunas antes de calcular o split, sem que o desenvolvedor perceba.",
+          "correct": false,
+          "explanation": "Não existe padronização oculta. O modelo simplesmente não depende da escala, então não há necessidade de padronizar."
+        },
+        {
+          "id": "b",
+          "text": "A árvore usa distância de Manhattan, que, ao contrário da euclidiana, não é afetada pela escala dos atributos.",
+          "correct": false,
+          "explanation": "Árvores não calculam distâncias. Além disso, Manhattan também é afetada pela escala; quem sofre com isso é o k-NN."
+        },
+        {
+          "id": "c",
+          "text": "A impureza é calculada só com as proporções das classes, então reescalar o atributo muda o valor do corte mas altera a escolha de qual corte é o melhor.",
+          "correct": false,
+          "explanation": "Reescalar não altera quais amostras vão para cada lado do corte, então a impureza e a melhor divisão permanecem as mesmas; apenas o número do limite muda."
+        },
+        {
+          "id": "d",
+          "text": "Cada divisão compara um atributo com um limite (X ≤ c); só a ordem dos valores importa, e ela não muda ao multiplicar ou somar uma constante.",
+          "correct": true,
+          "explanation": "Multiplicar uma coluna por 1000 ou somar 50 desloca os limites, mas as mesmas amostras ficam de cada lado. Por isso a árvore é invariante a transformações monótonas de escala."
+        }
+      ],
+      "generalExplanation": "Analogia: mudar a unidade de metros para centímetros não muda quem passou no `if altura <= limite`, só o número no `if`. **Slide 44:** métodos baseados em árvores normalmente não exigem normalização, ao contrário de k-NN, regressão regularizada e redes."
+    },
+    {
+      "id": "q14",
+      "label": "Instabilidade (alta variância)",
+      "type": "single",
+      "prompt": "O slide 45 diz que as árvores são **modelos instáveis (alta variância)**. O que isso significa na prática?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Uma mesma árvore já treinada devolve previsões diferentes para a mesma entrada a cada chamada de `predict()`.",
+          "correct": false,
+          "explanation": "Uma árvore treinada é determinística. A instabilidade está no treino: dados ligeiramente diferentes geram árvores diferentes."
+        },
+        {
+          "id": "b",
+          "text": "Pequenas variações nos dados de treino podem mudar o divisor escolhido, às vezes já na raiz, e produzir uma árvore bem diferente.",
+          "correct": true,
+          "explanation": "Slide 45. Como a escolha é gulosa e de cima para baixo, uma mudança no topo se propaga para todos os nós abaixo. É por isso que se usam comitês, como Random Forest, para estabilizar."
+        },
+        {
+          "id": "c",
+          "text": "A árvore erra bastante no treino e no teste porque é simples demais para os dados, o que caracteriza alta variância.",
+          "correct": false,
+          "explanation": "Erro alto nos dois conjuntos é underfitting (alto viés). Alta variância é sensibilidade aos dados de treino, geralmente com erro baixo no treino."
+        },
+        {
+          "id": "d",
+          "text": "Pequenas variações no conjunto de teste alteram a estrutura da árvore, que precisa ser reconstruída a cada avaliação.",
+          "correct": false,
+          "explanation": "O teste não participa do treino, então não pode alterar a árvore. A variância se refere a mudar o conjunto de treino."
+        }
+      ],
+      "generalExplanation": "Analogia: é um build sensível às entradas: mudar um arquivo de entrada muda toda a saída. **Slide 45:** pequenas variações nos dados de treino podem resultar em árvores completamente distintas; isso é variância alta."
+    },
+    {
+      "id": "q15",
+      "label": "Vantagens e desvantagens (slides 44 e 45)",
+      "type": "multiple",
+      "prompt": "Segundo os slides 44 e 45, quais afirmações sobre as árvores de decisão estão corretas?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A etapa de predição tem complexidade logarítmica, pois a amostra percorre um único caminho da raiz até uma folha.",
+          "correct": true,
+          "explanation": "Em uma árvore razoavelmente balanceada, o caminho tem profundidade da ordem de log(n); cada nó faz apenas uma comparação simples."
+        },
+        {
+          "id": "b",
+          "text": "Conseguem lidar com problemas de múltiplos rótulos e exigem pouco esforço de preparação dos dados.",
+          "correct": true,
+          "explanation": "Slide 44: dispensam normalização e são capazes de tratar problemas com mais de um rótulo, entre outras vantagens listadas."
+        },
+        {
+          "id": "c",
+          "text": "Ignoram variáveis redundantes e produzem regras fáceis de interpretar, que podem ser lidas como um conjunto de decisões encadeadas.",
+          "correct": true,
+          "explanation": "A árvore só usa nos divisores os atributos que ajudam a separar as classes, e o caminho até a folha é uma regra legível."
+        },
+        {
+          "id": "d",
+          "text": "São modelos estáveis: mudar poucas linhas do treino quase nunca altera a estrutura da árvore resultante.",
+          "correct": false,
+          "explanation": "É o oposto (slide 45): são instáveis, com alta variância. Pequenas variações nos dados de treino podem gerar árvores completamente diferentes."
+        }
+      ],
+      "generalExplanation": "Analogia: uma árvore é uma cadeia de `if` legível e rápida de executar, mas frágil a mudanças no treino. **Slides 44 e 45:** vantagens (interpretável, pouca preparação, predição logarítmica, múltiplos rótulos) e desvantagens (overfitting se profunda, instabilidade)."
+    },
+    {
+      "id": "q16",
+      "label": "Resumo e armadilhas",
+      "type": "multiple",
+      "prompt": "Quais afirmações sobre árvores de decisão representam fatos corretos para a prova?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Um nó puro tem entropia zero e índice de Gini zero.",
+          "correct": true,
+          "explanation": "Ambas medem mistura de classes; quando todas as amostras são da mesma classe, não há mistura e as duas valem zero."
+        },
+        {
+          "id": "b",
+          "text": "A escolha do divisor busca o maior ganho de informação ou, no caso do Gini, o menor Gini ponderado dos filhos.",
+          "correct": true,
+          "explanation": "O ganho mede a redução de incerteza (maior é melhor). O Gini mede a impureza que sobra nos filhos (menor é melhor)."
+        },
+        {
+          "id": "c",
+          "text": "Sem nenhum critério de poda, a árvore cresce até as folhas ficarem puras e tende a sofrer overfitting.",
+          "correct": true,
+          "explanation": "Slide 33: a parada natural é quando os nós são puros. Isso decora o treino, inclusive ruído, e prejudica a generalização (slide 34)."
+        },
+        {
+          "id": "d",
+          "text": "`min_impurity_decrease` é um parâmetro de pré-poda: o nó só se divide se a redução da impureza for suficiente.",
+          "correct": true,
+          "explanation": "Está na lista do slide 36, junto com max_depth, min_samples_split, min_samples_leaf e max_leaf_nodes."
+        },
+        {
+          "id": "e",
+          "text": "O ID3, o C4.5 e o CART fazem sempre divisão binária; o que muda entre eles é apenas o nome do autor.",
+          "correct": false,
+          "explanation": "O ID3 cria um ramo por valor do atributo categórico; o sklearn, que usa CART, só faz divisões binárias (slide 41). Os algoritmos diferem em critério e tipo de divisão."
+        }
+      ],
+      "generalExplanation": "Analogia: checklist de revisão de código das árvores. **Slides 16, 25, 28, 33, 34 e 36:** pureza = impureza zero; maior ganho ou menor Gini; sem poda = overfitting; pré-poda limita o crescimento."
+    },
+    {
+      "id": "q17",
+      "label": "Ler uma árvore: está em forma?",
+      "type": "single",
+      "prompt": "Uma árvore para decidir se uma pessoa **está em forma** (inspirada no slide 10) usa o tempo de corrida (em minutos por km) e o número de abdominais.\n\n```\nCorrida < 2,6 ?\n├─ sim → Abdominal < 50 ?\n│        ├─ sim → NÃO ESTÁ EM FORMA\n│        └─ não → ESTÁ EM FORMA\n└─ não → Abdominal < 38 ?\n         ├─ sim → NÃO ESTÁ EM FORMA\n         └─ não → ESTÁ EM FORMA\n```\n\nUma pessoa tem **Corrida = 3,0** e **Abdominal = 45**. Qual é a classificação e quantas folhas a árvore tem?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Não está em forma, porque 45 é menor que 50 e o teste de abdominal manda para o ramo sim; a árvore tem 4 folhas.",
+          "correct": false,
+          "explanation": "Usa o teste do ramo errado. O teste Abdominal < 50 está no ramo em que Corrida < 2,6 é verdadeiro, mas aqui a corrida é 3,0."
+        },
+        {
+          "id": "b",
+          "text": "Está em forma, porque a árvore sempre usa o último teste; a árvore tem 3 nós internos e 7 folhas.",
+          "correct": false,
+          "explanation": "A árvore tem 3 nós internos (os três testes) e 4 folhas, em um total de 7 nós. A classificação não vem do último teste, mas da folha alcançada."
+        },
+        {
+          "id": "c",
+          "text": "Está em forma, porque a corrida não é < 2,6 e, no ramo da direita, 45 não é < 38; a árvore tem 4 folhas.",
+          "correct": true,
+          "explanation": "Raiz: 3,0 < 2,6 é falso, vai para o ramo não. Depois: 45 < 38 é falso, vai para não, que leva a ESTÁ EM FORMA. As folhas são os 4 retângulos finais, sem filhos."
+        },
+        {
+          "id": "d",
+          "text": "Não está em forma, porque 45 é menor que 50 e o teste de abdominal mais exigente (50) prevalece sobre o outro; a árvore tem 7 folhas.",
+          "correct": false,
+          "explanation": "Não existe 'teste mais exigente que prevalece'. Cada pessoa segue um único caminho, determinado pelos resultados na ordem da raiz para baixo."
+        }
+      ],
+      "generalExplanation": "Analogia: é seguir o fluxo de um `if/else` aninhado com um exemplo concreto. **Slides 4 e 10:** a amostra entra pela raiz, cada teste manda para um ramo, e o caminho termina em uma folha, que dá a decisão. Os nós folha são os que não têm filhos; aqui são 4, e 3 são internos."
+    },
+    {
+      "id": "q18",
+      "label": "Ler uma árvore: crédito",
+      "type": "multiple",
+      "prompt": "Uma árvore para **aprovar ou negar crédito**:\n\n```\nIdade ≤ 30 ?\n├─ sim → Renda ≤ 3000 ?\n│        ├─ sim → NEGA\n│        └─ não → APROVA\n└─ não → Dívidas ≤ 2 ?\n         ├─ sim → APROVA\n         └─ não → Renda ≤ 5000 ?\n                  ├─ sim → NEGA\n                  └─ não → APROVA\n```\n\nQuais afirmações estão corretas?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A árvore tem 5 folhas e 4 nós internos.",
+          "correct": true,
+          "explanation": "Folhas: NEGA, APROVA, APROVA, NEGA e APROVA, totalizando 5. Internos: Idade, Renda ≤ 3000, Dívidas e Renda ≤ 5000, totalizando 4."
+        },
+        {
+          "id": "b",
+          "text": "Um cliente com Idade = 25 e Renda = 2000 é classificado como NEGA.",
+          "correct": true,
+          "explanation": "25 ≤ 30 leva ao ramo sim; 2000 ≤ 3000 leva ao ramo sim, que termina em NEGA. O atributo Dívidas nem é consultado."
+        },
+        {
+          "id": "c",
+          "text": "Todo cliente passa pelo teste de Dívidas antes de ser classificado.",
+          "correct": false,
+          "explanation": "Só passa por Dívidas quem tem Idade > 30. Quem tem Idade ≤ 30 vai para o teste de Renda e nunca vê Dívidas."
+        },
+        {
+          "id": "d",
+          "text": "Como Renda aparece em dois nós, a árvore é inválida: um atributo só pode ser usado uma vez em toda a árvore.",
+          "correct": false,
+          "explanation": "Um atributo pode ser testado várias vezes na árvore, inclusive em ramos diferentes com limites diferentes (3000 e 5000). No sklearn, o atributo não é removido após o uso (slide 42)."
+        }
+      ],
+      "generalExplanation": "Analogia: leia como se fosse um fluxograma de regras de negócio. Cada caminho raiz→folha é uma regra completa; só os atributos do caminho são consultados. **Slides 3, 10 e 42:** nós internos testam, folhas decidem, e atributos podem reaparecer em níveis ou ramos distintos."
+    },
+    {
+      "id": "q19",
+      "label": "Árvore de regressão: preço do imóvel",
+      "type": "single",
+      "prompt": "Uma árvore de regressão prevê o **preço de um imóvel** (em mil reais). Cada folha mostra os preços dos imóveis de treino que caíram nela e a **média** desses preços:\n\n```\nÁrea ≤ 60 ?\n├─ sim → Quartos ≤ 1 ?\n│        ├─ sim → folha: [150, 170, 160]  média = 160\n│        └─ não → folha: [200, 220]       média = 210\n└─ não → folha: [300, 340, 320, 380]      média = 335\n```\n\nUm imóvel novo tem **Área = 55** e **Quartos = 2**. Qual é a previsão?",
+      "options": [
+        {
+          "id": "a",
+          "text": "210, a média da folha em que ele cai (Área ≤ 60 e Quartos > 1).",
+          "correct": true,
+          "explanation": "55 ≤ 60 leva ao ramo sim; Quartos = 2 não é ≤ 1, então vai para o ramo não, que é a folha com média 210. Slide 32: a previsão é a média do alvo na região."
+        },
+        {
+          "id": "b",
+          "text": "160, porque a Área é pequena e a folha dos menores imóveis é a mais próxima.",
+          "correct": false,
+          "explanation": "A folha de média 160 exige Quartos ≤ 1. Esta amostra tem 2 quartos, então o segundo teste a manda para outra folha."
+        },
+        {
+          "id": "c",
+          "text": "235, a média das médias das três folhas, já que a árvore combina todas as regiões.",
+          "correct": false,
+          "explanation": "A árvore não combina folhas. Cada amostra cai em uma única folha e recebe o valor dela (slide 14: regiões disjuntas)."
+        },
+        {
+          "id": "d",
+          "text": "220, o maior preço da folha em que ele cai, por ser a estimativa mais conservadora.",
+          "correct": false,
+          "explanation": "A folha de regressão devolve a média, e não o máximo ou o mínimo. Usar a média é o que minimiza o erro quadrático médio dos exemplos da folha."
+        }
+      ],
+      "generalExplanation": "Analogia: cada folha é uma tabela de preços médios por faixa, e a árvore só roteia para a faixa certa. **Slides 12, 31 e 32:** em regressão, a árvore usa o MSE para escolher os cortes e a média do alvo em cada folha como previsão; por isso o resultado é em degraus."
+    },
+    {
+      "id": "q20",
+      "label": "Tabela de dados: qual atributo na raiz",
+      "type": "single",
+      "prompt": "Uma empresa quer prever se um cliente **cancela** o serviço. Há 6 clientes de treino e dois atributos candidatos:\n\n| Cliente | Plano premium | Usa o app | Cancelou |\n| :-- | :-- | :-- | :-- |\n| 1 | sim | sim | não |\n| 2 | sim | não | não |\n| 3 | sim | sim | não |\n| 4 | não | sim | sim |\n| 5 | não | não | sim |\n| 6 | não | sim | sim |\n\nO alvo tem 3 não e 3 sim (entropia 1). Qual atributo o algoritmo escolhe para a raiz?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Usa o app, porque divide os clientes em grupos de tamanhos desiguais (4 e 2), o que dá mais informação.",
+          "correct": false,
+          "explanation": "Tamanho desigual não é critério. Em 'sim' há 2 que cancelaram e 2 que não, e em 'não' há 1 de cada: os dois filhos continuam misturados."
+        },
+        {
+          "id": "b",
+          "text": "Qualquer um dos dois, pois a base tem 3 clientes de cada classe e o ganho de informação é igual para todos os atributos.",
+          "correct": false,
+          "explanation": "O ganho depende de como cada atributo separa as classes, e não do equilíbrio do alvo. Aqui os dois atributos têm ganhos bem diferentes."
+        },
+        {
+          "id": "c",
+          "text": "Nenhum dos dois deve ir à raiz, porque a raiz precisa ser um atributo com valores numéricos para ter um limite de corte.",
+          "correct": false,
+          "explanation": "Atributos categóricos ou binários também servem à raiz. O sklearn os trata como números (0 e 1) e testa o corte em 0,5 (slide 42)."
+        },
+        {
+          "id": "d",
+          "text": "Plano premium, porque separa perfeitamente: todos os clientes com plano premium ficam em um filho puro (não cancelam) e todos os sem plano no outro (cancelam).",
+          "correct": true,
+          "explanation": "Os filhos ficam puros: entropia 0 e Gini 0 nos dois. O ganho é então igual à entropia do pai (1), o maior possível. Usa o app deixa os dois filhos misturados."
+        }
+      ],
+      "generalExplanation": "Analogia: é achar a coluna que determina o resultado, sem precisar calcular. **Slides 18 a 24:** o melhor atributo é o que mais reduz a impureza (aqui a deixa em zero). Um atributo que separa perfeitamente tem ganho máximo, como Função no slide 24."
+    },
+    {
+      "id": "q21",
+      "label": "Ordem: como a árvore é construída",
+      "type": "single",
+      "prompt": "Os passos abaixo descrevem como o CART trata **um nó** durante a construção da árvore (slides 31 a 33). Eles estão fora de ordem:\n\n1. Dividir os dados do nó em dois grupos (≤ limite e > limite).\n2. Testar cada atributo e cada limite candidato, medindo a impureza resultante.\n3. Repetir o mesmo processo, recursivamente, em cada um dos dois grupos.\n4. Parar o ramo quando o nó fica puro ou uma regra de poda é atingida.\n5. Escolher o par atributo + limite de menor impureza (escolha gulosa).\n\nQual é a ordem correta?",
+      "options": [
+        {
+          "id": "a",
+          "text": "2 → 1 → 5 → 3 → 4",
+          "correct": false,
+          "explanation": "Divide antes de escolher: só se sabe qual atributo e limite usar depois de compará-los. Dividir (passo 1) vem depois da escolha (passo 5)."
+        },
+        {
+          "id": "b",
+          "text": "2 → 5 → 1 → 3 → 4",
+          "correct": true,
+          "explanation": "Testa os candidatos, escolhe o melhor, divide, repete nos filhos e interrompe cada ramo quando uma regra de parada é atingida (slides 31 e 33)."
+        },
+        {
+          "id": "c",
+          "text": "5 → 2 → 1 → 3 → 4",
+          "correct": false,
+          "explanation": "Escolher antes de testar não faz sentido: o passo 5 depende dos valores de impureza medidos no passo 2."
+        },
+        {
+          "id": "d",
+          "text": "2 → 5 → 1 → 4 → 3",
+          "correct": false,
+          "explanation": "Inverte parada e recursão. Os dois grupos precisam ser tratados pelo mesmo procedimento, e a parada é verificada em cada nó durante a recursão."
+        }
+      ],
+      "generalExplanation": "Analogia: é um algoritmo recursivo clássico, com caso base (parada) e passo recursivo (dividir e repetir). **Slides 4, 31 e 33:** varrer atributos, medir impureza, escolher de forma gulosa, dividir, repetir nos filhos e parar em nó puro, amostra única ou critério de poda."
+    },
+    {
+      "id": "q22",
+      "label": "Código sklearn: profundidade e folha mínima",
+      "type": "single",
+      "prompt": "Uma pessoa compara três configurações de `DecisionTreeClassifier` na mesma base (com `random_state=0`) e imprime a acurácia de treino e a de teste:\n\n```python\nfor params in [dict(max_depth=1), dict(), dict(max_depth=4, min_samples_leaf=10)]:\n    model = DecisionTreeClassifier(random_state=0, **params)\n    model.fit(X_train, y_train)\n    print(params, model.score(X_train, y_train), model.score(X_test, y_test))\n```\n\n| Configuração | Treino | Teste |\n| :-- | :-- | :-- |\n| max_depth=1 | 0,70 | 0,72 |\n| padrão (sem limites) | 1,00 | 0,73 |\n| max_depth=4, min_samples_leaf=10 | 0,86 | 0,79 |\n\nQual conclusão está correta?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A configuração padrão é a melhor, pois acerta 100% do treino e o teste (0,73) é ligeiramente maior que o da primeira configuração.",
+          "correct": false,
+          "explanation": "Acertar 100% do treino é sinal de que decorou. O que importa é o teste, e a terceira configuração tem o melhor (0,79). Diferenças de treino não mostram generalização."
+        },
+        {
+          "id": "b",
+          "text": "A de profundidade 1 é a mais confiável, porque treino e teste são quase iguais e isso mostra que ela não tem nenhum problema.",
+          "correct": false,
+          "explanation": "Treino e teste baixos e próximos é underfitting: o modelo é simples demais (uma única pergunta) e erra mesmo no treino (slide 34)."
+        },
+        {
+          "id": "c",
+          "text": "A de profundidade 1 sofre de underfitting e a padrão de overfitting (treino 1,00 contra teste 0,73); a terceira equilibra e é a melhor escolha.",
+          "correct": true,
+          "explanation": "Árvore pequena erra nos dois. Árvore sem limites decora o treino. Limitar com max_depth e min_samples_leaf (slides 35 e 36) leva ao melhor teste, 0,79."
+        },
+        {
+          "id": "d",
+          "text": "As três são equivalentes, pois a acurácia de teste varia pouco; o ajuste de hiperparâmetros de poda só altera o tempo de treino.",
+          "correct": false,
+          "explanation": "O teste vai de 0,72 a 0,79, e o treino vai de 0,70 a 1,00, com significados diferentes. A poda controla o tamanho da árvore e a generalização, não só o tempo."
+        }
+      ],
+      "generalExplanation": "Analogia: é um tuning de configuração, em que você compara ambiente de homologação (teste) com produção. **Slides 34 a 36:** muito pequena = underfitting; muito grande = overfitting; use max_depth, min_samples_leaf e outras para equilibrar. O exercício do slide 47 (pacientes ortopédicos) é um bom lugar para repetir esse experimento."
+    },
+    {
+      "id": "q23",
+      "label": "Pseudocódigo (ID3) versus sklearn (CART)",
+      "type": "multiple",
+      "prompt": "O slide 42 compara o pseudocódigo da indução de árvore com o que o scikit-learn faz (CART), e o slide 44 lista capacidades da árvore. Quais afirmações estão corretas?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O sklearn trata atributos categóricos já codificados como números: um atributo 0/1 é cortado em 0,5.",
+          "correct": true,
+          "explanation": "Slide 42: o sklearn trata tudo como numérico e testa limites do tipo ≤ e >. Para um atributo 0/1, o corte relevante fica em 0,5."
+        },
+        {
+          "id": "b",
+          "text": "O sklearn não remove o atributo depois de usá-lo; ele pode reaparecer em outros níveis se continuar reduzindo a impureza.",
+          "correct": true,
+          "explanation": "Diferente da linha 9 do pseudocódigo, o CART mantém todos os atributos disponíveis em cada nó (slide 42)."
+        },
+        {
+          "id": "c",
+          "text": "O sklearn evita criar nós vazios por meio de parâmetros como `min_samples_leaf`, só dividindo se houver dados suficientes dos dois lados.",
+          "correct": true,
+          "explanation": "É a resposta do slide 42 à linha 12 do pseudocódigo (se Dj está vazio...). O parâmetro garante um mínimo de amostras em cada filho."
+        },
+        {
+          "id": "d",
+          "text": "O sklearn cria um ramo para cada valor de um atributo categórico, como faz o pseudocódigo do ID3, em vez de usar apenas duas direções.",
+          "correct": false,
+          "explanation": "No sklearn as divisões são só binárias (slide 41): valor ≤ limite contra valor > limite. Isolar várias categorias exige várias perguntas sim/não."
+        }
+      ],
+      "generalExplanation": "Analogia: o pseudocódigo é a especificação teórica e o sklearn é a implementação otimizada, com decisões de engenharia diferentes. **Slides 41 a 44:** divisões binárias, atributos numéricos, atributos reutilizáveis e controle de tamanho dos filhos via parâmetros."
+    },
+    {
+      "id": "q24",
+      "label": "Código: erro de lógica no exercício do dataset",
+      "type": "single",
+      "prompt": "No exercício do slide 47 (pacientes ortopédicos), alguém monta o experimento abaixo. A coluna `class` já foi convertida para 0 (Normal) ou 1 (Abnormal):\n\n```python\ny = df[\"class\"]\nX = df\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.25, random_state=0\n)\nmodel = DecisionTreeClassifier(max_depth=2, random_state=0)\nmodel.fit(X_train, y_train)\nprint(model.score(X_test, y_test))   # 1.0\n```\n\nA acurácia de teste foi 1,0 com uma árvore de apenas dois níveis. Qual é o problema de lógica?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A coluna alvo `class` foi deixada entre os atributos (`X = df`), então a árvore usa a resposta para prever a resposta; a correção é `X = df.drop(columns=[\"class\"])`.",
+          "correct": true,
+          "explanation": "É vazamento do alvo: um único corte em `class` separa tudo. Com o alvo removido de X, a acurácia cai para um valor realista (testado com dados sintéticos equivalentes)."
+        },
+        {
+          "id": "b",
+          "text": "A árvore sofreu overfitting; o remédio é reduzir ainda mais a profundidade máxima até que a acurácia de teste fique abaixo de 1,0.",
+          "correct": false,
+          "explanation": "Árvore de profundidade 2 não decora dados. Com o alvo entre os atributos, o problema continua em qualquer profundidade, porque o corte na coluna `class` basta."
+        },
+        {
+          "id": "c",
+          "text": "Faltou padronizar os atributos antes de treinar; sem isso a árvore fica instável e produz acurácias artificialmente altas.",
+          "correct": false,
+          "explanation": "Árvores não dependem de escala (slide 44), então padronizar não muda a acurácia. O erro está em quais colunas entram em X."
+        },
+        {
+          "id": "d",
+          "text": "O conjunto de teste ficou pequeno demais; basta aumentar `test_size` para a acurácia refletir o desempenho real.",
+          "correct": false,
+          "explanation": "Mais amostras de teste dariam uma estimativa mais estável, mas não corrigiriam o vazamento. A acurácia continuaria 1,0 enquanto `class` estiver em X."
+        }
+      ],
+      "generalExplanation": "Analogia: é como testar uma função passando a resposta esperada como argumento: o teste passa sempre. **Slide 47 e erros de lógica de prova:** o alvo nunca pode estar entre os atributos; resultados perfeitos demais com um modelo simples são sinal de alarme."
+    }
+  ]
+}

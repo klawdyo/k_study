@@ -1,0 +1,771 @@
+{
+  "schema": "block/v2",
+  "id": "block-3",
+  "title": "Bloco 3 · Métricas de Avaliação para Classificadores",
+  "description": "Aula 7: Matriz de Confusão (VP, VN, FP, FN), Acurácia e Desbalanceamento, Precisão, Revocação (Recall), F1-Score, Especificidade, Curva ROC e AUC, e Relatórios no Scikit-Learn.",
+  "sections": [
+    {
+      "id": "aula-7",
+      "title": "Aula 7 · Métricas de Avaliação para Classificadores",
+      "items": [
+        {
+          "id": "a7-v11",
+          "type": "video",
+          "title": "TUDO que você precisa saber sobre Matriz de Confusão!",
+          "channel": "Meigarom | Comunidade DS",
+          "duration": "15:28",
+          "url": "https://www.youtube.com/watch?v=FZqMCgCbo3U",
+          "goals": [
+            "Entender o que é a matriz de confusão e como a tabela é montada: comparar o rótulo real com o previsto (slide 4).",
+            "Aprender a regra de nomeação: 'verdadeiro/falso' diz se o modelo acertou; 'positivo/negativo' diz o que ele previu (slides 6 e 7).",
+            "Ver de onde saem acurácia, precisão e revocação olhando para a matriz (slides 11, 17 e 21)."
+          ],
+          "warnings": [
+            "Neste vídeo as LINHAS são a classe real e as COLUNAS a prevista (igual ao scikit-learn); o vídeo 'a7-v3' e o 'a7-v12' usam a orientação inversa. O próprio vídeo avisa (11:24–11:48) que cada autor posiciona de um jeito: confira sempre.",
+            "Escorrega em 12:30–12:41: no denominador da precisão diz 'true positive mais falso negativo'; o correto é VP + FP (ele mostra certo na tela e o resto da explicação está certa).",
+            "Não usa o exemplo do hotel dos slides (usa fotos de gatos e cachorros) e só cita fraude como exemplo de qual classe chamar de positiva."
+          ],
+          "clips": [
+            {
+              "start": 82,
+              "end": 226,
+              "slides": "4",
+              "note": "Contexto: classificador de fotos (gato x cachorro) e por que se compara o rótulo real com o previsto."
+            },
+            {
+              "start": 243,
+              "end": 892,
+              "slides": "4–7, 11, 17, 21",
+              "note": "Construção da matriz passo a passo, convenção positivo/negativo, regra verdadeiro/falso e derivação de precisão, revocação e acurácia."
+            }
+          ],
+          "transcript": "../transcripts/FZqMCgCbo3U.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "01:22–03:46 — Exemplo de contexto: classificador de fotos gato x cachorro; o que é testar o algoritmo contra o rótulo real (slide 4)",
+              "04:03–05:19 — A matriz nasce de 4 combinações possíveis entre o rótulo real e o resultado do algoritmo (slide 4)",
+              "05:22–06:00 e 11:24–11:48 — Orientação da matriz: linhas = real, colunas = previsto; alguns autores invertem (slide 4)",
+              "06:00–07:56 — Positivo e negativo são convenção de quem treina; exemplo de fraude como classe positiva (slides 5, 9, 22)",
+              "08:04–11:19 — Regra de nomeação: acertou = verdadeiro, errou = falso; coluna prevista = positivo/negativo; chega a VP, FP, FN, VN (slides 6 e 7)",
+              "11:56–12:58 — Precisão = VP / (VP + FP): olha a coluna das previsões positivas (slide 17) [atenção ao deslize de 12:30–12:41]",
+              "12:59–13:46 — Revocação (recall) = VP / (VP + FN): olha a linha dos positivos reais (slide 21)",
+              "13:47–14:43 — Acurácia = (VP + VN) / total: a diagonal da matriz (slide 11)"
+            ],
+            "notCovered": "Não calcula nenhum número (tudo em fórmulas e desenho); não trata de F1, especificidade, ROC/AUC; não usa o exemplo do hotel.",
+            "profile": [
+              "**Nível:** iniciante; ideal para quem nunca viu a tabela.",
+              "**Foco:** conceito e lógica de construção (sem código).",
+              "**Idioma/qualidade:** português do Brasil, fala clara e didática; transcrição boa."
+            ],
+            "verdict": "Aprovar os trechos 01:22–03:46 e 04:03–14:51. É o único vídeo que explica a construção da tabela do zero (slide 4), o que o a7-v1 supõe já sabido."
+          }
+        },
+        {
+          "id": "a7-v1",
+          "type": "video",
+          "title": "Avaliação de Modelos Preditivos: Elementos de uma matriz de confusão",
+          "channel": "Fernando dos Santos",
+          "duration": "4:49",
+          "url": "https://www.youtube.com/watch?v=CbQ3se8wzfM",
+          "goals": [
+            "Dar nome às quatro células da matriz: VP, VN, FP e FN (slides 6 a 8).",
+            "Diferenciar falso positivo (alarme falso) de falso negativo (erro de omissão) com os exemplos de teste de covid e de gravidez.",
+            "Relacionar FP ao erro tipo 1 e FN ao erro tipo 2."
+          ],
+          "warnings": [
+            "Começa no meio de uma série: não explica como a tabela é montada (veja o a7-v11) e não usa o exemplo do hotel dos slides.",
+            "Em 02:23 o professor escorrega ('diz que é negativo, mas na verdade não é') e corrige em 02:28."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 289,
+              "slides": "4–8",
+              "note": "Nomes das 4 células da matriz (VP, VN, FP, FN), analogias de teste de covid e de gravidez, erros tipo 1 e 2."
+            }
+          ],
+          "transcript": "../transcripts/CbQ3se8wzfM.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "00:00–00:35 — Cada célula da matriz recebe um nome; caso binário (positivo/negativo) (slide 4)",
+              "00:35–01:45 — Verdadeiro positivo e verdadeiro negativo = acertos (slide 6)",
+              "01:45–02:31 — Falso positivo (real negativo, previu positivo) e falso negativo (real positivo, previu negativo) (slide 7)",
+              "02:31–03:35 — Analogia: teste rápido de covid (falso negativo x falso positivo)",
+              "03:35–04:24 — Analogia: exame de gravidez (charge) com os 4 casos (slide 8)",
+              "04:24–04:49 — Erro tipo 1 = falso positivo; erro tipo 2 = falso negativo"
+            ],
+            "notCovered": "Não explica a construção da tabela nem o exemplo do hotel (slide 5); não calcula nenhuma métrica.",
+            "profile": [
+              "**Nível:** introdutório conceitual.",
+              "**Foco:** nomenclatura das 4 células, com analogias.",
+              "**Qualidade:** concisa; transcrição boa."
+            ],
+            "verdict": "Aprovar o vídeo inteiro (00:00–04:49), depois do a7-v11."
+          }
+        },
+        {
+          "id": "a7-v6",
+          "type": "video",
+          "title": "Matriz de Confusão | Explicação e exemplos práticos",
+          "channel": "Let's Data",
+          "duration": "18:12",
+          "url": "https://www.youtube.com/watch?v=vS6bQy45rdE",
+          "goals": [
+            "Ver a orientação da matriz (real à esquerda, previsto em cima) e o aviso de que ela não é padrão (slide 4).",
+            "Reforçar VP, VN, FP, FN e os erros tipo 1 e 2 (slides 6 e 7).",
+            "Entender, com um exemplo de custo (churn), que o modelo de maior acurácia pode dar mais prejuízo: conclusão do slide 37 (e analogia com slides 12 e 18)."
+          ],
+          "warnings": [
+            "ERRO do vídeo: em 04:01–04:28 e 09:40–09:50 diz que em saúde/doenças a PRECISÃO deve ser alta, e define 'precisão' como acertos entre os positivos reais (isto é revocação). Pelo slide 23, doença grave pede alta REVOCAÇÃO (evitar falso negativo). Os clips abaixo pulam esses trechos.",
+            "Em 14:26–17:00 afirma que ROC/AUC só funcionam para regressão logística; os slides (33) falam de classificação binária em geral. Trecho fora dos clips.",
+            "A especificidade aparece só como fórmula (10:29–10:48), sem número no exemplo e sem a ideia do slide 31 ('foca nos falsos positivos').",
+            "O vídeo NÃO fala de F1. Chama a acurácia de 'curação/corácia' na transcrição automática."
+          ],
+          "clips": [
+            {
+              "start": 144,
+              "end": 240,
+              "slides": "4–5",
+              "note": "Orientação da matriz (amostra à esquerda, previsto em cima; não é padrão) e exemplo do teste de covid."
+            },
+            {
+              "start": 268,
+              "end": 461,
+              "slides": "6–8",
+              "note": "VP, VN, FP, FN no esquema true/false; erro tipo 1 e 2; charge do homem grávido."
+            },
+            {
+              "start": 601,
+              "end": 866,
+              "slides": "21, 30–32, 37",
+              "note": "Recall e especificidade (fórmulas), exemplo numérico e exemplo de custo (churn) em que a maior acurácia dá o maior prejuízo."
+            }
+          ],
+          "transcript": "../transcripts/vS6bQy45rdE.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "02:24–03:20 — Layout da matriz: amostra (real) à esquerda, previsto em cima; layout não é padrão, conferir sempre (slide 4)",
+              "03:20–04:00 — Teste de covid: falso positivo e falso negativo (slide 7)",
+              "04:28–06:14 — VP, VN, FN e FP (nomes em inglês nas bibliotecas) (slides 6 e 7)",
+              "06:14–07:41 — Erro tipo 1 = falso positivo, tipo 2 = falso negativo; charge do homem 'grávido' (slide 7)",
+              "10:01–10:48 — Recall = VP/(VP+FN); especificidade (taxa de verdadeiros negativos) = VN/(VN+FP) (slides 21, 30 e 31)",
+              "10:50–11:48 — Exemplo numérico (6000/50/600/4000): acurácia ≈ 94%, precisão ≈ 90%, recall ≈ 99% (slide 11)",
+              "11:48–14:26 — Exemplo de churn com custo (R$ 70 por FP, R$ 500 por FN): o modelo com mais acurácia (75%) tem mais prejuízo (R$ 3.900 x R$ 3.250) (slides 12, 18, 37)"
+            ],
+            "notCovered": "F1; cálculo da especificidade; ROC/AUC (só mencionados, com erro, fora dos clips); exemplo do hotel.",
+            "profile": [
+              "**Nível:** iniciante a intermediário.",
+              "**Foco:** nomenclatura e um exemplo de negócio com custo.",
+              "**Qualidade:** boa explicação, mas com um erro conceitual (precisão em saúde) que os clips evitam; transcrição boa."
+            ],
+            "verdict": "Aprovar só os trechos 02:24–04:00, 04:28–07:41 e 10:01–14:26. Evitar 04:01–04:28, 07:41–09:50 e 14:26–17:00."
+          }
+        },
+        {
+          "id": "a7-v2",
+          "type": "video",
+          "title": "Métricas de avaliação de um CLASSIFICADOR | Matriz de Confusão | Machine Learning #06",
+          "channel": "Programação Dinâmica",
+          "duration": "12:58",
+          "url": "https://www.youtube.com/watch?v=ePZswmBSLvc",
+          "goals": [
+            "Ver o exemplo de SPAM dos slides (positivo = spam) e por que acurácia pode enganar com classes desbalanceadas (slides 9, 11 e 13).",
+            "Entender precisão (reduzir falsos positivos, vídeos para crianças) e revocação (reduzir falsos negativos, doença grave) (slides 17 a 23).",
+            "Conhecer o F1 como média harmônica e ler o classification_report do scikit-learn, com suporte (slides 26, 35 e 36)."
+          ],
+          "warnings": [
+            "Matriz com linhas = classe real e colunas = classe prevista (igual ao scikit-learn); o vídeo a7-v3 usa o inverso.",
+            "F1 só aparece como fórmula (sem exemplo numérico). O 97% do início refere-se a um vídeo anterior do canal.",
+            "Nome da biblioteca sai errado na transcrição automática ('Site-Learn'); 'curação' = acurácia."
+          ],
+          "clips": [
+            {
+              "start": 16,
+              "end": 764,
+              "slides": "4, 9, 11–23, 26, 35–36",
+              "note": "Acurácia, desbalanceamento com exemplo de SPAM, matriz, precisão (vídeos para crianças), revocação (doença grave), F1 e classification_report do sklearn."
+            }
+          ],
+          "transcript": "../transcripts/ePZswmBSLvc.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "00:16–01:00 — Acurácia = acertos / total; boa como ponto de partida, mas não suficiente (slides 11, 15)",
+              "01:01–03:20 — Classes desbalanceadas: 100 e-mails, 99 não spam; chutar 'não é spam' dá 99% (slide 13)",
+              "03:25–05:19 — Matriz de confusão (linhas = real, colunas = previsto) e VP/FP/VN/FN no exemplo de SPAM (slides 4 e 9)",
+              "05:23–06:02 — Precisão = VP/(VP+FP) e revocação = VP/(VP+FN), em palavras (slides 17 e 21)",
+              "06:24–07:40 — Precisão: vídeos adequados para criança; reduzir falsos positivos aumenta a fração (slides 17 e 19)",
+              "07:41–09:20 — Revocação: doença grave; falso negativo priva do tratamento (slides 21 e 23)",
+              "09:34–10:04 — F1 = média harmônica de precisão e revocação (slide 26)",
+              "10:09–12:44 — classification_report do scikit-learn no Iris: precisão, revocação, F1, suporte (nº de amostras de cada espécie) e acurácia (slides 35 e 36)"
+            ],
+            "notCovered": "Não cobre especificidade, ROC/AUC nem exemplo numérico de F1; não usa o exemplo do hotel nem o de investimentos.",
+            "profile": [
+              "**Nível:** iniciante a intermediário.",
+              "**Foco:** intuição com o exemplo de SPAM e fechamento no scikit-learn.",
+              "**Qualidade:** a melhor explicação do bloco; transcrição boa."
+            ],
+            "verdict": "Aprovar o trecho 00:16–12:44. Vídeo principal para os slides 9, 11, 13, 17, 19, 21, 23, 26, 35 e 36."
+          }
+        },
+        {
+          "id": "a7-v3",
+          "type": "video",
+          "title": "Avaliação de Modelos Preditivos: Métricas (acurácia, precision e recall)",
+          "channel": "Fernando dos Santos",
+          "duration": "10:33",
+          "url": "https://www.youtube.com/watch?v=SRgZhZRKwqY",
+          "goals": [
+            "Calcular a acurácia a partir da matriz com um exemplo de HIV e ver por que ela esconde falhas (slides 11 e 13 a 15).",
+            "Ver o modelo que 'sempre diz negativo' com a mesma acurácia do modelo real (0,91).",
+            "Calcular precisão (0,5) e revocação (≈ 0,11) no mesmo exemplo e concluir que em diagnóstico o recall é o problema (slides 17, 21, 23 e 24)."
+          ],
+          "warnings": [
+            "Matriz desenhada com colunas = classe real e linhas = classe prevista (inverso do scikit-learn e do vídeo a7-v2).",
+            "O vídeo não diz 'precisão reduz falsos positivos' nem 'revocação reduz falsos negativos' (ideia dos slides 17 e 21); mostra só o cálculo.",
+            "Diz 'recall 0.1' arredondando 1/9 ≈ 0,11. As fórmulas só aparecem na tela (não são ditas)."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 633,
+              "slides": "11, 13–15, 17, 21, 23–24",
+              "note": "Acurácia com exemplo de HIV, modelo que sempre diz negativo, precisão e revocação calculadas."
+            }
+          ],
+          "transcript": "../transcripts/SRgZhZRKwqY.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "00:07–02:01 — Acurácia = (VP+VN)/total; exemplo de HIV com 100 pacientes (VP 1, VN 90, FN 8, FP 1) = 0,91 (slide 11)",
+              "02:27–04:18 — Olhando por classe: dos 9 positivos reais, o modelo só achou 1",
+              "04:18–05:56 — Um modelo que sempre diz 'negativo' tem a mesma acurácia (0,91): acurácia esconde falhas (slides 13 a 15)",
+              "05:56–06:29 — Em diagnóstico, o que importa é identificar os positivos reais (slide 23)",
+              "06:29–08:05 — Precisão (entre os previstos positivos) e recall/sensibilidade (entre os positivos reais) (slides 17 e 21)",
+              "08:08–09:09 — Cálculo: precisão = 1/(1+1) = 0,5; recall = 1/(1+8) ≈ 0,11",
+              "09:09–10:33 — Recall baixo é o problema deste modelo; trocar a rede até melhorar a métrica de interesse (slides 24 e 37)"
+            ],
+            "notCovered": "Não relaciona precisão a FP nem revocação a FN de forma explícita; não trata de F1, especificidade nem ROC.",
+            "profile": [
+              "**Nível:** intermediário direto.",
+              "**Foco:** cálculo com números e o perigo da acurácia.",
+              "**Qualidade:** boa; transcrição boa."
+            ],
+            "verdict": "Aprovar o vídeo inteiro (00:00–10:33), atento à orientação invertida da matriz."
+          },
+          "optional": true
+        },
+        {
+          "id": "a7-v4",
+          "type": "video",
+          "title": "Como entender as métricas Precision & Recall",
+          "channel": "Meigarom | Comunidade DS",
+          "duration": "11:36",
+          "url": "https://www.youtube.com/watch?v=nVctFRbmOZo",
+          "optional": true,
+          "goals": [
+            "Ter uma intuição por história para precisão (acertos / tentativas) e revocação (quanto do que existia foi encontrado).",
+            "Ver que a escolha entre precisão e revocação depende do problema (churn, fraude) (slide 22)."
+          ],
+          "warnings": [
+            "Não fala em matriz de confusão, falso positivo/negativo nem na fórmula VP/(VP+FP); a analogia só vale se 'cada lançamento de vara' for lido como 'uma previsão positiva'.",
+            "Confuso: a 'vara super precisa' da tarde tem precisão MENOR (19%), e o recall da tarde é calculado sobre os 30 peixes que restaram, não sobre os 100.",
+            "Nomes errados na transcrição automática ('Desce', 'Makro' = Meigarom). Ver depois do a7-v3."
+          ],
+          "clips": [
+            {
+              "start": 133,
+              "end": 673,
+              "slides": "17, 21, 22",
+              "note": "História do pesqueiro (precisão = acertos/tentativas; revocação = pescou/disponível), analogia do recall da Fiat e exemplos de churn/fraude."
+            }
+          ],
+          "transcript": "../transcripts/nVctFRbmOZo.json",
+          "review": {
+            "badge": "transcrição lida · complemento opcional",
+            "covers": [
+              "02:13–06:35 — História do pesqueiro: 160 lançamentos, 70 peixes na manhã, 100 peixes no tanque; à tarde, 30 em 160",
+              "06:44–07:56 — Precisão = acertos / tentativas (70/160 = 44%), exemplo do arqueiro (slide 17)",
+              "07:59–09:33 — Revocação = pescou / disponíveis (70/100 = 70%; à tarde precisão 19%, recall 100%) (slide 21)",
+              "09:33–10:07 — Analogia do 'recall' de carros da Fiat",
+              "10:11–11:13 — Churn e fraude: a empresa decide se prioriza precisão ou revocação (slide 22)"
+            ],
+            "notCovered": "Não relaciona com FP/FN nem com a matriz; sem fórmulas; não trata de F1, especificidade, ROC.",
+            "profile": [
+              "**Nível:** iniciante, informal.",
+              "**Foco:** analogia sem fórmulas.",
+              "**Qualidade:** simpática, mas pode confundir se vista antes do a7-v3; transcrição boa."
+            ],
+            "verdict": "Complemento opcional, depois do a7-v3: trechos 02:13–11:13."
+          }
+        },
+        {
+          "id": "a7-v12",
+          "type": "video",
+          "title": "Métricas de Performance para Classificação | Machine Learning: Fundamentos",
+          "channel": "Apoena Stack | Iury Rosal",
+          "duration": "21:33",
+          "url": "https://www.youtube.com/watch?v=6vM-qc2StZI",
+          "goals": [
+            "Ver precisão (82%) e recall (88%) calculados no mesmo exemplo de SPAM, com custo do falso positivo (e-mail importante na caixa de spam) (slides 17 e 19).",
+            "Entender revocação em detecção de fraude: falso negativo custa caro; falso positivo só gera uma análise a mais (slides 21 e 22).",
+            "Calcular a especificidade (25%) e ver que ela, junto com o recall, mostra que o modelo acerta uma classe e erra a outra (slides 30 e 31).",
+            "Conhecer o F1 como média entre precisão e revocação, útil com classes desbalanceadas e para comparar modelos (slide 26)."
+          ],
+          "warnings": [
+            "Matriz desenhada com colunas = classe real ('verdadeiro' em cima) e linhas = previsto (inverso do scikit-learn; igual ao a7-v3).",
+            "A explicação do F1 é rasa: só a fórmula e a ideia de 'juntar as médias' (18:47–19:07), sem exemplo numérico nem o motivo da média harmônica.",
+            "Lapsos de fala: em 03:44 diz 'verdadeiros positivos' ao falar de verdadeiros negativos; 'curaça' = acurácia.",
+            "Não conta a ideia do slide 31 em palavras ('foca nos falsos positivos'): mostra o cálculo e o contraste com o recall (16:54–18:24)."
+          ],
+          "clips": [
+            {
+              "start": 606,
+              "end": 1234,
+              "slides": "17, 19, 21–22, 26, 30–31",
+              "note": "Precisão e recall com números, custo do FP (spam) e do FN (fraude), especificidade calculada e F1 para comparar modelos. A construção da matriz (01:02–04:53) está no a7-v11."
+            }
+          ],
+          "transcript": "../transcripts/6vM-qc2StZI.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "10:06–11:35 — Precisão = VP/(VP+FP): exemplo VP 70, FP 15 → ≈ 82% (slide 17)",
+              "11:42–12:43 — Quando usar precisão: falso positivo caro; e-mail importante classificado como spam (slides 17 e 19)",
+              "12:44–13:46 — Revocação = VP/(VP+FN): 70/80 ≈ 88% (slide 21)",
+              "14:09–15:45 — Detecção de fraude: falso negativo custa caro, falso positivo só gera análise a mais (slide 22)",
+              "15:46–17:21 — Especificidade = VN/(VN+FP): 5/20 = 25% (slides 30 e 31)",
+              "17:02–18:24 — Recall 88% x especificidade 25%: o modelo é bom para spam e horrível para não spam; a acurácia (75%) não mostrava isso (slides 13 e 31)",
+              "18:24–20:34 — F1 = 2·P·R/(P+R); melhor que a acurácia com classes desbalanceadas e usado para comparar modelos (slide 26)"
+            ],
+            "notCovered": "Fora do clip: construção da matriz (01:02–04:53), acurácia com números (05:06–09:59, exemplo de 75% com 80 spam e 20 não spam). Não cobre ROC/AUC, exemplo numérico de F1 nem o exemplo do hotel.",
+            "profile": [
+              "**Nível:** iniciante; ritmo calmo, tudo com o mesmo exemplo numérico.",
+              "**Foco:** conceito e cálculo (sem código; o código está no vídeo seguinte do canal).",
+              "**Qualidade:** boa; transcrição razoável."
+            ],
+            "verdict": "Aprovar o trecho 10:06–20:34 (e, se faltar base, também 01:02–09:59). O melhor vídeo em português para especificidade com número e para fraude (slide 22)."
+          }
+        },
+        {
+          "id": "a7-v5",
+          "type": "video",
+          "title": "Avaliação de Modelos Preditivos: Métrica F1-score (ou F1-measure)",
+          "channel": "Fernando dos Santos",
+          "duration": "1:50",
+          "url": "https://www.youtube.com/watch?v=rpZm6cH0fdQ",
+          "optional": true,
+          "goals": [
+            "Saber que o F1 é uma única nota que combina precisão e revocação com o mesmo peso.",
+            "Saber que só faz sentido quando os dois têm a mesma importância; F1 próximo de 1 = modelo bom (slide 26)."
+          ],
+          "warnings": [
+            "Não explica por que a média harmônica pune desequilíbrio nem dá exemplo numérico ('não vem ao caso como se chegou').",
+            "Não cobre a afirmação do slide 27 (F1 como medida de confiabilidade da acurácia).",
+            "Refere-se a um vídeo anterior da série (exemplo do HIV). Transcrição automática ruim nas palavras-chave ('F-médio, ou mígio')."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 107,
+              "slides": "26",
+              "note": "F1 como combinação de precisão e revocação com mesmo peso e quando usar."
+            }
+          ],
+          "transcript": "../transcripts/rpZm6cH0fdQ.json",
+          "review": {
+            "badge": "transcrição lida · complemento opcional",
+            "covers": [
+              "00:00–00:57 — F1 combina precisão e revocação num único valor (fórmula na tela, baseada na média harmônica) (slide 26)",
+              "00:57–01:47 — Mesmo peso para os dois; nem todo problema é assim (diagnóstico pede recall); F1 próximo de 1 = bom (slide 26)"
+            ],
+            "notCovered": "Sem exemplo numérico, sem justificativa da média harmônica, sem slide 27.",
+            "profile": [
+              "**Nível:** introdutório, muito curto.",
+              "**Foco:** ideia geral do F1.",
+              "**Qualidade:** rasa; transcrição fraca nos termos."
+            ],
+            "verdict": "Complemento opcional curto (00:00–01:47). Para o motivo da média harmônica e exemplo numérico, ver o a7-v13."
+          }
+        },
+        {
+          "id": "a7-v13",
+          "type": "video",
+          "title": "F1 Score: Melhor que a Acurácia para Dados Desbalanceados",
+          "channel": "BlackBoard AI",
+          "duration": "4:35",
+          "url": "https://www.youtube.com/watch?v=rNLByGjvJ8c",
+          "optional": true,
+          "goals": [
+            "Entender por que a acurácia mente em dados desbalanceados, como a fraude do slide 14 (99% de acurácia sem detectar nada).",
+            "Ver por que o F1 usa média harmônica: precisão 1,0 e recall 0,01 dão F1 ≈ 0,02, e a média simples enganaria (slide 26).",
+            "Acompanhar um cálculo completo de F1 = 0,90 num filtro de spam (slides 26, 28 e 29)."
+          ],
+          "warnings": [
+            "VÍDEO EM INGLÊS (sem legenda em português verificada). Escolhido porque nenhum vídeo em português traz o exemplo numérico de F1.",
+            "Chama falso positivo de 'erro tipo 1' e falso negativo de 'erro tipo 2' (correto, igual ao a7-v1).",
+            "Não aborda a ideia do slide 27 (F1 como confiabilidade da acurácia)."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 267,
+              "slides": "14, 26",
+              "note": "Acurácia enganosa em dados desbalanceados, precisão e recall, motivo da média harmônica e cálculo completo de F1 no exemplo de spam."
+            }
+          ],
+          "transcript": "../transcripts/rNLByGjvJ8c.json",
+          "review": {
+            "badge": "transcrição lida · complemento opcional (inglês)",
+            "covers": [
+              "00:00–00:35 — Acurácia de 99% pode ser inútil com dados desbalanceados (fraude: sempre prever a classe majoritária) (slide 14)",
+              "00:35–01:46 — Matriz de confusão e fórmulas de precisão e recall (slides 6, 7, 17 e 21)",
+              "01:46–02:10 — Precisão e recall em 'cabo de guerra' (trade-off)",
+              "02:10–03:12 — Média simples engana; F1 = 2·P·R/(P+R) 'puxa para o menor'; precisão 1,0 e recall 0,01 → F1 ≈ 0,02 (slide 26)",
+              "03:12–04:03 — Exemplo de 1.000 e-mails (90 VP, 10 FP, 10 FN, 890 VN): precisão 0,90, recall 0,90, F1 0,90 (slide 26)",
+              "04:03–04:28 — Resumo"
+            ],
+            "notCovered": "Slide 27; exemplo do hotel (slides 28 e 29); especificidade; ROC.",
+            "profile": [
+              "**Nível:** iniciante.",
+              "**Foco:** conceito do F1 com números.",
+              "**Idioma/qualidade:** inglês, fala clara; transcrição ótima."
+            ],
+            "verdict": "Complemento opcional (inglês) para o F1 com número: trecho 00:00–04:28."
+          }
+        },
+        {
+          "id": "a7-v14",
+          "type": "video",
+          "title": "Sensibilidade e Especificidade",
+          "channel": "Rogério Anton",
+          "duration": "6:01",
+          "url": "https://www.youtube.com/watch?v=tdfVzRUqONc",
+          "goals": [
+            "Entender sensibilidade e especificidade do zero: quem é identificado entre os doentes (positivos reais) e entre os sadios (negativos reais) (slides 21, 30 e 31).",
+            "Ligar especificidade a falsos positivos: poucos falsos positivos = resultado positivo confiável (slide 31).",
+            "Ver o ponto de corte (limiar): mexer nele aumenta a sensibilidade e reduz a especificidade, ideia que dá origem à curva ROC (slide 33)."
+          ],
+          "warnings": [
+            "Vocabulário de testes médicos ('doente', 'exame', 'padrão ouro'): traduza mentalmente doente = positivo real e sadio = negativo real.",
+            "Fala de 'curva Rock' (ROC) e de 'um menos especificidade' no eixo horizontal; não menciona AUC = 0,5 nem a diagonal.",
+            "Não dá a fórmula VN/(VN+FP) nem calcula números; use o a7-v12 (15:46–17:21) para o cálculo."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 337,
+              "slides": "21, 30–31, 33",
+              "note": "Sensibilidade, especificidade, ponto de corte e a ideia da curva ROC, em linguagem de teste diagnóstico."
+            }
+          ],
+          "transcript": "../transcripts/tdfVzRUqONc.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "00:09–01:06 — Todo teste erra; falso negativo e falso positivo; os resultados vão numa tabela doentes x não doentes (slides 4 a 7)",
+              "01:06–01:40 — Sensibilidade: chance de dar positivo em quem é doente; alta sensibilidade = poucos falsos negativos, bom para descartar (slides 20 e 21)",
+              "01:40–02:17 — Especificidade: chance de dar negativo em quem não é doente; alta especificidade = poucos falsos positivos, bom para confirmar (slides 30 e 31)",
+              "02:17–03:45 — Ponto de corte: mover o limite aumenta uma e diminui a outra (slide 33)",
+              "03:45–04:36 — Curva ROC: sensibilidade x (1 − especificidade); quanto mais perto do canto superior esquerdo, melhor (slides 33 e 34)",
+              "04:36–05:20 — O melhor exame não é só o mais confiável (custo, risco); triar com exame sensível e confirmar com específico"
+            ],
+            "notCovered": "Fórmulas explícitas, números, AUC = 0,5, F1, exemplo do hotel; valores preditivos (o vídeo remete a outro).",
+            "profile": [
+              "**Nível:** iniciante.",
+              "**Foco:** conceito em linguagem de epidemiologia.",
+              "**Qualidade:** clara e curta; transcrição boa."
+            ],
+            "verdict": "Aprovar o vídeo (00:09–05:20). Única explicação em português de especificidade 'do zero' e do papel do limiar."
+          }
+        },
+        {
+          "id": "a7-v7",
+          "type": "video",
+          "title": "Aprendizado de Máquina (Machine Learning) | Dominando a Teoria da Curva ROC e Métrica AUC #27",
+          "channel": "Café e Computação",
+          "duration": "8:38",
+          "url": "https://www.youtube.com/watch?v=yb9wic1bS4A",
+          "goals": [
+            "Entender a curva ROC como TPR x FPR em vários limiares de decisão (slide 33).",
+            "Saber as fórmulas dos eixos: X = FPR = FP/(FP+VN); Y = TPR = sensibilidade = VP/(VP+FN).",
+            "Saber que a curva ideal fica no canto superior esquerdo e que a AUC é a área sob a curva, de 0 a 1 (slide 34)."
+          ],
+          "warnings": [
+            "Nos trechos 00:57–01:53 (fora do clip) o vídeo chama a ACURÁCIA de 'precisão'; não confundir com a precisão dos slides 16 a 19.",
+            "Chama a curva ROC de 'curva AUC' em 03:18 e 04:35.",
+            "Não menciona a diagonal (modelo aleatório) nem AUC = 0,5 (slide 34); diz que AUC = 0 é 'modelo completamente ruim' (na verdade seria um modelo invertido).",
+            "Sem exemplo numérico de limiar; o gráfico aparece só na tela. A última linha da transcrição (08:30) é eco do ASR."
+          ],
+          "clips": [
+            {
+              "start": 113,
+              "end": 488,
+              "slides": "33–34",
+              "note": "ROC como TPR x FPR em vários limiares, fórmulas dos eixos, canto superior esquerdo e AUC de 0 a 1."
+            }
+          ],
+          "transcript": "../transcripts/yb9wic1bS4A.json",
+          "review": {
+            "badge": "transcrição lida · só o trecho indicado",
+            "covers": [
+              "01:53–02:55 — Curva ROC: taxa de verdadeiros positivos x taxa de falsos positivos em diferentes limiares (pontos de corte de probabilidade) (slide 33)",
+              "02:59–04:35 — Eixo X = FPR = FP/(FP+VN); eixo Y = TPR (sensibilidade) = VP/(VP+FN) (slide 33)",
+              "04:35–05:05 — Cada ponto da curva é o desempenho do modelo em um limiar; 1 − FPR = especificidade",
+              "05:05–05:43 — Curva ideal: o mais perto possível do canto superior esquerdo (slide 34)",
+              "05:43–06:49 — AUC = área sob a curva ROC, resume todos os limiares; vai de 0 a 1, maior é melhor (slide 34)",
+              "06:49–07:30 — AUC não depende do limiar e é 'robusta' a classes desbalanceadas (extra, fora dos slides)",
+              "07:36–08:08 — Resumo"
+            ],
+            "notCovered": "Diagonal/AUC = 0,5; exemplo numérico de limiares; código scikit-learn (está no vídeo 2 do canal).",
+            "profile": [
+              "**Nível:** iniciante a intermediário; definição clara, mas abstrata.",
+              "**Foco:** teoria da ROC/AUC.",
+              "**Qualidade:** boa; transcrição boa."
+            ],
+            "verdict": "Aprovar só o trecho 01:53–08:08. Para entender o limiar com exemplo, ver a7-v14 e a7-v9."
+          }
+        },
+        {
+          "id": "a7-v8",
+          "type": "video",
+          "title": "Curva ROC",
+          "channel": "ProfDanilo_DS",
+          "duration": "7 min",
+          "url": "https://www.youtube.com/watch?v=WfEMppwd6oQ",
+          "optional": true,
+          "goals": [
+            "Curva ROC, TPR × FPR e o que significa AUC perto de 1 ou de 0,5 (slides 33 e 34); multiclasse um contra todos"
+          ],
+          "warnings": [
+            "A legenda automática é ruim ('ALC ROCK', 'Rubi-Col' por recall): confie na fala, não na transcrição.",
+            "Não explica o limiar (só diz 'várias configurações de limite'): para o limiar, use o vídeo em inglês da mesma seção.",
+            "Define a taxa de falsos positivos de forma confusa (é 1 − especificidade) e chama de 'fraco' o AUC perto de 0 (na prática, o modelo está invertido)."
+          ],
+          "clips": [
+            {
+              "start": 98,
+              "end": 290,
+              "slides": "33–34",
+              "note": "TPR, especificidade, curva ROC e AUC"
+            },
+            {
+              "start": 307,
+              "end": 367,
+              "slides": "34",
+              "note": "ROC para várias classes: um contra todos"
+            }
+          ],
+          "transcript": "../transcripts/WfEMppwd6oQ.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "01:38–03:00 revisão: VP, FN, FP, VN; TPR (sensibilidade, recall) = VP / (VP + FN); especificidade = VN / (VN + FP); FPR = FP / (VN + FP).",
+              "03:00–04:30 a curva ROC é TPR em função de FPR em várias configurações de limite; curva ideal sobe rápido; AUC perto de 1 separa bem as classes e AUC = 0,5 não separa (chute).",
+              "05:07–06:07 com várias classes: uma curva por classe, comparando cada uma contra as outras (um contra todos)."
+            ],
+            "notCovered": "O limiar e como cada ponto da curva é obtido; fórmulas do slide 33 passo a passo.",
+            "profile": [
+              "**Nível:** iniciante; explicação conceitual, sem exemplo numérico."
+            ],
+            "verdict": "Opcional: único em português que diz explicitamente que AUC = 0,5 é não separar as classes, e que trata multiclasse. Reavaliado pelo agente principal em 11/10 (antes descartado pela qualidade da transcrição, não do vídeo)."
+          }
+        },
+        {
+          "id": "a7-v9",
+          "type": "video",
+          "title": "ROC e AUC explicadas passo a passo (StatQuest)",
+          "channel": "StatQuest with Josh Starmer",
+          "duration": "16:17",
+          "url": "https://www.youtube.com/watch?v=4jRBRDbJemM",
+          "optional": true,
+          "goals": [
+            "Ver como a regressão logística gera probabilidade e como o limiar (0,5) a transforma em classe (slide 33).",
+            "Ver o efeito de mudar o limiar sobre FP e FN e como a ROC resume todas as matrizes, ponto a ponto (slide 33).",
+            "Entender a diagonal e a AUC para comparar modelos (slide 34)."
+          ],
+          "warnings": [
+            "VÍDEO EM INGLÊS: conferir se as legendas em português estão disponíveis no YouTube (não dá para saber pela transcrição).",
+            "Pressupõe os vídeos de matriz de confusão, sensibilidade e especificidade do mesmo canal.",
+            "Não diz que AUC = 0,5 equivale a chute aleatório; mostra apenas a diagonal TPR = FPR (veja o a7-v15).",
+            "O trecho final (14:24–15:30), sobre precisão no lugar de FPR, é extra e não cai na prova."
+          ],
+          "clips": [
+            {
+              "start": 85,
+              "end": 870,
+              "slides": "33–34",
+              "note": "Probabilidades e limiar 0,5, efeito de mudar o limiar, ROC (TPR x FPR) construída ponto a ponto e AUC para comparar modelos. Em inglês."
+            }
+          ],
+          "transcript": "../transcripts/4jRBRDbJemM.json",
+          "review": {
+            "badge": "transcrição lida · opcional aprofundamento (inglês)",
+            "covers": [
+              "01:25–03:00 — Regressão logística gera probabilidade; limiar 0,5 transforma em classes (slide 33)",
+              "03:03–04:43 — Testando com 8 camundongos: acertos, erros e matriz de confusão",
+              "04:48–07:00 — Mudar o limiar (0,1 ou 0,9) muda FP e FN; exemplo do Ebola: baixar o limiar para não perder nenhum positivo (liga com o slide 23)",
+              "07:03–08:30 — ROC resume todas as matrizes: eixo Y = TPR (sensibilidade), eixo X = FPR = 1 − especificidade (slide 33)",
+              "08:32–13:30 — Construção da curva ponto a ponto, de (1,1) até (0,0), um limiar por ponto",
+              "10:04–10:21 — Diagonal verde: onde TPR = FPR (slide 34)",
+              "13:33–14:16 — AUC (exemplo 0,9) para comparar duas curvas/modelos (slide 34)",
+              "14:24–15:30 — Extra: precisão no lugar de FPR quando há muito mais negativos (fora dos slides)"
+            ],
+            "notCovered": "AUC = 0,5 explicitado; código scikit-learn; multiclasse.",
+            "profile": [
+              "**Nível:** iniciante, passo a passo.",
+              "**Foco:** construção da ROC com exemplo.",
+              "**Idioma/qualidade:** inglês; transcrição ótima."
+            ],
+            "verdict": "Aprofundamento opcional (inglês): 01:25–14:30."
+          }
+        },
+        {
+          "id": "a7-v15",
+          "type": "video",
+          "title": "O que são as curvas ROC e AUC em Machine Learning?",
+          "channel": "Infomity",
+          "duration": "6:39",
+          "url": "https://www.youtube.com/watch?v=eodZZgSjppg",
+          "optional": true,
+          "goals": [
+            "Ouvir explicitamente que a diagonal é o classificador aleatório e que AUC = 0,5 equivale a jogar uma moeda (slide 34).",
+            "Rever o limiar: baixar aumenta TPR e FPR; subir faz o contrário (slide 33).",
+            "Saber interpretar valores de AUC (0,5 aleatório; acima de 0,9 excelente) (slide 34)."
+          ],
+          "warnings": [
+            "VÍDEO EM INGLÊS (sem legenda em português verificada). Escolhido porque nenhum vídeo em português diz 'AUC = 0,5 = chute'.",
+            "Diz que ROC e AUC são 'robustos' a desbalanceamento; é uma simplificação (o a7-v9 mostra que a precisão pode ser mais útil com muitos negativos).",
+            "As faixas '0,7 a 0,8 aceitável, 0,8 a 0,9 bom' são regra prática do vídeo, não dos slides."
+          ],
+          "clips": [
+            {
+              "start": 126,
+              "end": 372,
+              "slides": "33–34",
+              "note": "Limiar, construção da curva, diagonal = aleatório, AUC = 0,5 como moeda e interpretação de valores."
+            }
+          ],
+          "transcript": "../transcripts/eodZZgSjppg.json",
+          "review": {
+            "badge": "transcrição lida · complemento opcional (inglês)",
+            "covers": [
+              "02:06–02:49 — Modelos dão probabilidade; o limiar decide a classe; baixar o limiar aumenta TPR e FPR (slide 33)",
+              "02:49–03:40 — A ROC mostra o compromisso TPR x FPR em todos os limiares; eixos de 0 a 1 (slide 33)",
+              "03:40–04:24 — Curva boa sobe rápido para o canto superior esquerdo; a diagonal é um classificador aleatório; abaixo dela é pior que o acaso (slide 34)",
+              "04:24–05:00 — AUC = área sob a curva, de 0 a 1 (slide 34)",
+              "05:00–05:28 — AUC = 0,5 é igual a jogar uma moeda; acima de 0,9 é excelente (slide 34)",
+              "05:28–06:12 — Comparar modelos pela AUC; recapitulação"
+            ],
+            "notCovered": "Exemplo numérico de construção da curva; código; slides 35 em diante.",
+            "profile": [
+              "**Nível:** iniciante.",
+              "**Foco:** definições curtas de ROC/AUC.",
+              "**Idioma/qualidade:** inglês; transcrição boa."
+            ],
+            "verdict": "Complemento opcional curto (inglês): 02:06–06:12."
+          }
+        },
+        {
+          "id": "a7-v10",
+          "type": "video",
+          "title": "Métricas de Performance para Classificação com Sklearn | Machine Learning: Fundamentos",
+          "channel": "Apoena Stack | Iury Rosal",
+          "duration": "12:07",
+          "url": "https://www.youtube.com/watch?v=FqHd1Cu_Cq4",
+          "optional": true,
+          "goals": [
+            "Ver confusion_matrix e classification_report do scikit-learn num caso real (Titanic com KNN) (slides 35 e 36).",
+            "Perceber que a acurácia de 73% esconde recall de 0,46 para os sobreviventes, e que suporte é a contagem de amostras reais de cada classe."
+          ],
+          "warnings": [
+            "Em 03:28 diz 'as linhas representam os valores previstos': no scikit-learn as LINHAS são a classe real e as COLUNAS a prevista (ele mesmo corrige em 04:40).",
+            "Em 04:54–05:19 cita 165 e 83, valores que não batem com a matriz (139 negativos reais).",
+            "O slide 35 usa o Iris (suporte = nº de amostras de cada espécie); aqui é Titanic. O Iris está no a7-v2 (10:09–12:44).",
+            "A fala não cita y_true/y_pred (o código só aparece na tela). O trecho 09:20–11:55 (como melhorar o modelo) está fora do tema e do clip."
+          ],
+          "clips": [
+            {
+              "start": 140,
+              "end": 560,
+              "slides": "35–36",
+              "note": "confusion_matrix e classification_report no scikit-learn com o Titanic (KNN): acurácia 73% mas recall 0,46 dos sobreviventes; suporte."
+            }
+          ],
+          "transcript": "../transcripts/FqHd1Cu_Cq4.json",
+          "review": {
+            "badge": "transcrição lida · complemento opcional",
+            "covers": [
+              "02:17–03:00 — O módulo sklearn.metrics tem funções por métrica e funções que juntam várias",
+              "02:49–04:17 — confusion_matrix: 124 VN, 15 FP, 45 FN, 39 VP (soma 223)",
+              "04:23–05:43 — Heatmap da matriz: o modelo acerta quem não sobreviveu e erra muito os sobreviventes",
+              "05:45–06:27 — Leve desbalanceamento (139 x 84): acurácia sozinha não é ideal (slide 13)",
+              "06:33–08:50 — classification_report: acurácia 73%, recall 0,89 x 0,46, precisão equilibrada, F1; o recall da classe negativa equivale à especificidade (slide 35)",
+              "08:53–09:20 — Suporte = número de amostras reais de cada classe (139 e 84) (slide 35)"
+            ],
+            "notCovered": "Código completo de y_true/y_pred na fala; ROC/AUC; exemplo do hotel.",
+            "profile": [
+              "**Nível:** intermediário.",
+              "**Foco:** leitura de relatório do sklearn.",
+              "**Qualidade:** razoável, com deslizes de leitura; transcrição razoável."
+            ],
+            "verdict": "Complemento opcional: 02:20–09:20. O vídeo principal para os slides 35 e 36 é o a7-v2 (10:09–12:44)."
+          }
+        },
+        {
+          "id": "a7-md",
+          "type": "markdown",
+          "title": "Leitura: Aula 7 do zero",
+          "path": "aula-7-do-zero.md",
+          "goals": [
+            "Cobertura integral dos 37 slides da Aula 7",
+            "Anatomia completa da Matriz de Confusão: VP, VN, FP e FN",
+            "Acurácia e a armadilha do desbalanceamento (exemplos de SPAM e Fraude de Cartão)",
+            "Precisão: fórmula VP/(VP+FP) e cenários de custo de Falso Positivo (vídeos infantis, investimentos)",
+            "Revocação (Recall / Sensibilidade): fórmula VP/(VP+FN) e cenários de custo de Falso Negativo (diagnóstico em saúde)",
+            "O trade-off Precisão x Recall e o F1-Score como média harmônica de penalização",
+            "Especificidade (TNR) e Taxa de Falsos Positivos (FPR)",
+            "Curva ROC e Métrica AUC: variação do limiar, linha diagonal de 0.5 e modelo perfeito",
+            "Relatórios no scikit-learn: classification_report, suporte, macro avg vs weighted avg",
+            "Guia de decisão por custo do erro para responder na prova"
+          ]
+        },
+        {
+          "id": "a7-q",
+          "type": "questions",
+          "title": "Questões da Aula 7 (25)",
+          "path": "lesson-7-questions.json"
+        }
+      ]
+    },
+    {
+      "id": "codigo",
+      "title": "Fechamento · Leitura de Código do Bloco 3",
+      "items": [
+        {
+          "id": "b3-cod-md",
+          "type": "markdown",
+          "title": "Guia: Como ler código de Métricas no Scikit-Learn",
+          "path": "guia-ler-codigo-bloco-3.md",
+          "goals": [
+            "A convenção universal de argumentos: (y_true, y_pred) e o risco de inversão de parâmetros",
+            "A convenção da matriz de confusão no scikit-learn: [[VN, FP], [FN, VP]] e desempacotamento correto",
+            "predict (rótulos binários) vs predict_proba (probabilidades contínuas) para o cálculo da Curva ROC e AUC",
+            "Ajuste customizado de limiar de decisão (threshold tuning) no código",
+            "Interpretação detalhada de classification_report: macro avg vs weighted avg em classes raras",
+            "Checklist prático de 5 segundos para identificar erros de lógica de métricas na prova"
+          ]
+        },
+        {
+          "id": "b3-cod-q",
+          "type": "questions",
+          "title": "Questões de Código do Bloco 3 (19)",
+          "path": "code-questions.json"
+        }
+      ]
+    }
+  ]
+}

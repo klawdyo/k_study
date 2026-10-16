@@ -1,0 +1,1568 @@
+{
+  "schema": "block/v2",
+  "id": "block-4",
+  "title": "Bloco 4 · Redes Neurais e SVM",
+  "description": "Aulas 10 e 11: Neurônio MCP, Perceptron de Rosenblatt, Problema do XOR, MLP, Backpropagation, Funções de Ativação, Custo, Gradiente Descendente e Regularização; SVM, Margem Máxima, Vetores de Suporte, Margem Suave, Parâmetro C, Truque do Kernel, Parâmetro Gamma, Estratégias Multiclasse e Escala de Atributos no Scikit-Learn.",
+  "sections": [
+    {
+      "id": "aula-10",
+      "title": "Aula 10 · Redes Neurais Artificiais (Perceptron e MLP)",
+      "items": [
+        {
+          "id": "a10-v6",
+          "type": "video",
+          "title": "O que são Redes Neurais e Deep Learning",
+          "channel": "Hashtag Programação",
+          "duration": "13:55",
+          "url": "https://www.youtube.com/watch?v=s-Ue8SdQy3I",
+          "goals": [
+            "Entender a inspiração no cérebro: neurônios simples, muitos e interligados (slide 3).",
+            "Ver a ideia de aprender por experiência, que na rede artificial vira ajuste das conexões (slide 5).",
+            "Ter a primeira imagem de uma rede: entrada, camadas ocultas e saída (slide 6)."
+          ],
+          "warnings": [
+            "Descreve o neurônio biológico de forma bem simplificada (manda \"sim ou não\" para outros neurônios). Não usa os nomes dendrito, axônio, sinapse nem plasticidade dos slides 4 e 5; para isso veja o vídeo seguinte.",
+            "Fora do trecho recomendado (08:55 a 09:10) diz que a função de ativação serve para \"adequar os dados entre 0 e 1\". Isso só vale para algumas funções (sigmoide); ReLU, por exemplo, não limita a 1."
+          ],
+          "clips": [
+            {
+              "start": 43,
+              "end": 240,
+              "slides": "3, 5, 6",
+              "note": "o cérebro como máquina de aprender; neurônio simples; rede de nós com camadas ocultas"
+            }
+          ],
+          "transcript": "../transcripts/s-Ue8SdQy3I.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:43–01:57 o cérebro aprende por experiência: exemplo do bebê que se queima na vela e passa a evitar a chama (ideia de aprender mudando o comportamento depois do estímulo).",
+              "02:04–03:00 o neurônio biológico é simples (passa ou não passa a informação; armazena e transmite); o poder vem da quantidade de neurônios e do paralelismo.",
+              "03:02–04:00 a rede artificial replica a estrutura: nós conectados, entrada, camadas ocultas que aprendem sozinhas com os dados, e muitas camadas = deep learning.",
+              "07:45–11:55 (fora do trecho) peso como importância da conexão, viés e função de ativação, com o exemplo da banana; resumo útil, mas o vídeo de Pistori (a10-v8) explica pesos e viés melhor."
+            ],
+            "notCovered": "Os termos dendrito, corpo, axônio e plasticidade (slides 4 e 5); neurônio MCP e perceptron; o vídeo não fala de limiar nem de soma ponderada na parte biológica.",
+            "profile": [
+              "**Nível:** iniciante total, sem fórmulas.",
+              "**Foco:** motivação e analogia com o cérebro; bom para quem nunca viu o tema.",
+              "**Idioma/qualidade:** português do Brasil, fala clara; há pedido de curtida e propaganda no começo (até 00:32)."
+            ],
+            "verdict": "Aprovar só o trecho 00:43–04:00."
+          }
+        },
+        {
+          "id": "a10-v7",
+          "type": "video",
+          "title": "Neurônios Artificiais e Biológicos",
+          "channel": "Hemerson Pistori",
+          "duration": "19:56",
+          "url": "https://www.youtube.com/watch?v=wNBJFswcy00",
+          "goals": [
+            "Ver o neurônio artificial como entradas × pesos, soma e função de ativação (slides 8 e 9).",
+            "Ligar cada parte do neurônio artificial ao neurônio biológico: dendritos, corpo, limiar de disparo e axônio (slides 4 e 9).",
+            "Saber que esse modelo é de 1943 (slide 7)."
+          ],
+          "warnings": [
+            "Só o começo interessa (00:00–04:50). A partir de 04:57 o vídeo mostra que o neurônio real é muito mais complexo (tipos de sinapse, neurotransmissores, células da glia). Isso não está nos slides: não assistir.",
+            "Diz que o modelo \"foi criado em 1943\" mas não cita McCulloch e Pitts pelo nome nem fala que o neurônio MCP não aprende (slide 9).",
+            "A legenda automática erra alguns termos (\"neurone\", \"gêmulas\" para espinhas dendríticas); sem impacto no conteúdo."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 290,
+              "slides": "4, 7, 8, 9",
+              "note": "neurônio artificial lado a lado com o biológico"
+            }
+          ],
+          "transcript": "../transcripts/wNBJFswcy00.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:00–01:50 o neurônio artificial: entradas (números), cada uma multiplicada por um peso, soma, função de ativação; o peso é o que se altera na aprendizagem.",
+              "02:00–02:35 esse modelo foi criado em 1943 e é usado quase sem mudanças desde então (slide 7).",
+              "02:35–04:50 o neurônio biológico: dendritos recebem os sinais, o corpo integra (soma), ao atingir um limiar o neurônio dispara e o axônio leva o sinal até os terminais, que se conectam a outros neurônios.",
+              "04:57–19:50 (fora do trecho) tudo sobre neurociência real e o quanto o modelo artificial é simplificado."
+            ],
+            "notCovered": "Não nomeia o neurônio MCP, não diz que ele não tem algoritmo de aprendizado (slide 9) e não fala de plasticidade (slide 5).",
+            "profile": [
+              "**Nível:** iniciante a intermediário; professor de computação falando devagar.",
+              "**Foco:** correspondência neurônio artificial × biológico.",
+              "**Idioma/qualidade:** português do Brasil, boa dicção; legenda automática com alguns erros."
+            ],
+            "verdict": "Aprovar só o trecho 00:00–04:50."
+          }
+        },
+        {
+          "id": "a10-v8",
+          "type": "video",
+          "title": "Aula IA - 01 - Parâmetros, Pesos, Viés e Arquitetura de Redes Neurais Artificiais",
+          "channel": "Hemerson Pistori",
+          "duration": "15:29",
+          "url": "https://www.youtube.com/watch?v=TbGUV3nR2bI",
+          "goals": [
+            "Entender uma rede como neurônios simples que trocam números por conexões com peso (slides 6 e 8).",
+            "Saber o que são peso, viés (bias), parâmetros e arquitetura: número de camadas e de neurônios (slides 6, 8 e 35).",
+            "Fixar que a rede aprende mexendo nos parâmetros (slide 11)."
+          ],
+          "warnings": [
+            "Os exemplos numéricos (um peso 8 que transforma 5 em 40, por exemplo) são só ilustração; não são a fórmula do slide 12.",
+            "O viés não aparece no slide 8, mas reaparece nos slides 24 e 25 (\"pesos e bias\"); por isso vale ver essa parte.",
+            "Cita tamanhos de redes (AlexNet, GPT-3) como curiosidade; não cai na prova."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 721,
+              "slides": "6, 8, 35",
+              "note": "neurônio, conexão, peso, viés, camadas e arquitetura"
+            },
+            {
+              "start": 773,
+              "end": 925,
+              "slides": "11",
+              "note": "a rede aprende mexendo nos parâmetros"
+            }
+          ],
+          "transcript": "../transcripts/TbGUV3nR2bI.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:00–03:00 a rede como conjunto de \"computadores\" simples interligados; cada neurônio recebe números, faz uma conta simples e passa o resultado; neurônios de entrada e de saída.",
+              "03:00–06:00 o peso é um número que multiplica o sinal ao passar de um neurônio para outro (equivalente à sinapse, com a ressalva de que é só levemente inspirado no cérebro).",
+              "06:00–10:00 o viés (bias): número extra de cada neurônio, que não vem de outro neurônio e funciona como uma tendência.",
+              "10:00–12:00 pesos e vieses são os parâmetros; arquitetura é quantos neurônios, quantas camadas e como se ligam; camadas que não são de entrada nem de saída são ocultas; rede profunda = muitas camadas.",
+              "12:53–15:15 a rede aprende alterando os parâmetros para aproximar a saída do esperado; pesos grandes reforçam caminhos, peso zero anula a conexão."
+            ],
+            "notCovered": "Função de ativação (aparece só em outros vídeos da série); regra de correção do erro (slide 12).",
+            "profile": [
+              "**Nível:** iniciante total; muito didático, usa desenho e números pequenos.",
+              "**Foco:** vocabulário básico de redes.",
+              "**Idioma/qualidade:** português do Brasil; transcrição boa."
+            ],
+            "verdict": "Aprovar os trechos 00:00–12:00 e 12:53–15:15."
+          }
+        },
+        {
+          "id": "a10-v1",
+          "type": "video",
+          "title": "Redes Neurais: Perceptron",
+          "channel": "Fernando dos Santos",
+          "duration": "11:02",
+          "url": "https://www.youtube.com/watch?v=8lKamMoQKQ0",
+          "goals": [
+            "Entender o Perceptron simples como a rede mais simples: camada de entrada que só distribui e camada de neurônios que calcula (slide 10).",
+            "Ver que o conhecimento da rede está nos pesos e que aprender é encontrar os pesos certos (slides 10 e 11)."
+          ],
+          "warnings": [
+            "O vídeo NÃO ensina a regra de correção do erro (slides 12 a 17). Aos 09:57 ele anuncia que o algoritmo (\"aprendizado delta\") é o próximo tópico. A regra está em a10-v10.",
+            "Descreve um Perceptron com vários neurônios na camada de saída (um por classe) e chama a camada de entrada de \"sensorial\". O slide 10 fala em \"uma camada de neurônios MCP\".",
+            "Não cita Rosenblatt, 1958 nem o resultado de que o Perceptron converge se o problema for linearmente separável (slide 10)."
+          ],
+          "clips": [
+            {
+              "start": 81,
+              "end": 355,
+              "slides": "10",
+              "note": "estrutura do Perceptron: camada de entrada e camada de saída"
+            },
+            {
+              "start": 455,
+              "end": 600,
+              "slides": "10, 11",
+              "note": "aprender = achar os pesos"
+            }
+          ],
+          "transcript": "../transcripts/8lKamMoQKQ0.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:00–01:05 revisão do neurônio (entradas, soma, ativação); um neurônio só resolve coisas básicas como E e OU.",
+              "01:21–02:00 o Perceptron é a rede mais simples: vários neurônios, cada um processa as entradas e gera uma saída.",
+              "02:05–03:00 serve para classificação (exemplo: imagem em pássaro, cão ou gato); duas camadas.",
+              "03:00–04:20 camada de entrada: neurônios \"sensoriais\" só replicam cada valor de entrada para todos os neurônios seguintes.",
+              "04:27–05:50 camada de saída: neurônios que fazem soma ponderada e ativação; é onde o conhecimento fica guardado; número de entradas = número de variáveis do problema.",
+              "07:35–09:55 o conhecimento são os pesos; aprender é encontrar os pesos certos e também a quantidade de neurônios necessária.",
+              "09:57–10:55 anuncia o aprendizado delta como próximo assunto e sugere treinar a conta numa planilha."
+            ],
+            "notCovered": "Regra de correção do erro e taxa de aprendizado (slide 12); exemplo dos slides 13 a 17; Rosenblatt e linearmente separável.",
+            "profile": [
+              "**Nível:** iniciante.",
+              "**Foco:** anatomia do Perceptron.",
+              "**Idioma/qualidade:** português do Brasil, boa oratória."
+            ],
+            "verdict": "Aprovar só os trechos 01:21–05:55 e 07:35–10:00. A versão anterior desta ficha dizia que o vídeo cobria o algoritmo de correção de erro (08:00–11:02): isso é falso."
+          }
+        },
+        {
+          "id": "a10-v11",
+          "type": "video",
+          "title": "Teoria sobre Redes Neurais Artificiais: cálculos passo a passo Perceptron",
+          "channel": "IA Expert Academy",
+          "duration": "17:52",
+          "url": "https://www.youtube.com/watch?v=0chlwnUKoHA",
+          "goals": [
+            "Fazer à mão a conta do neurônio: soma ponderada e função de ativação (slides 7 a 9).",
+            "Acompanhar um exemplo completo de treino com o operador lógico E e a regra de atualização dos pesos (slides 12 a 17).",
+            "Entender por que uma camada só falha em problemas não linearmente separáveis, como o XOR (slide 18)."
+          ],
+          "warnings": [
+            "Usa a função degrau com limiar 1 (saída 1 se a soma for maior ou igual a 1). O slide 46 define o degrau com limiar 0 (x ≥ 0).",
+            "Inicia os pesos em zero e usa taxa 0,1. O slide 15 sugere pesos aleatórios em [0; 1] e taxa 0,3.",
+            "Os pesos 0,5 que resolvem o E lógico (13:20 a 14:50) são escolhidos pelo professor para mostrar o objetivo, não são o resultado do algoritmo.",
+            "Os slides 13 a 17 são imagens; o exemplo exato deles não está no texto extraído. Este vídeo faz o mesmo tipo de conta (E lógico, passo a passo)."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 310,
+              "slides": "7, 8, 9",
+              "note": "conta do neurônio com função degrau; analogia com o neurônio biológico"
+            },
+            {
+              "start": 310,
+              "end": 900,
+              "slides": "12, 13, 14, 15, 16, 17",
+              "note": "exemplo do E lógico: previsão, erro, atualização dos pesos"
+            },
+            {
+              "start": 900,
+              "end": 1069,
+              "slides": "18",
+              "note": "linearmente separável (E, OU) e XOR"
+            }
+          ],
+          "transcript": "../transcripts/0chlwnUKoHA.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "00:00–03:00 neurônio com entradas 1, 7, 5 e pesos 0,8; 0,1; 0: soma = 1,5; função degrau devolve 1.",
+              "03:00–04:20 comparação com o biológico: entradas = dendritos, corpo = soma e ativação, saída = terminais do axônio.",
+              "04:20–05:10 com entrada −1 a soma dá −0,1 e a saída é 0.",
+              "05:10–08:20 estudo de caso: operador lógico E; entradas x1 e x2, classe; objetivo: a rede aprender os pesos.",
+              "08:20–11:00 pesos iniciais zero; as quatro previsões dão 0; erro = classe − previsão; acerta 3 de 4 (75%).",
+              "11:00–13:00 regra: peso novo = peso atual + taxa × entrada × erro (exemplo: de 0 para 0,1).",
+              "13:20–15:10 com pesos 0,5 e 0,5 a rede acerta os quatro casos; o objetivo da rede é achar os melhores pesos.",
+              "15:10–17:50 E e OU são linearmente separáveis (uma reta separa as classes); XOR não é, então não se resolve com uma camada: são necessárias redes de múltiplas camadas."
+            ],
+            "notCovered": "Rosenblatt e 1958; MCP não aprende (slide 9); backpropagation.",
+            "profile": [
+              "**Nível:** iniciante; a conta é feita devagar, com números pequenos.",
+              "**Foco:** cálculo do neurônio e treino do Perceptron no E lógico.",
+              "**Idioma/qualidade:** português do Brasil, clara."
+            ],
+            "verdict": "Aprovar o vídeo inteiro (00:00–17:52). É o que mais se aproxima do exemplo dos slides 13 a 17."
+          }
+        },
+        {
+          "id": "a10-v12",
+          "type": "video",
+          "title": "Redes Neurais: Conceito de MultiLayer Perceptron (MLP) e a propagação de entradas",
+          "channel": "Fernando dos Santos",
+          "duration": "9:54",
+          "url": "https://www.youtube.com/watch?v=yV6KKoKfo3g",
+          "goals": [
+            "Entender o que a camada oculta acrescenta e por que o MLP resolve problemas não lineares (slides 18 e 19).",
+            "Acompanhar a propagação para frente camada por camada (slides 19, 20 e 23)."
+          ],
+          "warnings": [
+            "Explica só a propagação para frente (fase forward). O treinamento do MLP está em a10-v14.",
+            "Não cita o XOR; o problema não linear aparece como pontos verdes e vermelhos (01:40). A metáfora de \"sair de 2D para 3D\" (00:55 a 01:30) é uma imagem, não uma definição.",
+            "O slide 18 pede também função de ativação não linear; isso aparece nos vídeos de ativação (a10-v4)."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 593,
+              "slides": "18, 19, 20, 23",
+              "note": "MLP: camada oculta, topologia e propagação"
+            }
+          ],
+          "transcript": "../transcripts/yV6KKoKfo3g.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "00:00–01:00 o MLP é o mesmo Perceptron, só que com pelo menos uma camada oculta.",
+              "01:00–03:00 a camada oculta transforma um problema não linearmente separável em linearmente separável: o Perceptron simples traça uma reta, o MLP faz recortes não lineares.",
+              "03:00–04:30 topologia: entrada, uma ou mais camadas ocultas, saída; cada camada faz um mapeamento intermediário.",
+              "04:30–06:00 a entrada só replica; ocultas e saída são neurônios que calculam; a saída de um neurônio vira entrada de todos os da camada seguinte.",
+              "06:00–09:53 propagação: soma v, função de ativação φ, saída i, passa para a próxima camada; todo neurônio tem uma entrada fixa em 1 (viés)."
+            ],
+            "notCovered": "Treinamento do MLP; função de ativação não linear como condição (slide 18).",
+            "profile": [
+              "**Nível:** iniciante a intermediário.",
+              "**Foco:** estrutura do MLP.",
+              "**Idioma/qualidade:** português do Brasil, boa."
+            ],
+            "verdict": "Aprovar o vídeo inteiro (00:00–09:53)."
+          }
+        },
+        {
+          "id": "a10-v14",
+          "type": "video",
+          "title": "Redes Neurais: Visão geral do treinamento de MultiLayer Perceptron (MLP) com o Backpropagation",
+          "channel": "Fernando dos Santos",
+          "duration": "11:49",
+          "url": "https://www.youtube.com/watch?v=IjdJNPpJ8nE",
+          "goals": [
+            "Entender por que o erro só é conhecido na camada de saída e como o backpropagation estima o erro das camadas ocultas (slides 21 e 22).",
+            "Ver as fases do algoritmo: propagação para frente e ajuste dos pesos de trás para frente (slides 23 e 24).",
+            "Saber quando o treinamento termina."
+          ],
+          "warnings": [
+            "Chama de \"delta\" o erro multiplicado pela derivada da função de ativação. O slide 24 fala em derivadas parciais, regra da cadeia e gradiente; é a mesma ideia, mas o vídeo não usa os nomes \"regra da cadeia\", \"gradiente\" nem \"convergência\".",
+            "Diz que a função de ativação precisa ser derivável, sem justificar em detalhe (04:30): o motivo está nos slides 46 e 47.",
+            "Há fórmulas na tela; basta acompanhar a lógica, a prova não pede conta."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 705,
+              "slides": "21, 22, 23, 24",
+              "note": "backpropagation: erro na saída, delta das camadas ocultas, ajuste de trás para frente, época"
+            }
+          ],
+          "transcript": "../transcripts/IjdJNPpJ8nE.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "00:00–01:20 treinar o MLP é ajustar pesos; o algoritmo generaliza o aprendizado delta e se chama backpropagation porque o ajuste começa na saída e volta pelas camadas.",
+              "01:30–03:00 pseudocódigo: pesos iniciais aleatórios e não nulos; propaga as entradas até a saída.",
+              "03:00–05:30 calcula o erro da saída e o delta (erro × derivada da função de ativação); a atualização do peso é a mesma do Perceptron, usando a saída do neurônio anterior.",
+              "06:30–09:00 camadas ocultas não têm saída desejada; o delta de um neurônio oculto vem da soma dos deltas da camada seguinte ponderados pelos pesos, ou seja, quanto maior a conexão, maior a parte dele no erro (é a ideia do slide 22).",
+              "09:00–11:40 repete até a primeira camada oculta; passar por todos os exemplos fecha uma época; o treino para por número de épocas ou quando o erro quadrático médio fica pequeno."
+            ],
+            "notCovered": "Regra da cadeia e gradiente por nome (slide 24); descida do gradiente e função de custo (slides 25 a 33), que estão em a10-v16 e a10-v17.",
+            "profile": [
+              "**Nível:** intermediário.",
+              "**Foco:** visão geral do algoritmo, sem demonstração numérica.",
+              "**Idioma/qualidade:** português do Brasil, boa."
+            ],
+            "verdict": "Aprovar o vídeo inteiro (00:00–11:40)."
+          }
+        },
+        {
+          "id": "a10-v2",
+          "type": "video",
+          "title": "Backpropagation: Entenda de uma vez por todas!",
+          "channel": "Sandeco",
+          "duration": "10:28",
+          "url": "https://www.youtube.com/watch?v=L3lbrdCTK9w",
+          "optional": true,
+          "goals": [
+            "Ver a rede como funções aninhadas e por que isso leva à regra da cadeia (slides 22 e 24).",
+            "Visualizar com a analogia das engrenagens que cada peso tem parte da culpa no erro final (slide 22)."
+          ],
+          "warnings": [
+            "Parte conceitual boa (00:26 a 05:00). A parte de 05:00 a 09:30 é derivação com derivadas, sigmoide e regra da cadeia em detalhe: a prova não pede cálculo.",
+            "Usa a sigmoide como exemplo; o custo é um erro quadrático com ½.",
+            "Termina sem mostrar o ajuste dos pesos das camadas ocultas (W1): anuncia \"regra delta\" para o próximo vídeo. Isso está em a10-v14.",
+            "As versões anteriores desta ficha atribuíam a este vídeo os slides 21 a 24 inteiros; ele cobre bem só a ideia da cadeia."
+          ],
+          "clips": [
+            {
+              "start": 26,
+              "end": 300,
+              "slides": "22, 23",
+              "note": "duas fases, funções aninhadas, engrenagens"
+            },
+            {
+              "start": 300,
+              "end": 590,
+              "slides": "24",
+              "note": "regra da cadeia para o peso W5 (detalhe de cálculo)"
+            }
+          ],
+          "transcript": "../transcripts/L3lbrdCTK9w.json",
+          "review": {
+            "badge": "transcrição lida · complemento opcional",
+            "covers": [
+              "00:26–01:00 rede com entrada, camadas ocultas e saída; pesos e vieses; como atualizar? Backpropagation, em duas fases.",
+              "01:00–01:35 propaga, calcula o erro e retropropaga da saída até a entrada; o ciclo repete até o erro ser o menor possível.",
+              "01:35–03:00 a rede é uma composição de funções (soma ponderada + sigmoide em cada neurônio).",
+              "03:00–05:00 analogia das engrenagens: cada peso tem parcela de culpa no erro; derivar o erro em relação a cada peso.",
+              "05:00–09:10 derivação do erro em relação a W5 com a regra da cadeia; derivada da sigmoide = σ(1 − σ), reaproveitando as saídas guardadas na propagação (pode pular).",
+              "09:10–09:30 aviso: dependendo da função de ativação a derivada pode ser zero e a rede nunca aprende (liga com os slides 46 e 47)."
+            ],
+            "notCovered": "Atualização de pesos de camadas profundas; função de custo; convergência por nome.",
+            "profile": [
+              "**Nível:** intermediário; exige noções de derivada.",
+              "**Foco:** intuição mecânica e matemática do backpropagation.",
+              "**Idioma/qualidade:** português do Brasil, criativo e claro."
+            ],
+            "verdict": "Aprovar só como complemento opcional, trecho 00:26–05:00 (e 05:00–09:30 só para quem quer a conta)."
+          }
+        },
+        {
+          "id": "a10-v16",
+          "type": "video",
+          "title": "Aula IA - 03 - Função de Perda (Loss Function)",
+          "channel": "Hemerson Pistori",
+          "duration": "12:41",
+          "url": "https://www.youtube.com/watch?v=Odm-cm-nxVo",
+          "goals": [
+            "Entender a função de custo (perda, erro) como o número que mede o quão longe a rede está da resposta certa (slide 25).",
+            "Ver que aprender é mexer nos pesos para diminuir essa perda."
+          ],
+          "warnings": [
+            "O exemplo usa a soma das diferenças absolutas, não o erro quadrático médio (MSE) do slide 25; ele só diz que \"poderia pegar o quadrado da subtração\" (01:50). O MSE aparece em a10-v17 (01:00 a 02:00).",
+            "Do 07:00 em diante mostra a perda de dois pesos em 3D e redes reais; curioso, fora dos slides."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 405,
+              "slides": "25",
+              "note": "o que é a função de perda e como o aprendizado a usa"
+            }
+          ],
+          "transcript": "../transcripts/Odm-cm-nxVo.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:00–01:00 função de perda (também erro, custo, loss): dado o conjunto de parâmetros, quantifica o quanto a rede está longe da resposta esperada; exemplo de contar objetos em imagens.",
+              "01:00–02:00 um exemplo de perda: somar as diferenças entre o esperado e o obtido em todas as imagens de treino.",
+              "02:00–03:45 mudando um peso, a perda sobe ou desce; desenhada contra o peso vira uma curva.",
+              "03:45–05:00 aprender é mexer nos pesos para reduzir a perda; há um ponto de mínimo.",
+              "05:00–06:45 a perda diz se devemos parar ou continuar; na prática busca-se um erro aceitável, não necessariamente o mínimo absoluto."
+            ],
+            "notCovered": "MSE por nome e fórmula; gradiente descendente (vídeo seguinte da série e a10-v17).",
+            "profile": [
+              "**Nível:** iniciante.",
+              "**Foco:** a ideia de perda.",
+              "**Idioma/qualidade:** português do Brasil."
+            ],
+            "verdict": "Aprovar só o trecho 00:00–06:45."
+          }
+        },
+        {
+          "id": "a10-v17",
+          "type": "video",
+          "title": "Redes neurais artificiais #13: Backpropagation e descida do gradiente",
+          "channel": "Machine Learning para humanos",
+          "duration": "12:13",
+          "url": "https://www.youtube.com/watch?v=vH4eSfGkJhQ",
+          "goals": [
+            "Entender a descida do gradiente: a perda como parábola, o ponto de mínimo e a inclinação da reta tangente (slides 26 a 30).",
+            "Aprender a regra: peso novo = peso antigo − taxa de aprendizagem × inclinação (slides 31 a 33).",
+            "Ver o efeito da taxa de aprendizagem: passo pequeno demora, passo grande oscila (slide 41)."
+          ],
+          "warnings": [
+            "O título fala em backpropagation, mas o vídeo trata só da descida do gradiente com um peso. O backpropagation das camadas ocultas está em a10-v14.",
+            "Chama a derivada de \"inclinação da reta tangente\" (slide 29) e usa η (eta) para a taxa; o slide 32 usa α (alfa). É a mesma coisa.",
+            "Aos 01:09 troca os termos e chama o Fahrenheit (o que se quer prever) de \"variável independente\"; é a dependente.",
+            "Não menciona o critério de parar quando o custo chega perto de zero (slide 33); fala só de limite de épocas.",
+            "Entre 06:20 e 07:00 há um pedido de curtida; pode pular."
+          ],
+          "clips": [
+            {
+              "start": 58,
+              "end": 725,
+              "slides": "25, 26, 27, 28, 29, 30, 31, 32, 33, 41",
+              "note": "exemplo simples de descida do gradiente com um peso"
+            }
+          ],
+          "transcript": "../transcripts/vH4eSfGkJhQ.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:58–02:00 exemplo: Celsius → Fahrenheit, um peso e um viés, perda MSE (média do quadrado da diferença), que desenhada contra o peso vira uma parábola.",
+              "02:00–03:30 animação: ao variar o peso a reta e os erros mudam até o mínimo da perda.",
+              "03:30–04:15 o personagem Nelson descendo a parábola ilustra a descida do gradiente: achar o mínimo da perda em relação aos pesos.",
+              "04:15–06:20 sinais das direções; inclinação da reta tangente no ponto; inclinação negativa → andar para a direita; o sentido do movimento é sempre o oposto da inclinação.",
+              "07:00–08:00 tamanho do passo: pequeno demais demora ou nunca chega; liga com o número de épocas.",
+              "08:00–09:00 passo grande demais fica pulando de um lado para o outro; o tamanho do passo é a taxa de aprendizagem (learning rate), hiperparâmetro importante.",
+              "09:00–10:00 taxa variável (grande no começo, menor depois); inclinação alta = longe do mínimo.",
+              "10:00–11:50 regra de atualização: peso novo = peso antigo − taxa × inclinação; o sinal de menos faz andar para o lado contrário; inclinação = variação do erro em relação ao peso."
+            ],
+            "notCovered": "Gradiente como vetor com várias variáveis (slide 30, só no último parágrafo); mini-batch; derivada de funções de ativação.",
+            "profile": [
+              "**Nível:** iniciante total; usa animações feitas à mão.",
+              "**Foco:** descida do gradiente e taxa de aprendizagem.",
+              "**Idioma/qualidade:** português do Brasil, muito didático."
+            ],
+            "verdict": "Aprovar o trecho 00:58–12:05. É o vídeo principal para os slides 26 a 33 e 41."
+          }
+        },
+        {
+          "id": "a10-v3",
+          "type": "video",
+          "title": "Gradiente Descendente Estocástico (Otimizador das redes neurais)",
+          "channel": "Didática Tech",
+          "duration": "14:03",
+          "url": "https://www.youtube.com/watch?v=snXZg11IJ-8",
+          "goals": [
+            "Entender por que usar todos os exemplos a cada atualização é caro e como o SGD resolve isso (slides 34 e 36)."
+          ],
+          "warnings": [
+            "Não fala de taxa de aprendizado nem de Adam; versões anteriores desta ficha diziam que cobria a taxa de aprendizado (slide 41) e isso não existe no vídeo.",
+            "Chama o lote de \"minibet\" (erro da legenda automática para mini-batch).",
+            "Define o estocástico como um lote (por exemplo 500 de 10 mil amostras), como o slide 34; no sentido estrito, SGD usa um exemplo."
+          ],
+          "clips": [
+            {
+              "start": 60,
+              "end": 810,
+              "slides": "34, 36",
+              "note": "custo de usar todos os exemplos, SGD com lotes, andar do bêbado"
+            }
+          ],
+          "transcript": "../transcripts/snXZg11IJ-8.json",
+          "review": {
+            "badge": "transcrição lida · complemento opcional",
+            "covers": [
+              "01:00–02:50 revisa o gradiente descendente: a função de custo compara a previsão com o gabarito; o ideal seria atualizar usando todas as amostras.",
+              "02:50–04:20 problema: com 10 mil amostras (ou mais) cada atualização fica muito cara e pode estourar a memória.",
+              "04:20–06:00 o SGD usa só uma parte dos dados; o custo desenhado em 3D é uma paisagem de vales.",
+              "06:00–09:00 o passo não é o mais otimizado, mas vai na direção certa: \"andar do bêbado\".",
+              "09:00–11:00 cada passo é muito mais rápido; chega quase no mesmo lugar.",
+              "11:00–12:00 escolhe-se o tamanho do mini-lote; o custo deixa de crescer com o tamanho do conjunto de dados.",
+              "12:00–13:30 compromisso: lote maior é mais preciso e mais lento; menor é mais rápido e menos preciso."
+            ],
+            "notCovered": "Taxa de aprendizado; Adam; momentum.",
+            "profile": [
+              "**Nível:** iniciante a intermediário.",
+              "**Foco:** por que existe o SGD.",
+              "**Idioma/qualidade:** português do Brasil; a transcrição automática é picotada, mas legível."
+            ],
+            "verdict": "Aprovar como complemento opcional, trecho 01:00–13:30. Se só houver tempo para um, assista a a10-v19."
+          }
+        },
+        {
+          "id": "a10-v5",
+          "type": "video",
+          "title": "Aula IA - 09 - Regularização, Early Stopping (Parada Antecipada), Dropout, Weight Decay L1 e L2",
+          "channel": "Hemerson Pistori",
+          "duration": "13:51",
+          "url": "https://www.youtube.com/watch?v=rujn32cMeO8",
+          "goals": [
+            "Entender a parada antecipada: monitorar a validação, paciência e tolerância (slides 37 e 38).",
+            "Entender o Dropout: sortear e desligar neurônios a cada época (slide 40).",
+            "Diferenciar L2 (pesos pequenos, rede densa) de L1 (zera pesos, rede esparsa) (slides 39 e 40)."
+          ],
+          "warnings": [
+            "Aos 10:30 liga a norma L2 à regressão \"laço\" (Lasso). É o contrário: o slide 40 diz L2 = Ridge e L1 = Lasso. Aos 11:00 o nome ligado ao L1 ficou ilegível na transcrição automática.",
+            "Explica L1 e L2 como um termo somado à função de perda (penalidade com |w| ou w²). O slide 39 descreve o efeito no ajuste do peso (L1 diminui um valor constante, L2 um valor proporcional a w) e o slide 40 usa a versão da penalidade. É o mesmo efeito.",
+            "Chama a tolerância de um segundo hiperparâmetro da parada antecipada; o slide 38 só cita o conjunto de validação."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 265,
+              "slides": "37, 38",
+              "note": "parada antecipada: validação, paciência, tolerância, melhor conjunto de pesos"
+            },
+            {
+              "start": 285,
+              "end": 455,
+              "slides": "40",
+              "note": "Dropout"
+            },
+            {
+              "start": 460,
+              "end": 824,
+              "slides": "39, 40",
+              "note": "decaimento de peso: L2 (Ridge) e L1 (Lasso)"
+            }
+          ],
+          "transcript": "../transcripts/rujn32cMeO8.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:00–01:00 parada antecipada: monitora a perda no conjunto de validação; para antes do overfitting, quando o treino continua melhorando e a validação piora.",
+              "01:00–03:00 paciência (quantas épocas sem melhora antes de parar; exemplo 4 × 5 épocas) e tolerância (melhora mínima para contar como melhora).",
+              "03:00–04:25 paciência grande demais gasta tempo; guardar na memória o melhor conjunto de pesos.",
+              "04:25–04:50 regularização = técnicas para evitar o sobreajuste; o mini-lote também regulariza.",
+              "04:50–07:35 Dropout: sorteia neurônios a cada época (exemplo 50%) e zera a saída deles; evita que poucos neurônios decorem o treino; a porcentagem é hiperparâmetro; na camada de entrada vira algo parecido com aumento de dados.",
+              "07:35–10:05 decaimento de peso (L2): soma à perda os pesos ao quadrado vezes λ; λ = 0 é a perda normal; λ alto empurra os pesos para pequenos.",
+              "10:05–11:10 L1: no lugar do quadrado usa o módulo (distância de Manhattan).",
+              "11:10–13:45 L1 zera mais pesos (rede esparsa), L2 deixa a rede densa; λ alto demais zera tudo e a rede não aprende."
+            ],
+            "notCovered": "Nada relevante dos slides 37 a 40; não fala do termo \"Ridge\" por nome.",
+            "profile": [
+              "**Nível:** intermediário.",
+              "**Foco:** prevenção de sobreajuste.",
+              "**Idioma/qualidade:** português do Brasil, muito claro."
+            ],
+            "verdict": "Aprovar os trechos 00:00–04:25, 04:50–07:35 e 07:35–13:45, com o aviso sobre Lasso e Ridge."
+          }
+        },
+        {
+          "id": "a10-v22",
+          "type": "video",
+          "title": "Redes neurais artificiais #14: Backpropagation e learning rate",
+          "channel": "Machine Learning para humanos",
+          "duration": "13:25",
+          "url": "https://www.youtube.com/watch?v=9g6CjmkiwRw",
+          "optional": true,
+          "goals": [
+            "Ver, com animações, o efeito de uma taxa de aprendizado pequena, média e grande (slide 41)."
+          ],
+          "warnings": [
+            "O título fala em backpropagation, mas o vídeo trata só da taxa de aprendizado em um exemplo com um peso.",
+            "As taxas do exemplo (0,001 a 0,1) são só do experimento; o slide 41 cita valores comuns de 0.001 a 0.3 e a escolha depende do problema. A transcrição automática lê alguns números de forma imprecisa.",
+            "Do 08:15 em diante discute mínimos locais e taxa que diminui; esta última ideia aparece também em a10-v17."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 490,
+              "slides": "41",
+              "note": "taxa pequena, média e grande em animações"
+            }
+          ],
+          "transcript": "../transcripts/9g6CjmkiwRw.json",
+          "review": {
+            "badge": "transcrição lida · complemento opcional",
+            "covers": [
+              "00:00–02:00 mesmo exemplo do vídeo anterior: um peso, MSE, sem ativação.",
+              "02:00–03:30 taxa 0,001: passos maiores no começo (inclinação alta) e menores perto do mínimo; com poucas épocas fica longe do mínimo.",
+              "03:30–04:30 taxa 0,002: chega ao mínimo no mesmo número de épocas.",
+              "04:30–06:20 taxas maiores: salta de um lado para o outro da parábola; quanto maior, pior a convergência.",
+              "06:20–08:10 taxa ainda maior: a perda aumenta e a rede não aprende (diverge)."
+            ],
+            "notCovered": "Valores típicos do slide 41; parte de mínimos locais fica fora do trecho.",
+            "profile": [
+              "**Nível:** iniciante.",
+              "**Foco:** efeito visual da taxa de aprendizado.",
+              "**Idioma/qualidade:** português do Brasil."
+            ],
+            "verdict": "Aprovar só o trecho 00:00–08:10, como complemento opcional."
+          }
+        },
+        {
+          "id": "a10-v4",
+          "type": "video",
+          "title": "Aula IA - 08 - Funções de Ativação, Não-Linearidades, ReLU, Softmax",
+          "channel": "Hemerson Pistori",
+          "duration": "13:59",
+          "url": "https://www.youtube.com/watch?v=G-lFSSY8qhE",
+          "goals": [
+            "Entender por que um neurônio sem ativação só calcula uma reta e por que a ativação não linear dá poder à rede (slides 42 a 45).",
+            "Conhecer a sigmoide/logística (0 a 1, probabilidade) e o Softmax (vários neurônios de saída somando 100%) (slides 48 e 50).",
+            "Conhecer a ReLU e o problema da derivada zero nos valores negativos (slides 49 e 51)."
+          ],
+          "warnings": [
+            "Aos 03:35 a fala sai como \"se cada neurônio realizar uma operação não linear, a resposta continua sendo linear\". O sentido correto é: se cada neurônio fosse linear, a rede toda continuaria linear (slide 45). Releia a frase assim.",
+            "Não fala da função degrau nem da função linear como ativação (slides 46 e 47) e não diz qual função usar em cada tipo de problema (slides 51 e 52). Veja a10-v23 e a10-v24.",
+            "Chama a sigmoide de \"logística\" e diz que sigmoide é qualquer curva em S; o slide 48 trata os dois como sinônimos. Mostra também a tangente hiperbólica, que não está nos slides.",
+            "As indicações dos clips da versão anterior desta ficha estavam erradas: a ReLU está em 08:17–12:15, não em 05:00–09:00."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 230,
+              "slides": "42, 43, 44, 45",
+              "note": "neurônio linear, ativação não linear"
+            },
+            {
+              "start": 285,
+              "end": 497,
+              "slides": "48, 50",
+              "note": "sigmoide (logística) e softmax"
+            },
+            {
+              "start": 497,
+              "end": 735,
+              "slides": "49, 51",
+              "note": "ReLU, Leaky ReLU e derivada zero"
+            }
+          ],
+          "transcript": "../transcripts/G-lFSSY8qhE.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:00–01:00 o neurônio calcula y = a·x + b: uma reta; mexer em a e b muda o ângulo e a posição.",
+              "01:00–02:00 problema: se os pontos não são alinhados, uma reta não os representa bem.",
+              "02:00–03:00 solução: acrescentar logo depois da saída uma função não linear, a função de ativação, em analogia ao neurônio que dispara quando o sinal passa de um nível.",
+              "03:00–03:50 com ela o neurônio representa o que não é linear; sem ela, várias camadas continuariam sendo uma função linear.",
+              "05:20–07:30 função logística (sigmoide): leva qualquer número para o intervalo de 0 a 1, interpretável como probabilidade (exemplo: 87% de haver um boi na imagem).",
+              "07:30–08:15 Softmax: com vários neurônios de saída, normaliza para que as saídas somem 100%.",
+              "08:17–09:00 ReLU: negativo vira zero, positivo permanece igual; é muito rápida de calcular.",
+              "09:00–10:00 desvantagens: o zero se propaga e a derivada é zero na parte negativa (problema na retropropagação); a Leaky ReLU corrige.",
+              "10:00–11:00 não confundir função de perda com função de ativação; o gradiente passa pelas duas.",
+              "11:00–12:15 derivada da ReLU (1 ou 0) e da Leaky ReLU (nunca zero)."
+            ],
+            "notCovered": "Função degrau e função linear como ativação (slides 46 e 47); qual função usar em cada camada e tipo de problema (slides 51 e 52); que a ReLU só vale para camadas ocultas.",
+            "profile": [
+              "**Nível:** didático, universitário.",
+              "**Foco:** funções de ativação e suas derivadas.",
+              "**Idioma/qualidade:** português do Brasil, excelente."
+            ],
+            "verdict": "Aprovar os trechos 00:00–03:50, 04:45–08:17 e 08:17–12:15 (o resto trata da derivada da sigmoide, fora dos slides)."
+          }
+        },
+        {
+          "id": "a10-v23",
+          "type": "video",
+          "title": "Aprenda a função Sigmóide (machine learning)",
+          "channel": "Didática Tech",
+          "duration": "8:30",
+          "url": "https://www.youtube.com/watch?v=DlBhJdHQElI",
+          "goals": [
+            "Entender a sigmoide como a função que leva qualquer número a um valor entre 0 e 1 (slide 48).",
+            "Entender por que se usa uma função suave e diferenciável em vez do degrau (slides 43 e 46)."
+          ],
+          "warnings": [
+            "Diz que a sigmoide \"binariza\" os dados; na verdade ela devolve um valor contínuo entre 0 e 1, que se corta em 0,5 se quiser uma classe.",
+            "Contra o degrau o argumento é que ele não é diferenciável (e a descida do gradiente precisa de derivada). O slide 46 diz que o gradiente do degrau é zero. A conclusão é a mesma: o degrau não serve ao backpropagation.",
+            "Não cita ReLU, Softmax nem tangente hiperbólica."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 495,
+              "slides": "43, 46, 48",
+              "note": "sigmoide, intervalo 0–1, por que não o degrau"
+            }
+          ],
+          "transcript": "../transcripts/DlBhJdHQElI.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:00–01:10 motivação: classificar em 0 ou 1 (exemplo devedor/não devedor).",
+              "01:10–03:00 fórmula 1/(1 + e^−x) e o gráfico em S: negativos muito baixos vão a quase 0, positivos altos a quase 1; 0,5 no centro.",
+              "03:00–03:30 usar 0,5 como corte para decidir a classe.",
+              "03:30–05:20 x pode ser uma combinação linear de várias variáveis, como no neurônio; é o que acontece na regressão logística e nas redes neurais.",
+              "05:20–07:30 por que não um degrau: a função degrau não é contínua nem diferenciável e o gradiente descendente depende da derivada; a sigmoide é suave e a derivada é fácil."
+            ],
+            "notCovered": "Softmax; ReLU; função linear.",
+            "profile": [
+              "**Nível:** iniciante.",
+              "**Foco:** sigmoide.",
+              "**Idioma/qualidade:** português do Brasil; a transcrição tem erros (\"número de order\" = número de Euler)."
+            ],
+            "verdict": "Aprovar o trecho 00:00–07:30."
+          }
+        },
+        {
+          "id": "a10-v24",
+          "type": "video",
+          "title": "Entenda a Entropia Cruzada de Uma Vez Por Todas",
+          "channel": "Sandeco",
+          "duration": "4:08",
+          "url": "https://www.youtube.com/watch?v=GdNmDQRdL2o",
+          "goals": [
+            "Saber que na classificação binária o custo é a entropia cruzada binária, e não o erro quadrático, que serve para regressão (slide 52)."
+          ],
+          "warnings": [
+            "Só o início (00:00 a 01:00) interessa. O resto é conta com logaritmo, sem cálculo na prova.",
+            "Cobre só a linha de classificação binária da tabela do slide 52; as linhas de multiclasse, multilabel e regressão com outliers não aparecem."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 58,
+              "slides": "52",
+              "note": "classificação binária: entropia cruzada binária"
+            }
+          ],
+          "transcript": "../transcripts/GdNmDQRdL2o.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:00–00:58 em classificação binária o custo deve ser a entropia cruzada binária; o erro ao quadrado é usado em regressão e não é indicado para classificação.",
+              "01:00–03:45 (fora do trecho) exemplos numéricos de cálculo do erro por objeto com a fórmula."
+            ],
+            "notCovered": "Softmax e entropia cruzada categórica, multilabel, erro absoluto médio.",
+            "profile": [
+              "**Nível:** intermediário.",
+              "**Foco:** função de custo da classificação binária.",
+              "**Idioma/qualidade:** português do Brasil."
+            ],
+            "verdict": "Aprovar só o trecho 00:00–00:58."
+          }
+        },
+        {
+          "id": "a10-v25",
+          "type": "video",
+          "title": "Função de Perda (Loss Function): Como a IA Quantifica e Corrige o Erro!",
+          "channel": "Byte Criativo",
+          "duration": "6:06",
+          "url": "https://www.youtube.com/watch?v=qAnGJNA7HKA",
+          "goals": [
+            "Ligar classificação com várias classes a Softmax e entropia cruzada categórica (slides 50 e 52)."
+          ],
+          "warnings": [
+            "Usa como exemplo a geração de texto por LLMs (escolher a próxima palavra); é só ilustração.",
+            "Nível de divulgação, sem rigor; serve só para fixar a combinação Softmax + entropia cruzada categórica."
+          ],
+          "clips": [
+            {
+              "start": 131,
+              "end": 215,
+              "slides": "50, 52",
+              "note": "multiclasse: Softmax e entropia cruzada categórica"
+            }
+          ],
+          "transcript": "../transcripts/qAnGJNA7HKA.json",
+          "review": {
+            "badge": "transcrição lida · complemento opcional",
+            "covers": [
+              "02:11–03:35 para escolher entre muitas classes a função de perda é a entropia cruzada categórica; passos: pontuações brutas → Softmax (probabilidades que somam 100%) → entropia cruzada compara com a resposta certa e dá o erro."
+            ],
+            "notCovered": "Multilabel; regressão e erro absoluto médio; sigmoide na saída.",
+            "profile": [
+              "**Nível:** iniciante, divulgação.",
+              "**Foco:** função de perda e ciclo de treino.",
+              "**Idioma/qualidade:** português do Brasil."
+            ],
+            "verdict": "Aprovar só o trecho 02:11–03:35, como complemento opcional."
+          }
+        },
+        {
+          "id": "a10-md",
+          "type": "markdown",
+          "title": "Leitura: Aula 10 do zero",
+          "path": "aula-10-do-zero.md",
+          "goals": [
+            "Cobertura integral dos 52 slides da Aula 10",
+            "Inspiração biológica: dendritos, soma, axônio, sinapses e plasticidade cerebral",
+            "Neurônio MCP vs Perceptron de Rosenblatt: a ausência de aprendizado no MCP e a regra por correção de erro",
+            "O Teorema da Convergência e a limitação fatal do Perceptron no problema do XOR",
+            "Arquitetura MLP: camadas ocultas como extratoras de abstração não linear",
+            "Backpropagation: Forward pass, Backward pass, regra da cadeia e atribuição de responsabilidade nos pesos",
+            "Método do Gradiente Descendente: a analogia da bola no vale, Batch vs SGD vs Mini-Batch e Adam",
+            "Técnicas de regularização: Early Stopping, L1 (Lasso), L2 (Ridge) e Dropout",
+            "Funções de ativação: Degrau, Linear, Sigmoide, ReLU e Softmax",
+            "Tabela de ouro do Slide 52: Tipo de problema × Função de custo × Ativação recomendada na saída"
+          ]
+        },
+        {
+          "id": "a10-q",
+          "type": "questions",
+          "title": "Questões da Aula 10 (58)",
+          "path": "lesson-10-questions.json"
+        }
+      ]
+    },
+    {
+      "id": "aula-11",
+      "title": "Aula 11 · Máquinas de Vetores de Suporte (SVM)",
+      "items": [
+        {
+          "id": "a11-v2",
+          "type": "video",
+          "title": "Máquina de vetores de suporte (SVM) - Teoria",
+          "channel": "ProfDanilo_DS",
+          "duration": "6:57",
+          "url": "https://www.youtube.com/watch?v=Fgd-paB7Ejc",
+          "goals": [
+            "Entender o que é a SVM (classificação e regressão) e que ela procura o hiperplano de margem máxima entre várias retas possíveis (slides 3, 4 e 12).",
+            "Ver o que é um hiperplano: reta com 2 atributos, plano com 3, \"hiperplano\" acima disso (slide 9).",
+            "Fixar vetores de suporte e margem (slide 6).",
+            "Ter um primeiro contato rápido com C, gamma e os nomes dos kernels (slides 21 a 24), que serão aprofundados nos vídeos seguintes."
+          ],
+          "warnings": [
+            "A legenda automática fica muito confusa entre 03:00 e 04:30 (trecho sobre kernel e equação de predição): não tente decifrar, a equação correta está nos vídeos seguintes e nos slides (slide 5).",
+            "Chama o C de \"parâmetro de regularização\" e diz que regularização baixa dá uma reta e alta dá uma curva (04:30 a 05:00): é uma simplificação. Pelo slide 21, C é o inverso da força de regularização: C pequeno tolera erros (margem larga), C grande pune erros (margem estreita).",
+            "Explicação de C e gamma é de 30 segundos cada: serve só de primeira impressão."
+          ],
+          "clips": [
+            {
+              "start": 30,
+              "end": 417,
+              "slides": "3–6, 9, 12",
+              "note": "Definição de SVM, hiperplanos possíveis, margem máxima, dimensão do hiperplano, vetores de suporte, boa margem."
+            }
+          ],
+          "transcript": "../transcripts/Fgd-paB7Ejc.json",
+          "review": {
+            "badge": "transcrição lida · trecho aprovado",
+            "covers": [
+              "00:30–01:00 SVM é um algoritmo supervisionado para classificação e regressão, usado mais em classificação (slide 3).",
+              "01:00–02:00 o objetivo é achar o hiperplano que separa as classes; existem muitos possíveis e se escolhe o de margem máxima, porque dá mais confiança ao classificar pontos novos (slides 3, 4 e 12).",
+              "02:00–03:00 hiperplano como fronteira de decisão; com 2 atributos é uma reta, com 3 é um plano, acima disso não dá para desenhar (slide 9).",
+              "03:00–04:00 vetores de suporte: pontos próximos do hiperplano que definem sua posição e orientação (slide 6).",
+              "04:00–05:00 C: valor grande aceita margem pequena para classificar melhor o treino; valor pequeno aceita margem grande e mais erros (slides 21 e 22). Cita também os kernels linear, polinomial, gaussiano/RBF e sigmoide (slide 23).",
+              "05:00–06:00 gamma: valor baixo, a influência de um ponto alcança longe; valor alto, só os pontos próximos contam (slides 23 e 24); e o que é uma boa margem: equilibrada entre as duas classes (slide 4)."
+            ],
+            "notCovered": "Equação do hiperplano (slide 5), margem rígida × suave e variáveis de folga (slides 14 e 15), kernel trick (slides 18 e 19), multiclasse (27 a 29), vantagens e desvantagens (30 e 31). O trecho 06:00 a 06:57 é o fim (aplicação com voz masculina/feminina).",
+            "profile": [
+              "**Nível:** introdutório, bom como primeira visão geral.",
+              "**Foco:** geometria da separação e vocabulário.",
+              "**Idioma/qualidade:** português do Brasil; fala simples, sem exemplo numérico; legenda automática ruim em 03:00 a 04:30."
+            ],
+            "verdict": "Aprovar o trecho 00:30 a 06:57 como visão geral inicial."
+          }
+        },
+        {
+          "id": "a11-v5",
+          "type": "video",
+          "title": "Aprendizado de Máquinas - Máquinas de Vetores de Suporte SVMs",
+          "channel": "UNIVESP",
+          "duration": "22:55",
+          "url": "https://www.youtube.com/watch?v=54wtapH5t3E",
+          "goals": [
+            "Seguir a sequência quase igual à da aula: margem, hiperplano, vetores de suporte, equação do hiperplano, margens rígidas e suaves, truque do kernel e tipos de kernel (slides 3 a 8, 13, 14 e 17 a 19).",
+            "Conhecer os kernels polinomial, RBF e sigmoidal e que têm parâmetros a ajustar (slide 23).",
+            "Ver a lista de vantagens e desvantagens (slides 30 e 31)."
+          ],
+          "warnings": [
+            "Pule 00:00 a 06:00: é teoria do aprendizado estatístico (risco esperado, risco empírico), que não está nos slides.",
+            "Em 12:00 diz que a classe é azul se o valor for \"maior ou igual a 1\" e laranja se for \"menor ou igual a 1\". O correto é menor ou igual a **−1** (o próprio vídeo disse em 11:00 que os rótulos são −1 e +1).",
+            "Em 17:00 dá regras de bolso do autor (\"polinomial para dados normalizados\", \"RBF quando não se conhece os dados\", \"sigmoidal para classificação binária\"): não estão nos slides, não decore.",
+            "Não explica C nem gamma pelo nome: cita só as constantes dos kernels (17:30 a 18:20). C e gamma estão nos vídeos de hiperparâmetros.",
+            "Entre 20:00 e 21:00 chama a SVM de \"determinística\" e de \"robusta a ruídos\": o segundo ponto conversa com o slide 30; o primeiro é um comentário extra.",
+            "De 18:20 a 19:30 trata SVM para regressão (parâmetro epsilon): é só o gancho do slide 3, que diz que a SVM serve a classificação e regressão."
+          ],
+          "clips": [
+            {
+              "start": 360,
+              "end": 1325,
+              "slides": "3–8, 13–14, 17–19, 23, 30–31",
+              "note": "Margem, hiperplano e vetores de suporte, equação, margem rígida × suave, truque do kernel, tipos de kernel, vantagens e desvantagens."
+            }
+          ],
+          "transcript": "../transcripts/54wtapH5t3E.json",
+          "review": {
+            "badge": "transcrição lida · trecho aprovado",
+            "covers": [
+              "06:00–07:00 a SVM é um separador de margem máxima: fronteira linear com margens, quanto maior a margem, melhor (slides 3 e 6).",
+              "08:00–10:00 várias fronteiras lineares (hiperplanos) possíveis; a melhor fica no meio entre as duas classes, apoiada em dois hiperplanos auxiliares que são as margens (slides 4 e 12).",
+              "10:00–11:00 vetores de suporte: os objetos de cada classe mais próximos um do outro, que \"sustentam\" a fronteira (slide 6).",
+              "11:00–12:00 equação do hiperplano: w é o vetor normal (perpendicular), x é um ponto qualquer, b é a constante de deslocamento; rótulos −1 e +1 (slides 5 e 10).",
+              "12:00–14:00 SVM linear de margem rígida (só aceita pontos fora da margem, supõe separação perfeita) × margem suave (aceita uma taxa de erro; mais realista) (slides 8, 13 e 14).",
+              "14:00–17:00 dados misturados não se separam por reta: truque do kernel, que leva os dados a uma dimensão maior, com exemplo 2D para 3D em que um plano separa o que no 2D era circular (slides 17, 18 e 19).",
+              "17:00–18:20 kernels mais comuns: polinomial, RBF (função de base radial) e sigmoidal, cada um com parâmetros a experimentar (slide 23).",
+              "20:00–21:00 vantagens: generaliza bem, funciona em alta dimensionalidade (com o kernel vira linear), robusta a ruído (slide 30).",
+              "21:00–22:00 desvantagens: difícil de interpretar, sensível à escolha dos parâmetros do kernel, custoso (slide 31)."
+            ],
+            "notCovered": "Parâmetro C e gamma por nome (slides 15, 16 e 21 a 24), variáveis de folga (slide 15), hiperplano canônico (slide 11), Lagrangeana e dual (25 e 26), multiclasse (27 a 29), dados esparsos (slide 30).",
+            "profile": [
+              "**Nível:** iniciante a intermediário, aula expositiva com slides.",
+              "**Foco:** panorama completo da SVM.",
+              "**Idioma/qualidade:** português do Brasil; fala clara; legenda automática com erros pequenos."
+            ],
+            "verdict": "Aprovar o trecho 06:00 a 22:05 (pule a parte de teoria do aprendizado estatístico, a aplicação do fim e, se quiser, 18:20 a 19:30 sobre regressão)."
+          }
+        },
+        {
+          "id": "a11-v17",
+          "type": "video",
+          "optional": true,
+          "title": "(APRENDIZADO DE MÁQUINA) Máquinas de Vetores de Suporte - Parte 1",
+          "channel": "João Paulo Papa",
+          "duration": "mais de 16 min",
+          "url": "https://www.youtube.com/watch?v=4_0kcqk868M",
+          "goals": [
+            "Por que mapear os dados para uma dimensão maior quando não são separáveis (slides 17 a 19)"
+          ],
+          "warnings": [
+            "O vídeo não pôde ser baixado (o YouTube diz que não está disponível para o programa), então não houve conferência pelo áudio: a transcrição é a do próprio YouTube, colada pelo usuário, e vai só até 16:28. O que vem depois não foi lido.",
+            "Depois de 04:40 o vídeo deriva a SVM a partir da regressão logística (funções cost1 e cost0, mais abruptas). Isso NÃO está nos slides da Aula 11: só serve para quem já domina regressão logística; para a prova, o trecho útil é o do início.",
+            "Fala em 'duas amostras na mesma posição' como sinal de características ruins; é uma analogia para motivar o aumento de dimensão, não uma definição dos slides."
+          ],
+          "clips": [
+            {
+              "start": 35,
+              "end": 280,
+              "slides": "17–19",
+              "note": "por que mapear para uma dimensão maior e achar o hiperplano lá"
+            }
+          ],
+          "transcript": "../transcripts/4_0kcqk868M.json",
+          "review": {
+            "badge": "transcrição do YouTube lida (00:00–16:28) · sem áudio · só o trecho indicado",
+            "covers": [
+              "00:35–01:37 um perceptron acha o hiperplano quando as classes são linearmente separáveis; o problema é quando não são (custo muito grande para separar).",
+              "01:37–02:45 premissa da SVM: em um espaço com dimensão maior é mais provável as amostras ficarem separáveis; uma função de mapeamento não linear (phi) leva os dados para esse outro espaço.",
+              "02:45–04:09 a SVM faz duas coisas: mapeia para o espaço de maior dimensão e acha o hiperplano nele; analogia do quadrado 2D que vira um cubo, com as amostras que estavam uma sobre a outra passando a ficar separáveis.",
+              "04:40–16:28 deriva a SVM a partir da regressão logística: função de custo logística, versões cost1 e cost0 'abruptas' e o termo de regularização (fora dos slides)."
+            ],
+            "notCovered": "Margem máxima, vetores de suporte, o parâmetro C, os kernels linear, polinomial e RBF, o parâmetro gamma e a classificação com várias classes.",
+            "profile": [
+              "**Nível:** o início é para iniciante; a derivação a partir da regressão logística é intermediária."
+            ],
+            "verdict": "Opcional: o trecho 00:35–04:09 é boa intuição de por que aumentar a dimensão (slides 17 a 19); o resto é complemento fora dos slides. Avaliado pelo agente principal em 11/10 a partir da transcrição colada pelo usuário."
+          }
+        },
+        {
+          "id": "a11-v6",
+          "type": "video",
+          "title": "Máquinas de vetores de suporte (SVM) - Formulação do problema de otimização",
+          "channel": "Prof. Alexandre Levada",
+          "duration": "13:09",
+          "url": "https://www.youtube.com/watch?v=_VDIhWvaOA4",
+          "goals": [
+            "Entender a equação do hiperplano w·x + b = 0, o que é o hiperplano canônico e por que as margens ficam em +1 e −1 (slides 5, 8 e 11).",
+            "Ver por que \"yi · f(xi) > 0\" resume as duas classes numa só condição (slide 10).",
+            "Entender que maximizar a margem equivale a minimizar o tamanho do vetor w, sujeito a restrições (slide 13)."
+          ],
+          "warnings": [
+            "Matemática de nível intermediário (álgebra linear). A prova é sem cálculo: assista uma vez para ver a ideia e **não** decore as fórmulas.",
+            "A notação é w e b (b = deslocamento, \"bias\"); o slide usa β e β0. É a mesma coisa.",
+            "Em 11:00 a legenda diz \"maximizar a norma é a mesma coisa que maximizar a norma ao quadrado\": o que ele quer dizer é minimizar a norma de w (equivalente a minimizar ½‖w‖²), como na fala anterior.",
+            "Entre 04:00 e 05:00 a legenda fica confusa; a ideia é que a margem do lado positivo vale w·x + b = +1 e a do lado negativo vale −1.",
+            "O vídeo termina anunciando que a solução (Lagrange e KKT) vem no próximo vídeo; os slides 25 e 26 só citam a Lagrangeana e o dual."
+          ],
+          "clips": [
+            {
+              "start": 60,
+              "end": 735,
+              "slides": "5, 8, 10, 11, 13",
+              "note": "Equação do hiperplano, hiperplano canônico, margens em ±1, restrições e problema de otimização da margem máxima."
+            }
+          ],
+          "transcript": "../transcripts/_VDIhWvaOA4.json",
+          "review": {
+            "badge": "transcrição lida · trecho aprovado",
+            "covers": [
+              "01:00–02:00 o hiperplano é o conjunto de pontos com w·x = 0; w é perpendicular a ele; ele pode ser deslocado da origem por b (slide 5).",
+              "02:00–03:00 a distância da origem ao hiperplano é b/‖w‖ e existem infinitos pares (w, b) para o mesmo hiperplano (ex.: 2x + 1 = 0 e 4x + 2 = 0 são a mesma reta).",
+              "03:00–04:00 hiperplano canônico: aquele em que as amostras mais próximas satisfazem w·x + b = 1 em valor absoluto (slide 11).",
+              "04:00–06:00 as margens são w·x + b = +1 (lado positivo) e w·x + b = −1 (lado negativo); acima de 1 é a região da classe positiva, abaixo de −1 a da negativa (slides 8 e 13).",
+              "06:00–08:00 com os rótulos y = +1 e −1, as duas condições viram uma só: y · (w·x + b) − 1 ≥ 0 (a ideia do slide 10: y · f(x) positivo para todo ponto).",
+              "08:30–09:30 há uma restrição por amostra: com mil amostras, mil restrições, e é por isso que a SVM é pesada (slide 31).",
+              "09:00–11:00 a distância entre as duas margens é 2/‖w‖; para maximizar a margem, minimiza-se ‖w‖ (na prática ½‖w‖²) (slide 13).",
+              "11:00–12:20 é um problema de otimização com restrições de desigualdade (slide 13); a solução usa Lagrange e KKT, adiada para o vídeo seguinte."
+            ],
+            "notCovered": "Margem suave e variáveis de folga (slides 14 e 15), kernel, C e gamma, multiclasse; a solução com Lagrange/dual (slides 25 e 26) fica só anunciada.",
+            "profile": [
+              "**Nível:** intermediário; pressupõe vetor, produto escalar e plano cartesiano.",
+              "**Foco:** formulação matemática da margem máxima.",
+              "**Idioma/qualidade:** português do Brasil; lousa digital, ritmo calmo; a legenda erra os símbolos (w, b)."
+            ],
+            "verdict": "Aprovar o trecho 01:00 a 12:15, sem exigir de si entender cada passo (a prova não cobra cálculo)."
+          },
+          "optional": true
+        },
+        {
+          "id": "a11-v11",
+          "type": "video",
+          "title": "SVM (Support Vector Machine) - Algoritmos de Aprendizado de Máquinas",
+          "channel": "Hashtag Programação",
+          "duration": "23:06",
+          "url": "https://www.youtube.com/watch?v=Y-WFZd9_gtE",
+          "goals": [
+            "Ver a SVM em código scikit-learn: SVC, fit, e como ler os coeficientes (coef_), o intercepto (intercept_) e os vetores de suporte (support_vectors_) (slides 5, 6 e 8).",
+            "Reforçar a intuição de margem e vetores de suporte com um exemplo de uma dimensão (slides 4 e 6)."
+          ],
+          "warnings": [
+            "Vídeo opcional e de reforço: a parte conceitual (00:55 a 07:00) repete o que os vídeos anteriores já mostram; o valor extra é o código, útil porque a prova traz trechos curtos de scikit-learn.",
+            "Em 06:00 diz que o algoritmo \"vai buscar a melhor dimensão\" sozinho: na prática quem escolhe o kernel é você (parâmetro kernel do SVC); só o cálculo é feito nos bastidores (truque do kernel).",
+            "Chama coef_ de \"coeficiente angular\" e intercept_ de \"coeficiente linear\", por analogia com regressão linear, e usa a notação W0, W1, W2; o slide usa β0 e β. coef_ só existe com kernel linear (08:00 a 09:00).",
+            "Não trata de C, gamma, margem suave nem kernels não lineares. A partir de 17:00 usa as 3 classes da Iris e matriz de confusão: fora do tema do vídeo."
+          ],
+          "clips": [
+            {
+              "start": 55,
+              "end": 1030,
+              "slides": "4–6, 8, 18–19, 31",
+              "note": "Intuição de margem e vetores de suporte, kernel eleva dimensão, SVC com kernel linear, coef_, intercept_, support_vectors_ e margens em ±1."
+            }
+          ],
+          "transcript": "../transcripts/Y-WFZd9_gtE.json",
+          "review": {
+            "badge": "transcrição lida · trecho aprovado",
+            "covers": [
+              "01:00–03:00 problema com uma feature: o limite é posto no meio entre os pontos de classes diferentes mais próximos entre si; esses pontos são os vetores de suporte e definem as margens (slides 4 e 6).",
+              "04:00–05:00 o SVM também pode separar dados que não são linearmente separáveis; reta em 2D, plano em 3D, hiperplano acima (slides 9 e 18).",
+              "05:00–07:00 eleva-se o dado ao quadrado para ganhar uma dimensão e separar; é o papel do kernel, que na prática não faz a transformação (truque do kernel) e deixa o treino mais lento (slides 18, 19 e 31).",
+              "07:00–09:00 código: importar SVC, criar clf, fit(X_train, y_train); com kernel=\"linear\" aparece coef_.",
+              "09:00–12:00 coef_ dá w1 e w2 e intercept_ dá w0; a reta é w1·x1 + w2·x2 + w0 = 0 (slides 5 e 8); as margens são essa mesma equação igualada a +1 e −1.",
+              "14:00–15:00 clf.support_vectors_ mostra os pontos usados para traçar a reta (slide 6).",
+              "15:00–17:00 plota a reta, os vetores de suporte e as margens tracejadas (slides 6 e 8)."
+            ],
+            "notCovered": "Margem suave e C, gamma, kernels não lineares (só cita), multiclasse (aparece, mas não explica), vantagens e desvantagens.",
+            "profile": [
+              "**Nível:** iniciante em Python, intermediário em teoria.",
+              "**Foco:** código scikit-learn com intuição geométrica.",
+              "**Idioma/qualidade:** português do Brasil; o apresentador fala rápido e erra os nomes na legenda (cof = coef_)."
+            ],
+            "verdict": "Aprovar como complemento só o trecho 00:55 a 17:10 (o resto é avaliação do modelo)."
+          },
+          "optional": true,
+          "note": "Complemento de código: mostra no scikit-learn onde estão w, b e os vetores de suporte do slide 5 e 6. A parte conceitual repete os vídeos anteriores."
+        },
+        {
+          "id": "a11-v7",
+          "type": "video",
+          "title": "29 SVM - Como funciona o SVM",
+          "channel": "Michel Janos",
+          "duration": "8:58",
+          "url": "https://www.youtube.com/watch?v=s1PdatomM5E",
+          "goals": [
+            "Seguir o caminho dos slides (classificador de máxima margem, classificador de vetores de suporte, SVM) com um exemplo de uma dimensão (slides 4, 7, 13 e 14).",
+            "Entender por que o classificador de máxima margem é sensível a outliers e por que se aceita errar alguns pontos (slides 13, 14 e 30).",
+            "Ver o truque do kernel num exemplo simples (x e x²) e os kernels polinomial e RBF (slides 17 a 19 e 23)."
+          ],
+          "warnings": [
+            "O vídeo começa no meio de uma frase (\"margens, classificadores e suporte vector machines\"): é um recorte de uma aula maior.",
+            "Diz que a melhor margem é escolhida por **validação cruzada** (02:00 a 03:00 e 05:00). Nos slides (15 e 21) essa tolerância é o parâmetro C, e é ele que se ajusta por validação cruzada. O vídeo nunca diz a palavra C.",
+            "Chama o classificador de margem suave de \"Support Vector Classifier (SVC)\": é o mesmo nome do slide 14 (classificador de vetor de suporte), mas no scikit-learn SVC é a classe que implementa também o SVM com kernel.",
+            "Fala de \"aumentar o bias e diminuir a variância\" ao aceitar erros (02:00): é o mesmo trade-off viés × variância, que o slide 22 chama de overfitting × underfitting."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 515,
+              "slides": "4, 6–7, 9, 13–14, 17–19, 23",
+              "note": "Limite no ponto médio, classificador de máxima margem e seu problema com outliers, margem suave, vetores de suporte, 1D, 2D, 3D, kernel."
+            }
+          ],
+          "transcript": "../transcripts/s1PdatomM5E.json",
+          "review": {
+            "badge": "transcrição lida · trecho aprovado",
+            "covers": [
+              "00:00–01:00 limite no ponto médio entre os pontos extremos dos dois grupos (slide 4).",
+              "01:00–02:00 isso é o classificador de máxima margem (MMC); não é robusto a outliers (slides 7, 13 e 30).",
+              "02:00–03:00 tolerar um outlier e aceitar um erro de classificação dá margem melhor; sem tolerância haveria overfitting; a margem é a distância entre o limite e os pontos; os pontos nos limites da margem são os vetores de suporte (slides 6 e 14).",
+              "03:00–04:30 em 1D o classificador é um ponto, em 2D uma reta, em 3D um plano, acima disso hiperplano; margem como distância entre os planos (slides 9 e 14).",
+              "04:30–05:30 resumo do que o SVM faz: testar ponto a ponto, ajustar a reta e as margens até maximizar a margem com o menor erro.",
+              "05:30–07:00 dados em que o meio é \"ruim\" (chuva demais ou de menos) não são linearmente separáveis; elevando x ao quadrado ganha-se uma dimensão e uma reta separa; é o truque do kernel (slides 17, 18 e 19).",
+              "07:00–07:50 o kernel polinomial usa potências de x; o RBF dá mais influência às observações próximas (slide 23).",
+              "07:50–08:30 regressão logística e SVM com kernel linear têm desempenho parecido; a diferença aparece nos kernels não lineares (slide 17)."
+            ],
+            "notCovered": "Equação do hiperplano (slide 5), variáveis de folga (slide 15), C e gamma por nome (16 e 21 a 24), Lagrange/dual, multiclasse, vantagens e desvantagens.",
+            "profile": [
+              "**Nível:** iniciante; o melhor encadeamento de ideias em português para quem está começando.",
+              "**Foco:** MMC → margem suave → kernel, em animações simples.",
+              "**Idioma/qualidade:** português do Brasil; legenda automática boa; ritmo calmo."
+            ],
+            "verdict": "Aprovar o trecho 00:00 a 08:35."
+          }
+        },
+        {
+          "id": "a11-v12",
+          "type": "video",
+          "title": "Support Vector Machines Part 1 (of 3): Main Ideas!!!",
+          "channel": "StatQuest with Josh Starmer",
+          "duration": "20:32",
+          "url": "https://www.youtube.com/watch?v=efR1C6CvhmE",
+          "goals": [
+            "Ver, num mesmo vídeo, a progressão do slide 7: classificador de máxima margem, classificador de vetores de suporte (margem suave) e a SVM com kernel.",
+            "Reforçar vetores de suporte, hiperplano em várias dimensões, kernel polinomial, kernel radial e truque do kernel (slides 6, 9, 19 e 23)."
+          ],
+          "warnings": [
+            "**Áudio em inglês** (só em inglês, sem dublagem). Use a legenda do YouTube traduzida, se ajudar. Entra como complemento porque é a explicação mais clara que existe da progressão do slide 7; o equivalente em português, mais curto, é o vídeo do Michel Janos.",
+            "Usa o mesmo caminho dos slides mas com nomes ligeiramente diferentes: \"maximal margin classifier\" = classificador de máxima margem, \"soft margin classifier / support vector classifier\" = classificador de vetor de suporte.",
+            "Diz que a margem suave é escolhida por validação cruzada; no scikit-learn isso corresponde a escolher C (slide 21).",
+            "O trecho 11:00 a 12:00 mostra o caso em que nem a margem suave basta (dosagem de remédio): é a motivação para o kernel (slide 17)."
+          ],
+          "clips": [
+            {
+              "start": 15,
+              "end": 1195,
+              "slides": "4, 6–7, 9, 13–15, 17–19, 23",
+              "note": "Máxima margem, outliers, margem suave, vetores de suporte, hiperplano em n dimensões, kernel polinomial, kernel radial, truque do kernel."
+            }
+          ],
+          "transcript": "../transcripts/efR1C6CvhmE.json",
+          "review": {
+            "badge": "transcrição lida · só o trecho indicado · inglês",
+            "covers": [
+              "00:15–02:00 um limiar entre as observações nas bordas dos grupos, no ponto médio (slide 4).",
+              "02:00–03:30 margem = menor distância entre as observações e o limiar; no ponto médio a margem é a maior possível; é o classificador de máxima margem (slides 6, 7 e 13).",
+              "03:30–05:00 o classificador de máxima margem é muito sensível a outliers (slides 13 e 30).",
+              "05:00–07:00 permitir erros é o trade-off viés × variância; a distância com erros permitidos é a margem suave (soft margin); um classificador com margem suave é um classificador de vetores de suporte, e os vetores de suporte são as observações na borda ou dentro da margem (slides 14 e 15).",
+              "07:00–11:00 em 2D o classificador é uma reta, em 3D um plano, acima disso um hiperplano (slides 9 e 12).",
+              "11:00–12:00 com dados muito sobrepostos nenhum classificador linear funciona (slide 17).",
+              "12:00–15:00 ideias principais da SVM: começar em dimensão baixa, levar para dimensão maior (exemplo: dose e dose²), achar o classificador na dimensão maior (slides 18 e 19).",
+              "15:00–17:30 função kernel polinomial com o grau d (slide 23).",
+              "17:30–18:30 kernel radial se comporta como vizinho mais próximo ponderado: observações próximas influenciam mais (slide 23).",
+              "18:30–20:00 truque do kernel: calcula as relações como se estivessem na dimensão maior sem fazer a transformação (slide 19)."
+            ],
+            "notCovered": "Equação do hiperplano e canônico (slides 5 e 11), C e gamma por nome, Lagrange/dual, multiclasse, vantagens e desvantagens.",
+            "profile": [
+              "**Nível:** iniciante absoluto; o mais didático.",
+              "**Foco:** ideias principais, sem fórmulas.",
+              "**Idioma/qualidade:** inglês, com humor (\"BAM!\"); legenda automática boa."
+            ],
+            "verdict": "Aprovar como complemento o trecho 00:15 a 19:55."
+          },
+          "optional": true,
+          "note": "Complemento em inglês: cobre os mesmos slides (4, 7, 13 a 19) que o vídeo do Michel Janos, com mais calma e mais exemplos. Assista só se o anterior não bastar."
+        },
+        {
+          "id": "a11-v13",
+          "type": "video",
+          "title": "SVM's de margens suaves",
+          "channel": "Prof. Alexandre Levada",
+          "duration": "11:22",
+          "url": "https://www.youtube.com/watch?v=sT7H8gBjrbM",
+          "goals": [
+            "Entender por que a margem rígida é impossível na prática e como as variáveis de folga (ε) permitem violar a margem (slides 14 e 15).",
+            "Ver os três casos do slide 15: ε = 0 (sobre a margem), 0 < ε ≤ 1 (dentro da margem, ainda do lado certo) e ε > 1 (erro de classificação) (slide 15).",
+            "Perceber que a constante C pondera o quanto se pune a folga (slides 15 e 21)."
+          ],
+          "warnings": [
+            "Vídeo opcional de matemática (otimização e dual com multiplicadores α e KKT): ouça só os três trechos indicados e ignore 03:00 a 06:00 e 09:00 a 10:00.",
+            "Usa yi(w·xi + b) ≥ 1 − εi e a notação α, b, w. O slide 15 mostra só a ideia (ε, C), sem essas fórmulas.",
+            "Em 07:00 a 08:00 explica as 3 situações dos vetores de suporte quando α = C; a legenda atrapalha, mas a lista é a mesma do slide 15: ε > 1 erro de classificação; 0 < ε < 1 só viola a margem; ε = 0 em cima da margem."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 190,
+              "slides": "14–15",
+              "note": "Por que suavizar as margens e as variáveis de folga."
+            },
+            {
+              "start": 350,
+              "end": 520,
+              "slides": "15",
+              "note": "Os três tipos de vetores de suporte pelo valor de ε."
+            },
+            {
+              "start": 600,
+              "end": 665,
+              "slides": "14, 20",
+              "note": "A SVM linear de margem suave é a mais usada na prática."
+            }
+          ],
+          "transcript": "../transcripts/sT7H8gBjrbM.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:00–01:00 a margem rígida é um critério bastante rígido e em muitos casos impossível, porque as classes se sobrepõem (slides 14 e 20).",
+              "01:00–02:00 variáveis de folga ε: permitem produtos escalares um pouco menores que 1 (0,9; 0,8; 0,5) (slide 15).",
+              "02:00–03:00 a função objetivo ganha um termo C vezes a soma das folgas; C é a constante que pondera a folga (slides 15 e 21).",
+              "05:50–07:00 tipos de vetores de suporte pelo valor de ε.",
+              "07:00–08:40 ε > 1: o ponto cruza o hiperplano e é erro de classificação no treino; 0 < ε < 1: fica entre as margens (violação permitida); ε = 0: está em cima da margem (slide 15).",
+              "10:00–11:00 na prática quase sempre há sobreposição, então a SVM linear de margem suave é o método mais usado (slides 14 e 20)."
+            ],
+            "notCovered": "C pequeno × grande e seu efeito (slide 21 a 22), gamma, kernel, multiclasse. A parte de α/KKT (03:00 a 06:00) é matemática avançada, fora da prova.",
+            "profile": [
+              "**Nível:** intermediário a avançado (otimização).",
+              "**Foco:** formulação da margem suave.",
+              "**Idioma/qualidade:** português do Brasil; lousa digital; legenda com erros em símbolos."
+            ],
+            "verdict": "Aprovar como complemento só os trechos 00:00 a 03:10, 05:50 a 08:40 e 10:00 a 11:05."
+          },
+          "optional": true,
+          "note": "Complemento: é o único vídeo que mostra bem os 3 casos de ε do slide 15, embora com matemática ao redor."
+        },
+        {
+          "id": "a11-v8",
+          "type": "video",
+          "title": "Hyperparameters C & Gamma in Support Vector Machine (SVM)",
+          "channel": "Bhavesh Bhatt",
+          "duration": "13:40",
+          "url": "https://www.youtube.com/watch?v=fqhHBCfNy6s",
+          "goals": [
+            "Entender o efeito de C: penalidade por classificar errado, margem larga com C pequeno e margem estreita com C grande (slides 15, 16, 21 e 22).",
+            "Entender o efeito de gamma: raio de influência de um ponto, usado em kernels RBF e polinomial, sem efeito no kernel linear (slides 23 e 24).",
+            "Ver os gráficos de fronteira de decisão mudando com C e gamma (slides 16 e 24)."
+          ],
+          "warnings": [
+            "**Áudio em inglês**; os gráficos falam por si. É a explicação de C e gamma mais completa que achei; não há vídeo em português equivalente.",
+            "Os números de acurácia que cita (50% a 93%, 60% a 94%) são do **treino**, como ele mesmo lembra em 12:00; use só para ver a tendência.",
+            "Mostra que gamma maior melhora o ajuste até gamma = 1, mas **não mostra** o overfitting de gamma muito alto que o slide 24 descreve (isso aparece só no complemento do vídeo de Intuitive Machine Learning).",
+            "Chama C de \"penalidade por ponto classificado errado\", em vez de \"inverso da regularização\" (slide 21); as duas descrições dão a mesma direção: C pequeno tolera erros, C grande pune.",
+            "Mais da metade do vídeo é código (matplotlib, make_classification): foque nos gráficos e nas explicações em voz."
+          ],
+          "clips": [
+            {
+              "start": 55,
+              "end": 800,
+              "slides": "15–16, 20–24, 31",
+              "note": "Efeito de gamma (raio de influência) e de C (penalidade por erro), com gráficos das fronteiras de decisão."
+            }
+          ],
+          "transcript": "../transcripts/fqhHBCfNy6s.json",
+          "review": {
+            "badge": "transcrição lida · só o trecho indicado · inglês",
+            "covers": [
+              "00:55–02:00 SVM cria uma margem grande entre duas classes e reduz o erro de classificação; gamma só vale para kernel RBF ou polinomial, não para o linear; controla a distância de influência de um ponto; gamma baixo, grande raio de similaridade (muitos pontos agrupados); gamma alto, só pontos bem próximos contam (slide 23).",
+              "04:00–08:30 demonstração: gamma = 0,001 classifica tudo como classe 0 (acurácia ≈ 50%, subajuste); 0,01 igual; 0,1 chega a ≈ 80%; 1 chega a ≈ 93% (slide 24).",
+              "08:00–09:30 C é a penalidade por ponto classificado errado: C pequeno, penalidade pequena e margem larga; C grande, a SVM tenta errar menos e a margem fica pequena (slides 15, 21 e 22).",
+              "09:30–12:30 demonstração com gamma fixo: C = 0,1 dá ≈ 60% e margem larga; C = 1 sobe para ≈ 80%; C = 10 chega a ≈ 94% no treino, com a margem muito encolhida e risco de overfitting (slides 16 e 22).",
+              "12:30–13:00 para usar bem os dois é preciso ajustar os hiperparâmetros e escolher a combinação certa (slide 31)."
+            ],
+            "notCovered": "A convenção \"C é o inverso da regularização\" (slide 21), overfitting de gamma muito alto (slide 24), sigmoide, equação, kernel trick, multiclasse.",
+            "profile": [
+              "**Nível:** iniciante em teoria, intermediário em Python.",
+              "**Foco:** efeito visual de C e gamma.",
+              "**Idioma/qualidade:** inglês; fala clara; legenda automática boa."
+            ],
+            "verdict": "Aprovar o trecho 00:55 a 13:20."
+          },
+          "note": "Em inglês e a explicação mais clara de C e gamma que há. Os gráficos de fronteira dos slides 16 e 24 são exatamente o que ele constrói."
+        },
+        {
+          "id": "a11-v3",
+          "type": "video",
+          "title": "Kernel do SVM - Machine Learning 15",
+          "channel": "Universo Discreto",
+          "duration": "18:37",
+          "url": "https://www.youtube.com/watch?v=ydiqpR5gw0E",
+          "goals": [
+            "Rever o hiperplano separador, os vetores de suporte e a margem máxima (slides 3, 4 e 6), num exemplo de exames de sangue.",
+            "Entender por que o problema não linear exige um kernel que leva os dados a mais dimensões e como um plano separa o que a reta não separava (slides 17, 18 e 19).",
+            "Conhecer os três kernels: linear, polinomial (com grau) e gaussiano/RBF (slide 23)."
+          ],
+          "warnings": [
+            "Diz que o kernel \"sempre joga uma dimensão acima\" (06:00): é simplificação do exemplo 2D para 3D. O kernel pode levar a muitas mais dimensões (ele mesmo cita 60D e 120D em 05:00) e o RBF a infinitas.",
+            "Chama o kernel RBF de \"gaussiana\" (curva em sino): é o mesmo kernel RBF do slide 23.",
+            "Não fala do sigmoide, do parâmetro gamma nem de C (use o vídeo de Bhavesh Bhatt para isso).",
+            "Depois de 09:50 é comparação de modelos no notebook (Titanic, TQDM), fora do tema; pule."
+          ],
+          "clips": [
+            {
+              "start": 60,
+              "end": 590,
+              "slides": "3–4, 6, 17–19, 23",
+              "note": "Hiperplano e vetores de suporte, problema não linear, kernel, truque do kernel, linear, polinomial e gaussiana."
+            }
+          ],
+          "transcript": "../transcripts/ydiqpR5gw0E.json",
+          "review": {
+            "badge": "transcrição lida · trecho aprovado",
+            "covers": [
+              "01:00–03:00 exemplo de dois exames de sangue: o hiperplano ótimo é a reta que separa doentes de saudáveis, calculada pelo SVM (slides 3 e 4).",
+              "03:00–04:00 vetores de suporte: as amostras mais próximas do contorno; o hiperplano ótimo tem a maior margem possível, com a mesma distância dos dois lados (slides 4 e 6).",
+              "04:00–05:00 se a reta não resolve (problema não linear), é preciso uma curva, e é aí que entra o kernel (slides 17 e 18).",
+              "05:00–07:00 o kernel é uma função que representa os dados numa outra dimensionalidade (de 2D para 3D); isso torna fácil achar um hiperplano separador (slides 18 e 19).",
+              "07:00–08:00 um plano linear separa os dados em 3D; volta-se para a região original: é o \"truque do kernel\" (slide 19).",
+              "08:00–09:30 os kernels: linear, polinomial (com o grau do polinômio, 3, 4 ou 5) e gaussiana (curva em sino, que ele considera a melhor) (slide 23)."
+            ],
+            "notCovered": "Variáveis de folga, C, gamma, sigmoide, equação, multiclasse, vantagens e desvantagens.",
+            "profile": [
+              "**Nível:** introdutório; usa desenhos prontos e exemplos do dia a dia.",
+              "**Foco:** hiperplano, vetores de suporte e kernel.",
+              "**Idioma/qualidade:** português do Brasil; descontraído; legenda boa."
+            ],
+            "verdict": "Aprovar o trecho 01:00 a 09:50."
+          }
+        },
+        {
+          "id": "a11-v16",
+          "type": "video",
+          "title": "The Kernel Trick in Support Vector Machine (SVM)",
+          "channel": "Visually Explained",
+          "duration": "3:18",
+          "url": "https://www.youtube.com/watch?v=Q7vT0--5VII",
+          "goals": [
+            "Entender em 3 minutos por que o kernel permite fronteiras não lineares sem mudar o funcionamento interno da SVM (slides 17 a 19).",
+            "Ver a ideia por trás dos slides 25 e 26: a SVM só precisa saber como os pontos se comparam entre si (o produto interno), e a função kernel calcula isso direto.",
+            "Ver que o kernel linear, o polinomial e o RBF são escolhas diferentes e que gamma deixa a fronteira mais suave ou mais irregular (slides 23 e 24)."
+          ],
+          "warnings": [
+            "**Áudio em inglês**, fala rápida e muito condensada; por isso é complemento, depois dos vídeos em português sobre kernel.",
+            "Usa notação f(x) para a transformação e k(x, x′) para o kernel, sem mostrar fórmulas do slide.",
+            "Diz que o RBF corresponde a uma transformação de dimensão infinita: é verdade, mas está além do que os slides pedem."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 190,
+              "slides": "17–19, 23–26",
+              "note": "Transformação não linear, truque do kernel como produto interno e três kernels (linear, polinomial, RBF)."
+            }
+          ],
+          "transcript": "../transcripts/Q7vT0--5VII.json",
+          "review": {
+            "badge": "transcrição lida · só o trecho indicado · inglês",
+            "covers": [
+              "00:00–01:00 a fronteira plana da SVM é uma vantagem e uma limitação; transformar os dados antes (f de x) dá fronteira não linear no espaço original sem mudar a SVM (slides 17, 18 e 19).",
+              "01:00–02:00 dois problemas: escolher a transformação e o custo de aumentar a dimensão; o truque do kernel resolve os dois: o algoritmo só precisa saber como cada ponto se compara aos outros depois da transformação, que é o produto interno f(x)·f(x′), chamado função kernel (slide 26).",
+              "02:00–03:00 kernel linear = transformação identidade; kernel polinomial considera os atributos originais e as interações entre eles; o RBF corresponde a uma transformação de dimensão infinita, mas a fórmula é simples; gamma deixa a fronteira mais suave ou mais irregular (slides 23 e 24).",
+              "03:00–03:15 resumo: não é preciso se preocupar com a dimensão da saída."
+            ],
+            "notCovered": "Variáveis de folga, C, equação, Lagrangeana e dual (só toca em \"produto interno\"), multiclasse, vantagens e desvantagens.",
+            "profile": [
+              "**Nível:** iniciante a intermediário; muito condensado.",
+              "**Foco:** truque do kernel como produto interno.",
+              "**Idioma/qualidade:** inglês, voz clara; legenda automática boa."
+            ],
+            "verdict": "Aprovar como complemento o vídeo inteiro (00:00 a 03:15)."
+          },
+          "note": "Complemento em inglês de 3 minutos: a explicação mais enxuta do truque do kernel (produto interno, slides 25 e 26); só depois dos vídeos em português."
+        },
+        {
+          "id": "a11-v9",
+          "type": "video",
+          "title": "Multiclass SVM | Multiclass Support Vector Machines | Multiclass Classification",
+          "channel": "Mahesh Huddar",
+          "duration": "8:01",
+          "url": "https://www.youtube.com/watch?v=s7iC1ePvCWU",
+          "goals": [
+            "Entender por que a SVM binária precisa de uma estratégia para mais de duas classes e quais são elas: um-contra-todos (one-vs-rest) e um-contra-um (slide 27).",
+            "Aprender a contar classificadores e votar no um-contra-um: k(k − 1)/2 classificadores e a classe mais votada vence (slide 28).",
+            "Ver o um-contra-todos: k classificadores, cada classe contra as demais; vence o maior escore (slide 29)."
+          ],
+          "warnings": [
+            "**Áudio em inglês**, com exemplos simples (maçã, banana, laranja).",
+            "No um-contra-todos, o vídeo escolhe a classe pelo **maior escore de predição** (0,9 do SVM 2 → banana). O exemplo do slide 29 escolhe pelo classificador que \"ganhou do resto\" (C); é a mesma ideia, só que o slide não fala de escore.",
+            "Nomenclatura: \"one versus rest\" no vídeo = \"one-vs-all\" do slide.",
+            "Cita desvantagens (desbalanceamento no um-contra-todos, muitos classificadores no um-contra-um) que os slides não trazem."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 470,
+              "slides": "27–29",
+              "note": "Por que o SVM precisa de estratégia multiclasse, um-contra-todos e um-contra-um, com exemplos e contagem de classificadores."
+            }
+          ],
+          "transcript": "../transcripts/s7iC1ePvCWU.json",
+          "review": {
+            "badge": "transcrição lida · vídeo inteiro · inglês",
+            "covers": [
+              "00:00–01:30 o SVM básico é binário; no mundo real há mais classes (spam, promoções, social; gato, cachorro, cavalo, pássaro); com 3 classes não basta um hiperplano (slide 27).",
+              "01:30–02:00 estratégias: um-contra-resto e um-contra-um (slide 27).",
+              "02:00–04:00 um-contra-resto: para k classes, k classificadores (SVM 1: maçã vs resto; SVM 2: banana vs resto; SVM 3: laranja vs resto); uma amostra nova passa por todos e vence o de maior escore (0,7; 0,9; 0,3 → banana) (slide 29).",
+              "04:00–04:30 desvantagem: desbalanceamento de classes (10 exemplos positivos × 20 negativos).",
+              "04:30–06:30 um-contra-um: um classificador para cada par, k(k − 1)/2; com 3 classes são 3 (maçã-banana, maçã-laranja, banana-laranja); cada um vota e vence a classe com mais votos (1 × 2 × 0 → laranja) (slide 28).",
+              "06:30–07:50 vantagem e desvantagem do um-contra-um: mais acurado em bases pequenas, mas com 10 classes são 45 classificadores."
+            ],
+            "notCovered": "Como o scikit-learn faz isso por padrão, desempate no um-contra-todos além do escore, vantagens e desvantagens da SVM.",
+            "profile": [
+              "**Nível:** iniciante; passo a passo.",
+              "**Foco:** estratégias multiclasse da SVM.",
+              "**Idioma/qualidade:** inglês, voz clara; legenda automática boa."
+            ],
+            "verdict": "Aprovar o vídeo inteiro (00:00 a 07:50)."
+          },
+          "note": "Em inglês porque o único vídeo em português que cobre os dois métodos (computaçãoSemDrama) os explica em duas frases e o outro (Pablo Dalsasso) só cobre um-contra-um, com outro critério de decisão."
+        },
+        {
+          "id": "a11-v4",
+          "type": "video",
+          "title": "Support Vector Machine Multiclasse - Pablo Dalsasso.wmv",
+          "channel": "Pablo Dalsasso",
+          "duration": "5:28",
+          "url": "https://www.youtube.com/watch?v=9EuqfpoI4p8",
+          "goals": [
+            "Reforçar em português que a SVM nasce binária e precisa de decomposição (slide 27).",
+            "Ver a contagem k(k − 1)/2 de classificadores no esquema todos-contra-todos (um-contra-um) (slide 28)."
+          ],
+          "warnings": [
+            "Vídeo opcional: cobre **só o um-contra-um** (slide 28). O um-contra-todos (slide 29) **não aparece**.",
+            "O critério de decisão aqui é uma **árvore de eliminação** (cada comparação descarta uma classe), enquanto o slide 28 e o scikit-learn usam **votação da maioria**. A contagem de classificadores é a mesma.",
+            "A legenda automática embaralha a fórmula em 03:00 (\"cá menos um, cá vezes cá menos um dividido por dois\"): é k(k − 1)/2.",
+            "O trecho 00:00 a 02:00 é introdução a SVM e kernels; 04:30 a 05:00 é aplicações."
+          ],
+          "clips": [
+            {
+              "start": 125,
+              "end": 280,
+              "slides": "27–28",
+              "note": "SVM binária, decomposição todos-contra-todos e contagem de classificadores."
+            }
+          ],
+          "transcript": "../transcripts/9EuqfpoI4p8.json",
+          "review": {
+            "badge": "transcrição lida · só o trecho indicado",
+            "covers": [
+              "02:05–03:00 SVM é um classificador binário e a maioria dos problemas reais tem várias classes; a ideia é dividir o problema em problemas menores; a forma mais usada é a decomposição todos contra todos (slide 27).",
+              "03:00–03:30 com k classes são construídas k(k − 1)/2 máquinas; cada classe é comparada uma vez com cada uma das outras (slide 28).",
+              "03:30–04:40 exemplo com 4 classes: uma nova entrada da classe 2 passa pelas máquinas e, a cada comparação, descarta uma classe até restar a 2 (árvore de eliminação; difere do voto do slide 28)."
+            ],
+            "notCovered": "Um-contra-todos (slide 29), votação por maioria, vantagens e desvantagens, scikit-learn.",
+            "profile": [
+              "**Nível:** introdutório.",
+              "**Foco:** multiclasse um-contra-um.",
+              "**Idioma/qualidade:** português do Brasil; voz de apresentação gravada (aula antiga, formato .wmv); legenda automática com erro na fórmula."
+            ],
+            "verdict": "Aprovar como complemento só o trecho 02:05 a 04:40."
+          },
+          "optional": true,
+          "note": "Complemento em português para o um-contra-um (slide 28). O principal para multiclasse é o vídeo anterior, em inglês."
+        },
+        {
+          "id": "a11-v10",
+          "type": "video",
+          "title": "SVM - Support Vector Machine Linear, Não Linear - Teoria",
+          "channel": "computaçãoSemDrama",
+          "duration": "11:19",
+          "url": "https://www.youtube.com/watch?v=cB__Oa85htg",
+          "goals": [
+            "Revisar, na ordem e com as palavras dos slides, a SVM de margem rígida, a equação do hiperplano, as variáveis de folga, o espaço de características, o dual e o kernel (slides 3, 5, 8, 11, 14, 15, 19, 25 e 26).",
+            "Fechar o conteúdo com vantagens e desvantagens (slides 30 e 31) e os métodos multiclasse (slides 27 a 29)."
+          ],
+          "warnings": [
+            "A legenda automática é ruim e a fala é rápida e monótona, como a leitura de um texto de slides; por isso este vídeo entra no fim, como **revisão**, depois que os conceitos já foram vistos nos anteriores.",
+            "Chama os métodos multiclasse de \"decomposição de N\" (um-contra-todos: N classificadores, cada classe contra as N − 1 restantes) e \"decomposição de 1\" (um-contra-um: um para cada par, votação por maioria, com menção a um grafo acíclico dirigido). Nos slides são \"one-vs-all\" e \"one-vs-one\".",
+            "Diz que o SVM com kernel RBF equivale a uma rede neural RBF (07:30), que o teorema de Mercer garante o kernel (07:00) e que o kernel RBF pode ter dimensão infinita: detalhes que não estão nos slides.",
+            "Diz que a variável de folga é \"positiva\" para pontos dentro da margem e \"maior que um\" para erro (03:20 a 04:00); só cita 2 dos 3 casos do slide 15.",
+            "Afirma que SVMs só aceitam atributos numéricos (08:30 a 09:30), o que é verdade para o modelo, mas é uma observação que os slides não fazem."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 660,
+              "slides": "3, 5, 8, 11, 14–15, 19, 25–31",
+              "note": "Resumo geral teórico, na ordem: margem máxima, equação, hiperplano canônico, folga, espaço de características, dual e kernel, vantagens, desvantagens e multiclasse."
+            }
+          ],
+          "transcript": "../transcripts/cB__Oa85htg.json",
+          "review": {
+            "badge": "transcrição lida · trecho aprovado",
+            "covers": [
+              "00:00–01:00 a SVM é um classificador linear binário que maximiza a margem; SVM linear com margens rígidas define uma fronteira linear a partir de dados linearmente separáveis, por meio de um hiperplano (slides 3 e 8).",
+              "01:00–02:30 muitos hiperplanos possíveis; escolhe-se o de maior margem; hiperplano w·x + b = 0 em que w é perpendicular ao plano e b é um escalar; existem infinitos hiperplanos equivalentes, então escolhe-se w e b para que os mais próximos tenham |w·x + b| = 1 (slides 5 e 11).",
+              "02:30–04:30 quando não há separação linear, usam-se variáveis de relaxamento (folga) ε: ε = 0, a amostra está fora da região da margem e bem classificada; ε > 1, erro de classificação; para limitar o abuso, inclui-se uma penalidade (a constante C), ajustada empiricamente em dados de validação (slides 14, 15 e 21).",
+              "04:30–06:30 se o problema não é linear, mapeia-se o conjunto para um espaço de características de maior dimensão, onde passa a ser linearmente separável; cita o risco da maldição da dimensionalidade (slide 19).",
+              "06:30–08:00 formulação dual (multiplicadores de Lagrange): a solução depende só do produto entre as imagens das amostras, que é calculado pelo kernel sem conhecer a transformação (slides 25 e 26).",
+              "08:00–09:30 vantagens: encontra a melhor solução (mínimo global) e é eficiente em alta dimensionalidade; desvantagens: é caixa preta (difícil de interpretar), só atributos numéricos, custo de pelo menos O(n²) e geralmente O(n³), crítico com muitos dados (slides 30 e 31).",
+              "09:30–11:10 multiclasse: um-contra-todos (N classificadores, desempate por confiabilidade) e um-contra-um (um para cada par, vence quem tem mais votos) (slides 27, 28 e 29)."
+            ],
+            "notCovered": "Parâmetro gamma, C e seu efeito (só cita C como penalidade), dados esparsos e robustez a outliers (slide 30), escolha de kernels em exemplos.",
+            "profile": [
+              "**Nível:** intermediário; vocabulário denso (dual, Mercer, espaço de características).",
+              "**Foco:** teoria resumida da SVM.",
+              "**Idioma/qualidade:** português do Brasil; voz monótona e fala corrida; legenda automática com erros."
+            ],
+            "verdict": "Aprovar o trecho 00:00 a 11:00 como revisão ao final dos outros vídeos."
+          },
+          "optional": true
+        },
+        {
+          "id": "a11-md",
+          "type": "markdown",
+          "title": "Leitura: Aula 11 do zero",
+          "path": "aula-11-do-zero.md",
+          "goals": [
+            "Cobertura integral dos 31 slides da Aula 11",
+            "Conceito central de SVM: hiperplano ótimo no ponto médio e máxima margem",
+            "Vetores de suporte: os pontos críticos que sozinhos sustentam o modelo",
+            "Os 3 estágios: Máxima Margem (Hard) → Vetor de Suporte (Soft) → SVM (Kernel)",
+            "Variáveis de folga ε e a interpretação geométrica das violações de margem",
+            "O hiperparâmetro C: penalidade por errar, largura da margem e trade-off de overfitting/underfitting",
+            "O Truque do Kernel (Kernel Trick): projeção implícita para dimensão superior via produto interno",
+            "Os 4 kernels: Linear, RBF/Gaussiano, Polinomial e Sigmoide",
+            "O hiperparâmetro γ (gamma): raio de influência, suavidade e o risco de 'ilhas' de overfitting",
+            "Estratégias multiclasse: One-vs-One (OvO) vs One-vs-All (OvR)",
+            "Vantagens e desvantagens: robustez a ruído distante, dados esparsos e o perigo de datasets gigantes",
+            "Armadilha crítica de código: padronização mandatória de atributos com StandardScaler"
+          ]
+        },
+        {
+          "id": "a11-q",
+          "type": "questions",
+          "title": "Questões da Aula 11 (40)",
+          "path": "lesson-11-questions.json"
+        }
+      ]
+    },
+    {
+      "id": "codigo",
+      "title": "Fechamento · Leitura de Código do Bloco 4",
+      "items": [
+        {
+          "id": "b4-cod-md",
+          "type": "markdown",
+          "title": "Guia: Como ler código de Redes Neurais e SVM no Scikit-Learn",
+          "path": "guia-ler-codigo-bloco-4.md",
+          "goals": [
+            "Padronização mandatória com StandardScaler: por que dados brutos destroem o SVM e o MLP",
+            "Vazamento de dados (Data Leakage): fit_transform no X total vs fit apenas no X_train",
+            "Construção canônica de Pipeline para encadear pré-processador e modelo na ordem correta",
+            "Parâmetros do MLPClassifier: hidden_layer_sizes, activation, solver, learning_rate_init, max_iter e early_stopping",
+            "Parâmetros do SVC: C, kernel, gamma, degree e a exigência de probability=True para predict_proba",
+            "Interpretação e correção de ConvergenceWarning e divergência numérica (NaN)",
+            "Diferença entre modelos de Classificação (SVC, MLPClassifier) e Regressão (SVR, MLPRegressor)"
+          ]
+        },
+        {
+          "id": "b4-cod-q",
+          "type": "questions",
+          "title": "Questões de Código do Bloco 4 (26)",
+          "path": "code-questions.json"
+        }
+      ]
+    }
+  ]
+}

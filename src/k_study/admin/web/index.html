@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Administração · k_study</title>
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Pular para o conteúdo</a>
+<div class="shell" id="shell" hidden>
+  <header class="topbar">
+    <a class="brand" href="#/" aria-label="k_study, administração">
+      <span class="brand-mark" aria-hidden="true">k</span>
+      <span class="brand-text"><strong>k_study</strong><small>Administração</small></span>
+    </a>
+    <nav class="nav" id="nav" aria-label="Seções da administração">
+      <a href="#/" data-nav="overview">Visão geral</a>
+      <a href="#/students" data-nav="students">Alunos</a>
+      <a href="#/trails" data-nav="trails">Trilhas</a>
+      <a href="#/import" data-nav="import">Importar trilha</a>
+    </nav>
+    <div class="topbar-tools">
+      <a class="btn" href="/" id="back-link">← Voltar às trilhas</a>
+      <span class="user-id"><span id="user-name" class="user-name"></span><span id="user-email" class="user-email"></span></span>
+      <button class="icon-btn" id="theme-btn" type="button" aria-label="Alternar tema claro e escuro" title="Alternar tema"></button>
+      <button class="icon-btn" id="logout-btn" type="button">Sair</button>
+    </div>
+  </header>
+  <main id="main" tabindex="-1"></main>
+</div>
+<div class="tip" id="tip" role="tooltip" hidden></div>
+<script src="app.js"></script>
+</body>
+</html>

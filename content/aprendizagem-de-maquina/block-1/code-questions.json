@@ -1,0 +1,717 @@
+{
+  "schema": "questions/v2",
+  "id": "bloco-1-codigo",
+  "title": "Bloco 1 · Ler código e ordem das ações",
+  "instructions": "Cada questão traz um trecho curto de código de aprendizado de máquina. O código **roda**; o erro, quando existe, é de **lógica** (vazamento de dados, ordem errada, treino e teste misturados). Antes de começar, leia o guia *Como ler um trecho de código de AM, do zero*. Responda antes de ler qualquer explicação e depois leia a explicação de **todas** as alternativas. As questões vão das mais simples às mais difíceis.",
+  "questions": [
+    {
+      "id": "q01",
+      "label": "Avaliar no treino",
+      "type": "single",
+      "prompt": "Leia o trecho. Ele treina uma árvore de decisão e imprime a \"acurácia final\".\n\n```python\nmodel = DecisionTreeClassifier(random_state=0)\nmodel.fit(X_train, y_train)\n\nacc = model.score(X_train, y_train)\nprint(\"Acurácia final do modelo:\", acc)\n```\n\nQual é o erro de lógica?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A nota foi medida nos **mesmos dados** em que o modelo treinou (`X_train`), então não mede generalização.",
+          "correct": true,
+          "explanation": "Linha `model.score(X_train, y_train)`. Uma árvore sem limite de profundidade consegue decorar cada exemplo e dará algo perto de 100 %. É como testar um programa só com os casos de teste que você usou para escrevê-lo. A nota verdadeira sai de `model.score(X_test, y_test)`."
+        },
+        {
+          "id": "b",
+          "text": "`random_state=0` é um valor ruim; o certo seria `random_state=42`.",
+          "correct": false,
+          "explanation": "O valor da semente é irrelevante: qualquer inteiro fixo serve para tornar o resultado reprodutível. Quem aponta isso está olhando para um detalhe sem efeito lógico."
+        },
+        {
+          "id": "c",
+          "text": "Falta chamar `model.predict(X_train)` antes do `score`.",
+          "correct": false,
+          "explanation": "O `score` já chama o `predict` internamente: ele prevê para as linhas passadas e compara com o gabarito. Não falta nada ali; o problema é **quais dados** foram passados."
+        },
+        {
+          "id": "d",
+          "text": "Árvore de decisão não pode ser usada em classificação.",
+          "correct": false,
+          "explanation": "Pode e é muito usada. `DecisionTreeClassifier` é exatamente a versão para classificação; o erro está na avaliação, não no algoritmo."
+        }
+      ],
+      "generalExplanation": "**Ideia central:** o treino serve para **aprender**; o teste serve para **medir**. Medir no treino devolve uma nota inflada (overfitting escondido).\n\nCódigo corrigido:\n\n```python\nmodel = DecisionTreeClassifier(random_state=0)\nmodel.fit(X_train, y_train)\n\nacc_treino = model.score(X_train, y_train)   # opcional: só para comparar\nacc_teste  = model.score(X_test, y_test)     # esta é a nota que vale\nprint(\"Treino:\", acc_treino, \"Teste:\", acc_teste)\n```\n\nSe o treino der ~100 % e o teste bem menos, o modelo está em **overfitting**."
+    },
+    {
+      "id": "q02",
+      "label": "Treino e teste trocados",
+      "type": "single",
+      "prompt": "```python\nmodel = SVC(kernel=\"rbf\")\nmodel.fit(X_test, y_test)\ny_pred = model.predict(X_train)\nprint(accuracy_score(y_train, y_pred))\n```\n\n`X_train` tem 80 % das linhas e `X_test` tem 20 %. O que há de errado?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O SVM não aceita `kernel=\"rbf\"` em classificação.",
+          "correct": false,
+          "explanation": "`rbf` é o kernel padrão do `SVC` e é válido. O problema não está nos parâmetros do modelo."
+        },
+        {
+          "id": "b",
+          "text": "Os papéis estão **invertidos**: o modelo aprende com o conjunto de teste (20 %) e é avaliado no de treino (80 %).",
+          "correct": true,
+          "explanation": "Linhas `fit(X_test, y_test)` e `predict(X_train)`. O modelo estuda com a fatia pequena e é avaliado numa fatia maior que ele nunca viu de forma válida; a divisão perde a função e a nota não estima o desempenho real. Corrigir: `fit(X_train, y_train)`, avaliar com `X_test`/`y_test`."
+        },
+        {
+          "id": "c",
+          "text": "Falta aplicar `StandardScaler`; sem isso o código não executa.",
+          "correct": false,
+          "explanation": "A falta de escala prejudica o SVM, mas o código **executa**, e esse não é o erro de lógica que o trecho exibe. Quando o enunciado fala de lógica, procure primeiro quem treina e quem é avaliado."
+        },
+        {
+          "id": "d",
+          "text": "É correto treinar com menos dados, pois isso evita overfitting.",
+          "correct": false,
+          "explanation": "Menos dados de treino não evitam overfitting; geralmente pioram o modelo. E, mesmo assim, o teste existe para **avaliar**, não para treinar."
+        }
+      ],
+      "generalExplanation": "Regra mínima: `fit` recebe **treino**; `score`/`predict` para a nota final recebem **teste**.\n\n```python\nmodel = SVC(kernel=\"rbf\")\nmodel.fit(X_train, y_train)\ny_pred = model.predict(X_test)\nprint(accuracy_score(y_test, y_pred))\n```"
+    },
+    {
+      "id": "q03",
+      "label": "fit_transform no teste",
+      "type": "single",
+      "prompt": "```python\nscaler = StandardScaler()\nX_train_s = scaler.fit_transform(X_train)\nX_test_s  = scaler.fit_transform(X_test)\n\nmodel = KNeighborsClassifier(n_neighbors=5).fit(X_train_s, y_train)\nprint(model.score(X_test_s, y_test))\n```\n\nQual é o erro de lógica?",
+      "options": [
+        {
+          "id": "a",
+          "text": "`fit_transform` foi usado também no teste: o escalonador **reaprendeu** média e desvio a partir do teste.",
+          "correct": true,
+          "explanation": "Linha 3. Cada conjunto é padronizado com a **sua própria** média e desvio: treino e teste ficam em escalas diferentes, e o k-NN compara distâncias entre pontos em referenciais distintos. Além disso, o teste deixa de ser \"dado novo\". Correção: `scaler.transform(X_test)`."
+        },
+        {
+          "id": "b",
+          "text": "Deveria ter usado `fit_transform` também no `y_train`.",
+          "correct": false,
+          "explanation": "Não se padroniza o alvo em classificação: `y` são classes, não números contínuos. Escalonar `X` já basta."
+        },
+        {
+          "id": "c",
+          "text": "O k-NN não precisa de padronização, então o `StandardScaler` está sobrando.",
+          "correct": false,
+          "explanation": "É o contrário: o k-NN usa **distância**, e atributos em escalas diferentes (salário em milhares x idade em dezenas) fazem o de maior escala dominar. A padronização é recomendada aqui."
+        },
+        {
+          "id": "d",
+          "text": "`n_neighbors=5` deveria ser par para evitar empates.",
+          "correct": false,
+          "explanation": "Para evitar empates em classificação binária o K costuma ser **ímpar**, justamente como 5. Esse valor não é o erro."
+        }
+      ],
+      "generalExplanation": "**Ideia central:** `fit` aprende parâmetros e **só no treino**; no teste usa-se `transform`, com os parâmetros do treino.\n\n```python\nscaler = StandardScaler()\nX_train_s = scaler.fit_transform(X_train)   # aprende e aplica\nX_test_s  = scaler.transform(X_test)        # só aplica\n\nmodel = KNeighborsClassifier(n_neighbors=5).fit(X_train_s, y_train)\nprint(model.score(X_test_s, y_test))\n```"
+    },
+    {
+      "id": "q04",
+      "label": "Codificação nominal",
+      "type": "single",
+      "prompt": "```python\nle = LabelEncoder()\ndf[\"cidade\"] = le.fit_transform(df[\"cidade\"])   # Caicó=0, Mossoró=1, Natal=2\n\nmodel = KNeighborsClassifier(n_neighbors=3)\nmodel.fit(df[[\"cidade\", \"renda\"]], df[\"inadimplente\"])\n```\n\nQual é o problema?",
+      "options": [
+        {
+          "id": "a",
+          "text": "`cidade` é uma variável **nominal**; ao virar 0, 1, 2 o modelo enxerga uma ordem e distâncias que não existem.",
+          "correct": true,
+          "explanation": "Para o k-NN, Caicó (0) fica \"mais perto\" de Mossoró (1) do que de Natal (2). Isso é uma distância inventada. Em nominais use **one-hot** (`pd.get_dummies` ou `OneHotEncoder`): cada cidade vira uma coluna 0/1, todas equidistantes."
+        },
+        {
+          "id": "b",
+          "text": "Falta chamar `le.transform` depois do `fit_transform`.",
+          "correct": false,
+          "explanation": "`fit_transform` já faz `fit` e `transform`. Chamar outra vez não acrescenta nada."
+        },
+        {
+          "id": "c",
+          "text": "O `LabelEncoder` só pode ser usado em colunas numéricas.",
+          "correct": false,
+          "explanation": "Ele é feito para **texto/categorias** e as converte em inteiros. O problema é o tipo de variável (nominal), não o tipo da coluna."
+        },
+        {
+          "id": "d",
+          "text": "`n_neighbors=3` é pequeno demais; o certo seria 1.",
+          "correct": false,
+          "explanation": "O K não tem a ver com o erro de codificação. E K=1 seria mais sensível a ruído, não menos."
+        }
+      ],
+      "generalExplanation": "**Ideia central:** o tratamento depende do **tipo de variável**. Nominal (cidade, cor) = one-hot. Ordinal (escolaridade, tamanho P/M/G) = inteiros na ordem natural. `LabelEncoder` serve, em geral, para o **alvo**.\n\n```python\nX = pd.get_dummies(df[[\"cidade\", \"renda\"]], columns=[\"cidade\"])\nmodel = KNeighborsClassifier(n_neighbors=3).fit(X, df[\"inadimplente\"])\n```\n\n(Em código completo, o `OneHotEncoder` entra num `ColumnTransformer` ajustado só no treino.)"
+    },
+    {
+      "id": "q05",
+      "label": "Winsorização",
+      "type": "single",
+      "prompt": "A regra do IQR define limites e a **winsorização** troca os valores extremos pelos próprios limites.\n\n```python\nq1 = df[\"idade\"].quantile(0.25)\nq3 = df[\"idade\"].quantile(0.75)\niqr = q3 - q1\nlLim = q1 - 1.5 * iqr\nhLim = q3 + 1.5 * iqr\n\ndf.loc[df[\"idade\"] < lLim, \"idade\"] = hLim\ndf.loc[df[\"idade\"] > hLim, \"idade\"] = lLim\n```\n\nOnde está o erro?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Os limites foram calculados com `quantile(0.25)` e `quantile(0.75)`, que não são Q1 e Q3.",
+          "correct": false,
+          "explanation": "São exatamente Q1 (25 %) e Q3 (75 %). O cálculo dos limites está correto."
+        },
+        {
+          "id": "b",
+          "text": "Deveria usar `3 * iqr` em vez de `1.5 * iqr`.",
+          "correct": false,
+          "explanation": "1,5 x IQR é a regra clássica de outliers. Outros fatores existem, mas não é um erro lógico."
+        },
+        {
+          "id": "c",
+          "text": "As atribuições estão **trocadas**: quem está abaixo de `lLim` recebe `hLim` e quem está acima de `hLim` recebe `lLim`.",
+          "correct": true,
+          "explanation": "Linhas finais. Um outlier muito pequeno vira o limite superior (grande) e um muito grande vira o inferior (pequeno): o contrário de \"achatar\" os extremos. O certo é `< lLim` recebe `lLim` e `> hLim` recebe `hLim`."
+        },
+        {
+          "id": "d",
+          "text": "O tratamento deveria ser remover as linhas, nunca substituí-las.",
+          "correct": false,
+          "explanation": "Winsorizar é uma estratégia legítima (preserva o número de linhas). O erro é a troca dos valores, não a escolha da estratégia."
+        }
+      ],
+      "generalExplanation": "**Ideia central:** winsorizar = \"limitar\" cada valor ao intervalo [lLim, hLim].\n\n```python\ndf.loc[df[\"idade\"] < lLim, \"idade\"] = lLim\ndf.loc[df[\"idade\"] > hLim, \"idade\"] = hLim\n\n# equivalente em uma linha:\ndf[\"idade\"] = df[\"idade\"].clip(lower=lLim, upper=hLim)\n```\n\nLembrete: `q1` e `q3` devem ser calculados com o **treino** (veja as próximas questões)."
+    },
+    {
+      "id": "q06",
+      "label": "Ausentes",
+      "type": "multiple",
+      "prompt": "Duas linhas de limpeza de uma base de crédito, em outra versão do mesmo projeto (não é uma sequência única).\n\n```python\n# (1) 'inadimplente' é o rótulo 0/1; algumas linhas estão sem rótulo\ndf[\"inadimplente\"] = df[\"inadimplente\"].fillna(df[\"inadimplente\"].mean())\n\n# (2) só 2 de 5.000 linhas têm 'salario' ausente; 'salario' é muito importante\ndf.dropna(axis=1, inplace=True)\n```\n\nMarque **todas** as afirmações verdadeiras.",
+      "options": [
+        {
+          "id": "a",
+          "text": "A linha (1) cria um rótulo fictício (por exemplo, 0,07), que não é uma classe válida em classificação.",
+          "correct": true,
+          "explanation": "A média de uma coluna 0/1 é uma fração. Passa a existir uma \"classe\" 0,07 que nunca existiu. Linhas sem rótulo não servem ao aprendizado supervisionado: o correto é removê-las (`dropna(subset=[\"inadimplente\"])`) ou rotulá-las manualmente."
+        },
+        {
+          "id": "b",
+          "text": "A linha (2) apaga a coluna `salario` **inteira** por causa de apenas 2 linhas ausentes.",
+          "correct": true,
+          "explanation": "`axis=1` remove **colunas** com qualquer `NaN`. Perde-se uma variável importante para economizar 2 linhas. É a opção menos recomendada; só se justifica se a variável quase não tiver dados ou não influenciar o alvo."
+        },
+        {
+          "id": "c",
+          "text": "A forma mais razoável para (2) é remover essas poucas linhas (`axis=0`) ou imputar o `salario` com uma estatística calculada no treino.",
+          "correct": true,
+          "explanation": "Com 2 em 5.000 ausentes, descartar as linhas ou imputar mediana/média custa quase nada. A imputação deve usar só o treino, para não vazar o teste."
+        },
+        {
+          "id": "d",
+          "text": "A linha (1) é adequada, pois qualquer coluna ausente pode ser preenchida pela média.",
+          "correct": false,
+          "explanation": "A média serve para atributos numéricos contínuos, não para o **alvo** categórico. Nunca se \"inventa\" o gabarito."
+        }
+      ],
+      "generalExplanation": "Resumo do tratamento de ausentes:\n\n- **Alvo ausente:** remover a linha. Não imputar.\n- **Atributo com poucos ausentes:** remover as linhas ou imputar (média/mediana/moda), **com a estatística do treino**.\n- **Coluna quase toda vazia ou irrelevante:** aí sim pode-se remover a coluna.\n\n```python\ndf = df.dropna(subset=[\"inadimplente\"])        # sem rótulo -> sai\nX = df.drop(\"inadimplente\", axis=1)\ny = df[\"inadimplente\"]\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, stratify=y, random_state=42)\nimp = SimpleImputer(strategy=\"median\").fit(X_train)   # pressupõe colunas numéricas\nX_train = imp.transform(X_train)\nX_test  = imp.transform(X_test)\n```"
+    },
+    {
+      "id": "q07",
+      "label": "Dados temporais",
+      "type": "single",
+      "prompt": "Vendas diárias de 2020 a 2025, ordenadas por data. O objetivo é **prever o futuro**.\n\n```python\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, shuffle=True, random_state=42)\n```\n\nQual é o erro de lógica?",
+      "options": [
+        {
+          "id": "a",
+          "text": "`test_size=0.2` é pouco; em séries temporais o teste deve ser de 50 %.",
+          "correct": false,
+          "explanation": "Não há regra de 50 %. O tamanho do teste não é o problema."
+        },
+        {
+          "id": "b",
+          "text": "Falta `stratify=y`, pois séries temporais precisam de estratificação.",
+          "correct": false,
+          "explanation": "Estratificar não resolve ordem temporal. Em séries, o essencial é respeitar a **ordem do tempo**."
+        },
+        {
+          "id": "c",
+          "text": "`shuffle=True` embaralha as datas: dias do futuro vão para o treino e dias do passado para o teste.",
+          "correct": true,
+          "explanation": "O modelo \"vê\" o futuro durante o treino e é testado em dias que vieram antes de dados que ele já conhece. Isso é **vazamento temporal** e deixa a nota otimista, porque em produção você nunca terá o futuro. Correção: `shuffle=False` (treino = período mais antigo, teste = mais recente) ou `TimeSeriesSplit`."
+        },
+        {
+          "id": "d",
+          "text": "`random_state=42` torna a divisão determinística e isso impede o modelo de aprender.",
+          "correct": false,
+          "explanation": "A semente só fixa o sorteio e garante reprodutibilidade; não afeta a aprendizagem. Aliás, com `shuffle=False` ela nem seria usada."
+        }
+      ],
+      "generalExplanation": "**Ideia central:** em dados no tempo, a divisão tem de ser temporal.\n\n```python\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, shuffle=False)       # passado -> treino, futuro -> teste\n\n# validação cruzada respeitando o tempo:\ncv = TimeSeriesSplit(n_splits=5)\n```"
+    },
+    {
+      "id": "q08",
+      "label": "Código correto 1",
+      "type": "multiple",
+      "prompt": "Este trecho está **correto**. Marque as afirmações **verdadeiras** sobre ele.\n\n```python\nX = df.drop(\"inadimplente\", axis=1)\ny = df[\"inadimplente\"]\n\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, stratify=y, random_state=42)\n\nimp = SimpleImputer(strategy=\"median\")\nX_train_i = imp.fit_transform(X_train)\nX_test_i  = imp.transform(X_test)\n\nsc = StandardScaler()\nX_train_s = sc.fit_transform(X_train_i)\nX_test_s  = sc.transform(X_test_i)\n\nmodel = LogisticRegression(max_iter=1000).fit(X_train_s, y_train)\nprint(model.score(X_test_s, y_test))\n```",
+      "options": [
+        {
+          "id": "a",
+          "text": "A divisão ocorre antes de qualquer imputação ou padronização, então o teste não influencia as estatísticas.",
+          "correct": true,
+          "explanation": "A ordem é a canônica: dividir -> imputar -> escalar -> treinar -> avaliar. Mediana e desvio vêm só do treino."
+        },
+        {
+          "id": "b",
+          "text": "O imputador e o escalonador usam `fit_transform` no treino e apenas `transform` no teste.",
+          "correct": true,
+          "explanation": "É exatamente o uso correto: aprende no treino, aplica nos dois. O teste recebe os mesmos parâmetros."
+        },
+        {
+          "id": "c",
+          "text": "`stratify=y` mantém a proporção de classes em treino e teste, e `random_state=42` torna a divisão reprodutível.",
+          "correct": true,
+          "explanation": "Os dois parâmetros são boas práticas, sobretudo se `inadimplente` for uma classe rara."
+        },
+        {
+          "id": "d",
+          "text": "O alvo `inadimplente` está corretamente fora de `X` e só entra no `fit` do modelo.",
+          "correct": true,
+          "explanation": "`drop(..., axis=1)` retira a coluna de `X`; `y` fica separado e é usado apenas como gabarito."
+        },
+        {
+          "id": "e",
+          "text": "Há vazamento, pois o `SimpleImputer` deveria ser ajustado na base completa.",
+          "correct": false,
+          "explanation": "Seria o contrário: ajustar na base completa é que causaria vazamento. Aqui o `fit` é só no treino."
+        }
+      ],
+      "generalExplanation": "Observação: o código está correto, mas pode ficar mais seguro e enxuto num `Pipeline`, que garante a mesma ordem também dentro da validação cruzada.\n\n```python\npipe = Pipeline([\n    (\"imp\", SimpleImputer(strategy=\"median\")),\n    (\"sc\",  StandardScaler()),\n    (\"clf\", LogisticRegression(max_iter=1000)),\n])\npipe.fit(X_train, y_train)\nprint(pipe.score(X_test, y_test))\n```\n\nFalta algo? Só se a base tivesse colunas de texto (precisariam de codificação) e se a classe positiva fosse rara (avaliar também com recall/F1, não só com a acurácia)."
+    },
+    {
+      "id": "q09",
+      "label": "Padronizar o alvo",
+      "type": "multiple",
+      "prompt": "```python\ndf_scaled = pd.DataFrame(StandardScaler().fit_transform(df), columns=df.columns)\nX = df_scaled.drop(\"aprovado\", axis=1)\ny = df_scaled[\"aprovado\"]               # \"aprovado\" era 0/1\nmodel = LogisticRegression().fit(X, y)\n```\n\nMarque **todos** os problemas reais.",
+      "options": [
+        {
+          "id": "a",
+          "text": "O alvo `aprovado` foi padronizado: os valores 0 e 1 viram números como −0,6 e 1,6, que não são classes.",
+          "correct": true,
+          "explanation": "A regressão logística é um classificador e exige rótulos discretos. Com `y` contínuo o `fit` costuma até lançar erro; de qualquer forma, o alvo não deve ser escalado."
+        },
+        {
+          "id": "b",
+          "text": "A padronização foi feita na base inteira, **antes** de dividir em treino e teste.",
+          "correct": true,
+          "explanation": "Média e desvio incluem as linhas que seriam do teste: vazamento. Sequer há um teste neste trecho, o que é outro sinal de que a avaliação não está prevista."
+        },
+        {
+          "id": "c",
+          "text": "Colunas binárias (0/1) e dummies, em geral, não precisam ser padronizadas.",
+          "correct": true,
+          "explanation": "Já estão em escala pequena e perdem a interpretação (\"é ou não é\") quando padronizadas. Padroniza-se apenas as numéricas contínuas."
+        },
+        {
+          "id": "d",
+          "text": "O `LogisticRegression` não pode ser usado, pois é um algoritmo de regressão.",
+          "correct": false,
+          "explanation": "O nome engana: é um algoritmo de **classificação**. Aqui ele é adequado ao alvo binário, desde que `y` seja 0/1."
+        }
+      ],
+      "generalExplanation": "Ordem correta: separar `X` e `y` -> dividir -> padronizar só as colunas numéricas contínuas (`fit` no treino) -> treinar -> avaliar.\n\n```python\nX = df.drop(\"aprovado\", axis=1)\ny = df[\"aprovado\"]                       # continua 0/1\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, stratify=y, random_state=42)\n\nnum = [\"idade\", \"renda\"]                 # só as contínuas\nprep = ColumnTransformer([(\"num\", StandardScaler(), num)], remainder=\"passthrough\")\nX_train_s = prep.fit_transform(X_train)\nX_test_s  = prep.transform(X_test)\nmodel = LogisticRegression().fit(X_train_s, y_train)\n```"
+    },
+    {
+      "id": "q10",
+      "label": "PCA",
+      "type": "multiple",
+      "prompt": "```python\npca = PCA(n_components=0.95)\nnewData = pca.fit_transform(df)     # df: 20 atributos em escalas muito diferentes + a coluna \"inadimplente\"\nX_train, X_test, y_train, y_test = train_test_split(newData, y, random_state=0)\n```\n\nMarque **todas** as afirmações verdadeiras.",
+      "options": [
+        {
+          "id": "a",
+          "text": "`df` inclui o alvo `inadimplente`, então os componentes principais misturam a resposta com os atributos (vazamento do alvo).",
+          "correct": true,
+          "explanation": "O PCA deve receber só os atributos. Com o alvo dentro, os componentes \"contêm o gabarito\" e, em produção, esse dado nem existiria."
+        },
+        {
+          "id": "b",
+          "text": "O PCA foi ajustado na base inteira antes da divisão, o que vaza informação do teste para os componentes.",
+          "correct": true,
+          "explanation": "Os componentes são parâmetros aprendidos (como média e desvio). Devem ser aprendidos só com o treino e aplicados ao teste com `transform`."
+        },
+        {
+          "id": "c",
+          "text": "Sem padronizar antes, os atributos de maior escala dominam a variância e, portanto, os componentes.",
+          "correct": true,
+          "explanation": "O PCA busca direções de maior variância. Uma coluna em milhares de reais vence outra em unidades, sem ter mais informação. Padronize antes."
+        },
+        {
+          "id": "d",
+          "text": "`n_components=0.95` significa manter 95 % das colunas originais.",
+          "correct": false,
+          "explanation": "Significa manter o **número de componentes necessário para explicar 95 % da variância** dos dados, e não 95 % das colunas."
+        }
+      ],
+      "generalExplanation": "Ordem correta: separar `X` (sem alvo) e `y` -> dividir -> padronizar (`fit` no treino) -> PCA (`fit` no treino) -> transformar o teste com os **mesmos** objetos -> treinar -> avaliar.\n\n```python\nX = df.drop(\"inadimplente\", axis=1)\ny = df[\"inadimplente\"]\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, stratify=y, random_state=0)\n\npipe = Pipeline([\n    (\"sc\",  StandardScaler()),\n    (\"pca\", PCA(n_components=0.95)),\n    (\"clf\", LogisticRegression(max_iter=1000)),\n])\npipe.fit(X_train, y_train)\nprint(pipe.score(X_test, y_test))\n```"
+    },
+    {
+      "id": "q11",
+      "label": "Estatística antes da divisão",
+      "type": "single",
+      "prompt": "Um colega escreveu a preparação abaixo e pediu revisão.\n\n```python\ndf[\"renda\"] = df[\"renda\"].fillna(df[\"renda\"].mean())\nX_scaled = StandardScaler().fit_transform(df.drop(\"inadimplente\", axis=1))\ny = df[\"inadimplente\"]\n\nX_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2)\nmodel = KNeighborsClassifier(n_neighbors=5).fit(X_train, y_train)\nprint(model.score(X_test, y_test))\n```\n\nQual é a avaliação correta?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A ordem está correta: preencher ausentes e padronizar antes de dividir garante que treino e teste tenham o mesmo tratamento.",
+          "correct": false,
+          "explanation": "Parece razoável (\"mesmo tratamento\"), mas o tratamento é feito com **estatísticas calculadas na base toda**. O teste participa do cálculo da média da renda e da média e desvio da padronização. Treino e teste devem receber o mesmo tratamento **com parâmetros aprendidos só no treino**."
+        },
+        {
+          "id": "b",
+          "text": "A ordem está errada: a média de `renda` e os parâmetros do `StandardScaler` foram calculados com todas as linhas, inclusive as de teste, causando vazamento e nota otimista.",
+          "correct": true,
+          "explanation": "Linhas 1 e 2. É vazamento no pré-processamento: o treino \"conhece\" a média e o desvio do teste. O certo é dividir primeiro; ajustar imputador e escalonador no treino; aplicar `transform` no teste (de preferência num `Pipeline`)."
+        },
+        {
+          "id": "c",
+          "text": "O erro é só o `fillna` com média; a padronização antes da divisão é aceitável.",
+          "correct": false,
+          "explanation": "As duas etapas têm o mesmo problema: usam estatística da base inteira. Não há \"meio vazamento aceitável\"."
+        },
+        {
+          "id": "d",
+          "text": "O único problema é a falta de `random_state` e de `stratify`.",
+          "correct": false,
+          "explanation": "Faltam mesmo (reprodutibilidade e proporção de classes), mas isso é um problema **adicional**; o erro central é o vazamento por pré-processar antes de dividir."
+        }
+      ],
+      "generalExplanation": "Ordem correta: separar `X` e `y` -> dividir (`stratify`, `random_state`) -> imputar (`fit` no treino) -> padronizar (`fit` no treino) -> treinar -> avaliar no teste.\n\n```python\nX = df.drop(\"inadimplente\", axis=1)\ny = df[\"inadimplente\"]\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, stratify=y, random_state=42)\n\npipe = Pipeline([\n    (\"imp\", SimpleImputer(strategy=\"mean\")),\n    (\"sc\",  StandardScaler()),\n    (\"clf\", KNeighborsClassifier(n_neighbors=5)),\n])\npipe.fit(X_train, y_train)\nprint(pipe.score(X_test, y_test))\n```"
+    },
+    {
+      "id": "q12",
+      "label": "Outliers x normalização",
+      "type": "single",
+      "prompt": "```python\n# 1) normaliza as colunas numéricas\ndf[[\"idade\", \"salario\"]] = MinMaxScaler().fit_transform(df[[\"idade\", \"salario\"]])\n\n# 2) trata outliers pela regra do IQR\nfor col in [\"idade\", \"salario\"]:\n    q1, q3 = df[col].quantile(0.25), df[col].quantile(0.75)\n    iqr = q3 - q1\n    df.loc[df[col] > q3 + 1.5 * iqr, col] = q3 + 1.5 * iqr\n```\n\nO que está errado **na ordem** das etapas (ignore o fato de tudo estar na base inteira)?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Nada: normalizar primeiro facilita enxergar os outliers numa escala comum.",
+          "correct": false,
+          "explanation": "A escala comum esconde o problema, não o resolve: o outlier já contaminou o cálculo do mínimo e do máximo."
+        },
+        {
+          "id": "b",
+          "text": "O tratamento de outliers deveria vir antes do `train_test_split`.",
+          "correct": false,
+          "explanation": "O contrário: os limites de outlier são estatísticas e também devem ser calculados no **treino**, depois da divisão."
+        },
+        {
+          "id": "c",
+          "text": "O `MinMaxScaler` usa o mínimo e o máximo, que são justamente os outliers: um salário absurdo vira o \"1\" e comprime todos os demais perto de 0.",
+          "correct": true,
+          "explanation": "Tratar outliers depois não desfaz a distorção: os valores normais já foram esmagados para uma faixa estreita. A regra da aula: trate os outliers **antes** de normalizar."
+        },
+        {
+          "id": "d",
+          "text": "O `MinMaxScaler` deveria ser trocado por `LabelEncoder`.",
+          "correct": false,
+          "explanation": "`LabelEncoder` converte categorias em números; não escala variáveis numéricas."
+        }
+      ],
+      "generalExplanation": "Ordem correta (com a divisão): dividir -> calcular limites de outlier no treino e aplicar (winsorizar) -> normalizar (`fit` no treino).\n\n```python\nfor col in [\"idade\", \"salario\"]:\n    q1, q3 = X_train[col].quantile(0.25), X_train[col].quantile(0.75)\n    iqr = q3 - q1\n    lo, hi = q1 - 1.5 * iqr, q3 + 1.5 * iqr\n    X_train[col] = X_train[col].clip(lo, hi)\n    X_test[col]  = X_test[col].clip(lo, hi)     # mesmos limites do treino\n\nmm = MinMaxScaler().fit(X_train[[\"idade\", \"salario\"]])\nX_train[[\"idade\", \"salario\"]] = mm.transform(X_train[[\"idade\", \"salario\"]])\nX_test[[\"idade\", \"salario\"]]  = mm.transform(X_test[[\"idade\", \"salario\"]])\n```"
+    },
+    {
+      "id": "q13",
+      "label": "Balanceamento",
+      "type": "multiple",
+      "prompt": "Os dois trechos abaixo balanceiam as classes de formas diferentes.\n\n```python\n# Trecho A\nX_res, y_res = SMOTE(random_state=42).fit_resample(X, y)\nX_train, X_test, y_train, y_test = train_test_split(X_res, y_res, test_size=0.2, random_state=42)\nclf = RandomForestClassifier(random_state=42).fit(X_train, y_train)\nprint(classification_report(y_test, clf.predict(X_test)))\n\n# Trecho B\nX_train_b, y_train_b = SMOTE(random_state=42).fit_resample(X_train, y_train)\nX_test_b,  y_test_b  = SMOTE(random_state=42).fit_resample(X_test, y_test)\nclf.fit(X_train_b, y_train_b)\nprint(classification_report(y_test_b, clf.predict(X_test_b)))\n```\n\n(No trecho B, `X_train`/`X_test` vêm de uma divisão correta e original.) Marque **todas** as afirmações verdadeiras.",
+      "options": [
+        {
+          "id": "a",
+          "text": "No trecho A, o SMOTE foi aplicado antes da divisão: exemplos sintéticos, derivados de vizinhos reais, caem no teste e no treino.",
+          "correct": true,
+          "explanation": "Um exemplo sintético é uma interpolação entre vizinhos reais; se o vizinho está no treino e o sintético no teste (ou vice-versa), o modelo \"já viu\" algo muito parecido com o teste. É vazamento."
+        },
+        {
+          "id": "b",
+          "text": "No trecho A, o teste fica artificialmente balanceado (por exemplo, 50 % x 50 %), e não reflete a distribuição real.",
+          "correct": true,
+          "explanation": "As métricas passam a descrever um mundo que não existe: em produção a classe rara continua rara."
+        },
+        {
+          "id": "c",
+          "text": "No trecho B, balancear o conjunto de teste infla as métricas, pois avalia o modelo sobre dados inventados.",
+          "correct": true,
+          "explanation": "O teste deve ser o dado real, na proporção real. Avaliar sobre exemplos sintéticos mede a capacidade de acertar o que o próprio SMOTE fabricou."
+        },
+        {
+          "id": "d",
+          "text": "O correto é dividir (estratificado), balancear **somente o treino** e avaliar no teste original.",
+          "correct": true,
+          "explanation": "É a ordem canônica para balanceamento. Em `imblearn`, o `Pipeline` dessa biblioteca aplica o SMOTE só no `fit`."
+        },
+        {
+          "id": "e",
+          "text": "`classification_report` é inadequado porque não mostra métricas por classe.",
+          "correct": false,
+          "explanation": "Mostra precisão, recall e F1 **por classe**, exatamente o que se quer em dados desbalanceados. A acurácia sozinha é que enganaria."
+        }
+      ],
+      "generalExplanation": "Mesmo princípio vale para o undersampling (`NearMiss`, `RandomUnderSampler`): reduzir a classe majoritária **na base inteira** descarta exemplos do teste e distorce sua proporção.\n\n```python\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, stratify=y, random_state=42)\n\nX_train_b, y_train_b = SMOTE(random_state=42).fit_resample(X_train, y_train)\nclf = RandomForestClassifier(random_state=42).fit(X_train_b, y_train_b)\nprint(classification_report(y_test, clf.predict(X_test)))   # teste original\n```"
+    },
+    {
+      "id": "q14",
+      "label": "Outliers no teste",
+      "type": "multiple",
+      "prompt": "```python\nq1 = X_test[\"renda\"].quantile(0.25)\nq3 = X_test[\"renda\"].quantile(0.75)\niqr = q3 - q1\nX_test = X_test[(X_test[\"renda\"] >= q1 - 1.5 * iqr) &\n                (X_test[\"renda\"] <= q3 + 1.5 * iqr)]\n```\n\nMarque **todas** as afirmações verdadeiras sobre esse trecho.",
+      "options": [
+        {
+          "id": "a",
+          "text": "Os limites foram calculados com o próprio teste; deveriam sair do treino.",
+          "correct": true,
+          "explanation": "Os limites do IQR são parâmetros aprendidos. A regra da aula: trate outliers com base no conjunto de treino."
+        },
+        {
+          "id": "b",
+          "text": "Remover linhas do teste melhora artificialmente a nota, porque elimina justamente os casos difíceis.",
+          "correct": true,
+          "explanation": "O teste precisa representar o uso real, inclusive os valores extremos. Um teste \"limpo demais\" produz uma avaliação otimista."
+        },
+        {
+          "id": "c",
+          "text": "Depois do filtro, `X_test` tem menos linhas que `y_test`, e as duas deixam de corresponder.",
+          "correct": true,
+          "explanation": "Linha a linha, o filtro só atinge `X_test`. `y_test` continua com todas as linhas, e `model.score(X_test, y_test)` falharia ou compararia o par errado. É um bug adicional."
+        },
+        {
+          "id": "d",
+          "text": "A forma aceitável no teste é aplicar a **mesma winsorização** (`clip`) com os limites do treino, sem excluir linhas.",
+          "correct": true,
+          "explanation": "Assim o teste recebe o mesmo tratamento do treino, preserva o número de linhas e não vaza informação."
+        },
+        {
+          "id": "e",
+          "text": "O erro é usar 1,5 como multiplicador; em teste deveria ser 3.",
+          "correct": false,
+          "explanation": "O multiplicador é uma convenção e não tem a ver com o teste. O erro está em **de onde** vêm os limites e em **excluir** linhas."
+        }
+      ],
+      "generalExplanation": "```python\nq1, q3 = X_train[\"renda\"].quantile(0.25), X_train[\"renda\"].quantile(0.75)\niqr = q3 - q1\nlo, hi = q1 - 1.5 * iqr, q3 + 1.5 * iqr\n\nX_train[\"renda\"] = X_train[\"renda\"].clip(lo, hi)     # (ou remover linhas, só no treino)\nX_test[\"renda\"]  = X_test[\"renda\"].clip(lo, hi)      # mesmos limites, sem excluir linhas\n```"
+    },
+    {
+      "id": "q15",
+      "label": "Validação cruzada",
+      "type": "single",
+      "prompt": "```python\nX_scaled = StandardScaler().fit_transform(X)\nscores = cross_val_score(SVC(), X_scaled, y, cv=5)\nprint(scores.mean())\n```\n\nHá vazamento de dados? Qual é a correção?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Não há vazamento: a validação cruzada já separa treino e teste em cada dobra.",
+          "correct": false,
+          "explanation": "Ela separa treino e teste **a partir do que recebe**. Aqui, ela recebe dados que já foram padronizados com a média e o desvio da base completa; a escala de cada dobra de validação já foi incorporada ao treino."
+        },
+        {
+          "id": "b",
+          "text": "Há vazamento: a média e o desvio foram calculados com todas as linhas, inclusive as que, em cada rodada, servem como dobra de validação. A correção é passar um `Pipeline` (escalonador + SVC) ao `cross_val_score`.",
+          "correct": true,
+          "explanation": "No `Pipeline`, o `StandardScaler` refaz o `fit` só com o treino de cada dobra e aplica `transform` na dobra de validação. A mesma lógica vale para imputação, PCA, seleção de atributos e balanceamento."
+        },
+        {
+          "id": "c",
+          "text": "Há vazamento, e a correção é aumentar `cv=5` para `cv=10`.",
+          "correct": false,
+          "explanation": "Mais dobras não removem o vazamento: o `StandardScaler` continua vendo todas as linhas antes de qualquer dobra."
+        },
+        {
+          "id": "d",
+          "text": "Há vazamento, e a correção é trocar o `SVC` por uma árvore, que não precisa de escala.",
+          "correct": false,
+          "explanation": "Trocar o algoritmo evita a necessidade de escalar, mas não ensina o princípio. O trecho com SVM é válido; o que falha é o pré-processamento fora da validação."
+        }
+      ],
+      "generalExplanation": "```python\npipe = Pipeline([(\"sc\", StandardScaler()), (\"clf\", SVC())])\ncv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)\nscores = cross_val_score(pipe, X, y, cv=cv)\nprint(scores.mean(), scores.std())\n```\n\nRegra: se há `fit` em qualquer coisa que dependa dos dados, ela tem de estar **dentro** do `Pipeline` passado à validação cruzada."
+    },
+    {
+      "id": "q16",
+      "label": "Escolha de hiperparâmetro",
+      "type": "multiple",
+      "prompt": "```python\nbest_k, best_acc = None, 0\nfor k in range(1, 30, 2):\n    acc = KNeighborsClassifier(n_neighbors=k).fit(X_train, y_train).score(X_test, y_test)\n    if acc > best_acc:\n        best_k, best_acc = k, acc\nprint(\"Melhor K:\", best_k, \"Acurácia:\", best_acc)\n```\n\nMarque **todas** as afirmações verdadeiras.",
+      "options": [
+        {
+          "id": "a",
+          "text": "O melhor K foi escolhido olhando o conjunto de teste, então o teste participou da seleção do modelo e a acurácia final fica otimista.",
+          "correct": true,
+          "explanation": "A linha `.score(X_test, y_test)` dentro do laço usa o teste para **decidir**. Depois disso, essa nota deixou de ser um julgamento independente (vazamento indireto)."
+        },
+        {
+          "id": "b",
+          "text": "Uma correção é escolher K por validação cruzada **dentro do treino** (`GridSearchCV` ou `cross_val_score`).",
+          "correct": true,
+          "explanation": "Assim o K é decidido só com dobras do treino, e o teste fica guardado para a avaliação final."
+        },
+        {
+          "id": "c",
+          "text": "Outra correção é separar um conjunto de validação a partir do treino e, só no fim, avaliar uma única vez no teste com o K escolhido.",
+          "correct": true,
+          "explanation": "Treino -> escolher hiperparâmetros na validação -> avaliar no teste uma vez. É a estrutura treino/validação/teste."
+        },
+        {
+          "id": "d",
+          "text": "Variar K de 2 em 2 a partir de 1 gera só valores ímpares, o que evita empates na votação em classificação binária.",
+          "correct": true,
+          "explanation": "Com K par pode haver, por exemplo, 2 votos para cada classe. Valores ímpares eliminam esse empate."
+        },
+        {
+          "id": "e",
+          "text": "O laço está certo, pois todos os K foram avaliados nos mesmos dados.",
+          "correct": false,
+          "explanation": "Usar os mesmos dados é justo, mas se esses dados são o **teste**, a escolha do melhor K já \"estudou\" a prova."
+        }
+      ],
+      "generalExplanation": "```python\nparam = {\"n_neighbors\": list(range(1, 30, 2))}\ncv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)\ngrid = GridSearchCV(KNeighborsClassifier(), param, cv=cv)\ngrid.fit(X_train, y_train)                    # o teste não participa\nprint(\"Melhor K:\", grid.best_params_)\nprint(\"Teste:\", grid.score(X_test, y_test))   # uma única vez\n```"
+    },
+    {
+      "id": "q17",
+      "label": "Código correto 2",
+      "type": "multiple",
+      "prompt": "Este trecho está **correto**. Marque as afirmações **verdadeiras** sobre ele.\n\n```python\npipe = Pipeline([\n    (\"imp\", SimpleImputer(strategy=\"median\")),\n    (\"sc\",  StandardScaler()),\n    (\"clf\", SVC(C=1.0, gamma=\"scale\", class_weight=\"balanced\")),\n])\ncv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)\nscores = cross_val_score(pipe, X, y, cv=cv, scoring=\"f1\")\nprint(scores.mean(), scores.std())\n```",
+      "options": [
+        {
+          "id": "a",
+          "text": "Não há vazamento: imputação, padronização e SVM estão dentro do `Pipeline`, refeitos com o treino de cada dobra.",
+          "correct": true,
+          "explanation": "O `cross_val_score` chama `fit` do pipeline inteiro no treino da dobra e `predict`/`score` na dobra de validação. Cada etapa aprende só com o treino."
+        },
+        {
+          "id": "b",
+          "text": "`StratifiedKFold` mantém a proporção de classes em cada dobra; `shuffle=True` com `random_state=42` embaralha de modo reprodutível.",
+          "correct": true,
+          "explanation": "Boas práticas para classificação, sobretudo desbalanceada."
+        },
+        {
+          "id": "c",
+          "text": "`class_weight=\"balanced\"` e a métrica `f1` tratam o desbalanceamento sem alterar os dados.",
+          "correct": true,
+          "explanation": "`class_weight` dá mais peso aos erros na classe rara, e o F1 não é enganado por uma classe dominante, ao contrário da acurácia."
+        },
+        {
+          "id": "d",
+          "text": "`StandardScaler` é adequado porque o SVM é baseado em distância e sensível à escala.",
+          "correct": true,
+          "explanation": "Sem escala, os atributos de maior magnitude dominariam o cálculo."
+        },
+        {
+          "id": "e",
+          "text": "Se `X` tivesse uma coluna de texto `cidade`, o código continuaria correto sem nenhuma alteração.",
+          "correct": false,
+          "explanation": "O `SimpleImputer(strategy=\"median\")` e o SVM não aceitam texto. Seria preciso codificar `cidade` (one-hot num `ColumnTransformer` dentro do pipeline). Também seria preciso remover linhas **duplicadas antes** da validação, para que uma cópia não caia no treino e outra no teste."
+        }
+      ],
+      "generalExplanation": "Este é o modelo de **código bom** para reconhecer na prova: `Pipeline` + validação cruzada estratificada + métrica adequada. Se aparecer algo fora disso (escalonador fora do pipeline, `fit` no teste, acurácia com classe rara), suspeite.\n\nVersão estendida, com uma categórica e duplicatas tratadas:\n\n```python\ndf = df.drop_duplicates()\nX = df.drop(\"inadimplente\", axis=1)\ny = df[\"inadimplente\"]\n\nprep = ColumnTransformer([\n    (\"num\", Pipeline([(\"imp\", SimpleImputer(strategy=\"median\")),\n                      (\"sc\",  StandardScaler())]), [\"idade\", \"renda\"]),\n    (\"cat\", OneHotEncoder(handle_unknown=\"ignore\"), [\"cidade\"]),\n])\npipe = Pipeline([(\"prep\", prep),\n                 (\"clf\", SVC(class_weight=\"balanced\"))])\nscores = cross_val_score(pipe, X, y, cv=cv, scoring=\"f1\")\n```"
+    },
+    {
+      "id": "q18",
+      "label": "Falta algo?",
+      "type": "multiple",
+      "prompt": "Primeiras linhas de `clientes.csv`. Na base real, **96 %** dos clientes têm `inadimplente = 0`.\n\n| id | cidade | idade | renda | escolaridade | tempo_emprego | inadimplente |\n| :-- | :-- | :-- | :-- | :-- | :-- | :-- |\n| 1 | Natal | 34 | 3200 | Médio | 5 | 0 |\n| 2 | Mossoró | 29 | (vazio) | Superior | 3 | 0 |\n| 3 | Natal | 41 | 95000 | Fundamental | (vazio) | 0 |\n| 4 | Natal | 41 | 95000 | Fundamental | (vazio) | 0 |\n| 5 | Caicó | 52 | 5100 | Médio | 12 | 1 |\n\n```python\ndf = pd.read_csv(\"clientes.csv\")\nX = df.drop(\"inadimplente\", axis=1)\ny = df[\"inadimplente\"]\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)\nmodel = SVC(kernel=\"rbf\").fit(X_train, y_train)\nprint(accuracy_score(y_test, model.predict(X_test)))\n```\n\nMarque **tudo** o que **falta ou está inadequado**.",
+      "options": [
+        {
+          "id": "a",
+          "text": "Remover a coluna `id` e as linhas duplicadas (linhas 3 e 4) antes da divisão.",
+          "correct": true,
+          "explanation": "`id` é só um identificador, sem poder preditivo, e pode confundir o modelo. Uma duplicata pode cair uma cópia no treino e outra no teste, inflando a nota."
+        },
+        {
+          "id": "b",
+          "text": "Tratar os ausentes (`renda`, `tempo_emprego`) com imputação calculada no treino; sem isso o SVM nem executa.",
+          "correct": true,
+          "explanation": "O SVM não aceita `NaN`; a chamada a `fit` lança erro. Também não aceita texto (`cidade`, `escolaridade`)."
+        },
+        {
+          "id": "c",
+          "text": "Codificar `cidade` (nominal) com one-hot e `escolaridade` (ordinal) com inteiros ordenados.",
+          "correct": true,
+          "explanation": "Texto precisa virar número, e o tipo de variável decide como: nominal = one-hot; ordinal = ordem Fundamental < Médio < Superior."
+        },
+        {
+          "id": "d",
+          "text": "Padronizar os numéricos (a renda de 95.000 domina a idade 41 na distância do SVM) e tratar o outlier de renda.",
+          "correct": true,
+          "explanation": "O SVM é baseado em distância e precisa de escala. O valor 95.000 pode ser real ou erro; investigue e, se for caso, winsorize com limites do treino antes de normalizar."
+        },
+        {
+          "id": "e",
+          "text": "Usar `stratify=y` e `random_state`, tratar o desbalanceamento e trocar a acurácia por recall/F1/matriz de confusão.",
+          "correct": true,
+          "explanation": "Com 96 % de zeros, um modelo que sempre responde 0 já tem 96 % de acurácia. A classe de interesse (inadimplente) é a rara: meça precisão, recall e F1 dela, compare com um `DummyClassifier`."
+        },
+        {
+          "id": "f",
+          "text": "Nada falta: o SVM com kernel `rbf` já faz o pré-processamento automaticamente.",
+          "correct": false,
+          "explanation": "O SVM **não** limpa, codifica nem escala nada sozinho. O código fornecido supõe uma base já limpa e totalmente numérica."
+        }
+      ],
+      "generalExplanation": "Tudo isso poderia ser organizado em um `Pipeline`:\n\n```python\ndf = pd.read_csv(\"clientes.csv\").drop_duplicates().drop(columns=[\"id\"])\nX = df.drop(\"inadimplente\", axis=1)\ny = df[\"inadimplente\"]\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.3, stratify=y, random_state=42)\n\nprep = ColumnTransformer([\n    (\"num\", Pipeline([(\"imp\", SimpleImputer(strategy=\"median\")),\n                      (\"sc\",  StandardScaler())]), [\"idade\", \"renda\", \"tempo_emprego\"]),\n    (\"cid\", OneHotEncoder(handle_unknown=\"ignore\"), [\"cidade\"]),\n    (\"esc\", OrdinalEncoder(categories=[[\"Fundamental\", \"Médio\", \"Superior\"]]), [\"escolaridade\"]),\n])\npipe = Pipeline([(\"prep\", prep), (\"clf\", SVC(class_weight=\"balanced\"))])\npipe.fit(X_train, y_train)\nprint(classification_report(y_test, pipe.predict(X_test)))\n```"
+    },
+    {
+      "id": "q19",
+      "label": "Ordem das ações (A a E)",
+      "type": "single",
+      "prompt": "Sensores de uma fábrica; o objetivo é classificar `falha`. Os problemas encontrados: `leitura_id` (identificador), duas linhas duplicadas, valor sentinela −999 na temperatura, umidade ausente e `modo` escrito como \"automático\" e \"AUTOMATICO\".\n\nEtapas (fora de ordem):\n\n- **A)** dividir em treino e teste (estratificado)\n- **B)** remover o identificador e as duplicatas; padronizar o texto de `modo`; trocar −999 por `NaN`\n- **C)** imputar ausentes com a estatística do treino\n- **D)** treinar o k-NN com o treino\n- **E)** padronizar os numéricos (`fit` no treino)\n\nQual é a ordem correta?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A -> B -> C -> E -> D",
+          "correct": false,
+          "explanation": "Dividir antes de remover duplicatas é perigoso: uma cópia da mesma leitura pode cair no treino e outra no teste. A limpeza estrutural (B) deve vir **antes** da divisão."
+        },
+        {
+          "id": "b",
+          "text": "B -> C -> A -> E -> D",
+          "correct": false,
+          "explanation": "Imputar (C) antes de dividir usa a estatística da base inteira, incluindo o teste. É o vazamento clássico."
+        },
+        {
+          "id": "c",
+          "text": "B -> A -> C -> E -> D",
+          "correct": true,
+          "explanation": "Limpeza estrutural (não aprende nada com os dados) -> divisão -> imputação (treino) -> escala (treino) -> treino do modelo. Para o k-NN a escala é essencial: temperatura, umidade e pressão estão em magnitudes diferentes. (Para uma árvore, E seria dispensável.)"
+        },
+        {
+          "id": "d",
+          "text": "B -> A -> E -> C -> D",
+          "correct": false,
+          "explanation": "Ordem pouco recomendada: o k-NN não aceita `NaN`, então o ausente precisa ser preenchido de qualquer jeito, e a convenção é imputar **antes** de escalar, para que a escala seja calculada sobre os dados já completos e o preenchimento seja feito na unidade original."
+        }
+      ],
+      "generalExplanation": "**Regra:** (1) o que não depende de estatística (id, duplicatas, formatos, sentinelas) pode vir antes de dividir; (2) tudo que **aprende** parâmetros (imputar, tratar outlier, codificar, escalar, PCA, balancear) vem **depois** de dividir e só com o treino; (3) treinar vem depois do pré-processamento; (4) avaliar no teste é o último passo.\n\n```python\ndf = df.drop(columns=[\"leitura_id\"]).drop_duplicates()\ndf[\"modo\"] = df[\"modo\"].str.lower()             # (e remover acentos, se houver)\ndf[\"temperatura\"] = df[\"temperatura\"].replace(-999, np.nan)\n\nX = df.drop(\"falha\", axis=1); y = df[\"falha\"]\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, stratify=y, random_state=42)\n```\n\nDepois, `SimpleImputer` -> `StandardScaler` -> k-NN, de preferência em `Pipeline`. O outlier de 340 °C seria tratado (com limites do treino) entre a imputação e a escala."
+    },
+    {
+      "id": "q20",
+      "label": "Ordem das ações (A a H)",
+      "type": "multiple",
+      "prompt": "Etapas de um pipeline (fora de ordem):\n\n- **A)** treinar o modelo com o conjunto de treino\n- **B)** remover identificadores e registros duplicados\n- **C)** dividir em treino e teste (estratificado)\n- **D)** ajustar (`fit`) o normalizador no treino e aplicar no treino e no teste\n- **E)** avaliar no conjunto de teste\n- **F)** imputar ausentes com a estatística do treino\n- **G)** codificar variáveis categóricas (one-hot)\n- **H)** tratar outliers (limites calculados no treino)\n\nMarque **todas** as afirmações verdadeiras.",
+      "options": [
+        {
+          "id": "a",
+          "text": "Uma ordem correta é B -> C -> F -> H -> G -> D -> A -> E.",
+          "correct": true,
+          "explanation": "Limpeza estrutural, divisão, e só então tudo que aprende estatísticas (F, H, G, D), treino e avaliação. F e G podem trocar entre si dependendo do caso (por exemplo, imputar a moda de uma categoria antes de codificar), mas ambos vêm depois de C."
+        },
+        {
+          "id": "b",
+          "text": "As etapas F, H e D não podem vir antes da divisão em treino e teste.",
+          "correct": true,
+          "explanation": "Todas calculam estatísticas (mediana, quartis, média e desvio). Se usarem o teste, há vazamento. O mesmo vale para PCA, seleção de atributos e balanceamento, se existissem."
+        },
+        {
+          "id": "c",
+          "text": "H deve vir antes de D porque a normalização é sensível a valores extremos; normalizar antes contamina a escala com possíveis erros.",
+          "correct": true,
+          "explanation": "Min-max usa mínimo e máximo; o z-score usa média e desvio, ambos distorcidos por outliers."
+        },
+        {
+          "id": "d",
+          "text": "B pode vir antes da divisão, pois remover identificadores e duplicatas não usa estatística do alvo nem do teste e evita cópias nos dois conjuntos.",
+          "correct": true,
+          "explanation": "Se uma duplicata ficar para depois, uma cópia pode cair no treino e a outra no teste: o modelo \"reconhece\" o teste."
+        },
+        {
+          "id": "e",
+          "text": "D pode vir antes de C, pois normalizar é só uma mudança de unidade.",
+          "correct": false,
+          "explanation": "A normalização aprende média e desvio (ou mínimo e máximo). Fazer isso antes da divisão incorpora o teste ao cálculo."
+        }
+      ],
+      "generalExplanation": "Memorize o esqueleto: **limpeza estrutural -> dividir -> imputar -> outliers -> codificar -> escalar -> (PCA) -> (balancear, só treino) -> treinar -> avaliar**.\n\nEm código, os passos que aprendem ficam em um `Pipeline`/`ColumnTransformer`, e o `fit` acontece uma única vez, no treino."
+    }
+  ],
+  "closing": "Checklist de 30 segundos para a prova: (1) o alvo está fora de `X`? (2) há `fit` em algo que contém o teste ou a base antes da divisão? (3) o teste só recebe `transform`/`predict`? (4) balanceamento, PCA, imputação e limites de outlier vêm depois de dividir, só com o treino? (5) outliers antes de normalizar? (6) divisão estratificada, sem embaralhar séries temporais? (7) a nota é do teste, e o hiperparâmetro foi escolhido sem ele? (8) a métrica serve ao problema? (9) a validação cruzada recebe um `Pipeline`?"
+}

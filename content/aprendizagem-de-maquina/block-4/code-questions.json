@@ -1,0 +1,867 @@
+{
+  "schema": "questions/v2",
+  "id": "code-questions",
+  "title": "Bloco 4 · Ler código de redes neurais e SVM",
+  "description": "Questões de código com erro de lógica (escala, vazamento, avaliação, hiperparâmetros, kernel, convergência, ordem das ações) em MLPClassifier, SVC e Pipeline.",
+  "instructions": "Cada questão traz um trecho curto de scikit-learn que **roda**; o erro, quando existe, é de **lógica**. Os números citados nas explicações vêm de execuções reais em dados sintéticos nossos. Leia antes o guia *Como ler código de redes neurais e SVM*. Responda antes de ler as explicações e depois leia a explicação de **todas** as alternativas.",
+  "questions": [
+    {
+      "id": "b4-c01",
+      "label": "SVM com atributos em escalas diferentes",
+      "type": "single",
+      "prompt": "Leia o trecho. Ele treina um SVM para prever se um cliente vai pagar o empréstimo.\n\n```python\nfrom sklearn.svm import SVC\nfrom sklearn.model_selection import train_test_split\n\n# X tem 'Idade' (18 a 70) e 'Renda_Anual' (20.000 a 300.000)\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)\n\nmodelo = SVC(kernel='rbf', C=1.0)\nmodelo.fit(X_train, y_train)\nprint(\"Acurácia:\", modelo.score(X_test, y_test))\n```\n\nQual é o erro de lógica?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O `random_state=42` deixa a divisão viciada: fixar a semente faz o teste repetir sempre as mesmas linhas, e a nota perde a honestidade.",
+          "explanation": "A semente só torna o sorteio reprodutível (o mesmo código dá a mesma divisão). Ela não vicia nada, e o valor 42 é tão bom quanto qualquer outro. O defeito do trecho está nas colunas que entram no modelo, não no sorteio.",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "Falta padronizar: `Renda_Anual` (centenas de milhares) domina as distâncias do kernel RBF e a `Idade` quase não pesa.",
+          "explanation": "Linha do `fit`: o SVM decide tudo por distâncias entre pontos. Uma diferença de 100.000 na renda esmaga uma diferença de 30 anos na idade, e a margem passa a depender de uma coluna só. Num exemplo nosso (dados sintéticos em que a idade pesa mais que a renda) o SVC com dados brutos acertou 63,3% no teste e, com `StandardScaler`, 92,5%.",
+          "correct": true
+        },
+        {
+          "id": "c",
+          "text": "O `score` está medindo no conjunto de teste, o que mistura treino e teste; o certo seria calcular a acurácia nos dados usados no `fit`.",
+          "explanation": "É o contrário: medir no teste é exatamente o que se quer, porque mede generalização. Medir no conjunto do `fit` daria uma nota inflada, pois o modelo já viu aquelas linhas (isso sim seria um erro de lógica).",
+          "correct": false
+        },
+        {
+          "id": "d",
+          "text": "O valor `C=1.0` é alto demais para qualquer base e faz o SVC decorar o treino; ele só generaliza com `C` abaixo de 0.1 em dados com poucas colunas.",
+          "explanation": "`C=1.0` é justamente o valor padrão do `SVC`, usado na maioria dos exemplos. Não existe um teto universal para `C`; ele se escolhe por validação cruzada. O problema do trecho não é a tolerância a erros, é a escala das colunas.",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "**Ideia central:** o SVM (e o k-NN, e a rede neural) trabalha com **distâncias**. Se uma coluna tem números 10.000 vezes maiores que a outra, ela vira o único critério. É como somar metros com milímetros sem converter as unidades: o resultado é dominado pela unidade maior.\n\n**Analogia de engenharia de software:** é uma API que recebe dois campos, um em segundos e outro em milissegundos, e soma os dois sem normalizar. O bug é silencioso: nada falha, só o resultado sai ruim.\n\nCódigo corrigido (o escalonador fica dentro do `Pipeline`, que o ajusta só com o treino):\n\n```python\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.preprocessing import StandardScaler\n\npipe = Pipeline([('scaler', StandardScaler()), ('svm', SVC(kernel='rbf', C=1.0))])\npipe.fit(X_train, y_train)\nprint(\"Acurácia:\", pipe.score(X_test, y_test))\n```\n\nNa prova: se o trecho treina SVM, k-NN ou rede neural com colunas em unidades muito diferentes e não há `StandardScaler`, o erro é a falta de padronização."
+    },
+    {
+      "id": "b4-c02",
+      "label": "Escalonador ajustado antes da divisão",
+      "type": "single",
+      "prompt": "Leia o trecho. Ele prepara os dados e treina uma rede neural.\n\n```python\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.neural_network import MLPClassifier\nfrom sklearn.model_selection import train_test_split\n\nscaler = StandardScaler()\nX_escalado = scaler.fit_transform(X)\n\nX_train, X_test, y_train, y_test = train_test_split(X_escalado, y, test_size=0.25, random_state=42)\n\nmlp = MLPClassifier(hidden_layer_sizes=(50,), max_iter=300)\nmlp.fit(X_train, y_train)\n```\n\nQual é a falha metodológica?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Redes neurais não precisam de padronização porque ajustam os pesos sozinhas; a linha do `StandardScaler` é desnecessária e só atrapalha o `fit`.",
+          "explanation": "Ao contrário: a rede sofre com colunas em escalas muito diferentes (as somas ponderadas saturam e o gradiente fica desequilibrado). Num exemplo nosso, o MLP com dados brutos acertou 51,7% no teste e, padronizado, 94,2%. A padronização é necessária; o problema é o momento em que ela é ajustada.",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "A divisão 75/25 deixa pouco dado para treino; em redes neurais o teste deveria ficar com no máximo 5% das linhas para a rede aprender bem.",
+          "explanation": "Não há regra assim. 75/25, 80/20 e 70/30 são divisões comuns e válidas para redes. O tamanho do teste influencia a precisão da nota, não a validade do procedimento.",
+          "correct": false
+        },
+        {
+          "id": "c",
+          "text": "Falta `random_state` no `StandardScaler`; sem ele o sorteio interno muda a cada execução e as notas ficam irreprodutíveis entre rodadas.",
+          "explanation": "O `StandardScaler` é determinístico: não usa sorteio e não tem `random_state`; ele só calcula média e desvio. As notas variam com a semente do `MLPClassifier` e da divisão, não do escalonador, e isso não tem relação com o vazamento do trecho.",
+          "correct": false
+        },
+        {
+          "id": "d",
+          "text": "A média e o desvio vieram de todas as linhas, inclusive das que viram teste: o teste vazou para o pré-processamento.",
+          "explanation": "Linha `scaler.fit_transform(X)` vem antes do `train_test_split`. O `fit` do escalonador aprende estatísticas; se ele aprende com o teste, o teste deixa de ser dado nunca visto. No nosso exemplo sintético a média de `Renda` era 158.285 na base toda e 157.012 só no treino: uma diferença pequena, mas é informação do teste dentro do treino. O correto é dividir primeiro e ajustar o escalonador só no treino.",
+          "correct": true
+        }
+      ],
+      "generalExplanation": "**Ideia central:** qualquer objeto que faz `fit` **aprende com os dados**. Se ele aprende com o teste, o teste vazou. Isso vale para escalonador, imputador, PCA e modelo.\n\n**Analogia:** é como calcular o limite de alertas do monitoramento usando também os dados do período que você vai usar para provar que o monitoramento funciona. O teste parece bom porque a régua já foi ajustada a ele.\n\nOrdem correta:\n\n```python\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)\n\nscaler = StandardScaler()\nX_train_scaled = scaler.fit_transform(X_train)   # aprende SÓ com o treino\nX_test_scaled = scaler.transform(X_test)         # só aplica\n\nmlp = MLPClassifier(hidden_layer_sizes=(50,), max_iter=300, random_state=42)\nmlp.fit(X_train_scaled, y_train)\n```\n\nDica de prova: procure a linha com `fit` ou `fit_transform` e pergunte quais dados ela enxerga. Se enxerga a base inteira antes do `train_test_split`, é vazamento."
+    },
+    {
+      "id": "b4-c03",
+      "label": "fit_transform aplicado no teste",
+      "type": "single",
+      "prompt": "Leia o trecho. Ele padroniza treino e teste antes de treinar um SVM.\n\n```python\nscaler = StandardScaler()\nX_train_scaled = scaler.fit_transform(X_train)\nX_test_scaled = scaler.fit_transform(X_test)\n\nmodelo = SVC().fit(X_train_scaled, y_train)\nprint(modelo.score(X_test_scaled, y_test))\n```\n\nQual é o erro de lógica na linha que transforma `X_test`?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Deveria ser `scaler.transform(X_test)`, reaproveitando a média e o desvio do treino; `fit_transform` recalcula tudo com o teste.",
+          "explanation": "Com `fit_transform(X_test)` o escalonador esquece o que aprendeu e calcula média e desvio do teste. O modelo foi treinado numa régua e é avaliado em outra. Num exemplo nosso, em um lote de 47 clientes de renda alta, o mesmo modelo acertou 89,4% com `transform` e 78,7% com `fit_transform`, porque a régua nova apagou a diferença entre treino e lote.",
+          "correct": true
+        },
+        {
+          "id": "b",
+          "text": "O teste deveria usar `MinMaxScaler`, enquanto o treino usa `StandardScaler`, para que as duas escalas fiquem independentes e sem influência mútua.",
+          "explanation": "O oposto: treino e teste precisam passar exatamente pela mesma transformação. Usar escalonadores diferentes (ou parâmetros diferentes) para cada conjunto faz o modelo receber entradas em escalas que ele nunca viu.",
+          "correct": false
+        },
+        {
+          "id": "c",
+          "text": "Faltou escalar também `y_test`, já que treino e teste precisam estar na mesma escala em todas as variáveis, inclusive nos rótulos.",
+          "explanation": "Rótulos de classificação não são padronizados: 0 e 1 (ou nomes de classes) continuam como estão. Escalar `y` num problema de classificação destruiria o alvo. A padronização vale para os atributos `X`.",
+          "correct": false
+        },
+        {
+          "id": "d",
+          "text": "`fit_transform` e `transform` dão resultado idêntico no teste; a diferença é só de velocidade, relevante apenas em bases muito grandes.",
+          "explanation": "Não dão o mesmo resultado: `transform` usa os parâmetros guardados do treino, `fit_transform` recalcula com os dados passados. A diferença é lógica, não de desempenho, e por isso o erro é silencioso: o código roda sem aviso.",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "**Ideia central:** `fit` só no treino. No teste e em dados novos, só `transform`.\n\n**Analogia:** o escalonador é uma **tabela de conversão** que você calibrou na homologação. Em produção, você usa a mesma tabela. Recalibrar a tabela a cada lote de produção faz com que lotes diferentes pareçam iguais e o modelo receba números que não significam o que ele aprendeu.\n\n```python\nscaler = StandardScaler()\nX_train_scaled = scaler.fit_transform(X_train)   # calibra\nX_test_scaled = scaler.transform(X_test)         # aplica a mesma tabela\n```\n\nCom um único exemplo, o erro fica evidente: `fit_transform` numa linha só dá desvio padrão zero e a padronização perde o sentido. Na prova, `fit_transform` aplicado a `X_test` é erro certo."
+    },
+    {
+      "id": "b4-c04",
+      "label": "AUC calculada com rótulos em vez de escores",
+      "type": "single",
+      "prompt": "Leia o trecho. Ele avalia um SVM com a área sob a curva ROC (AUC).\n\n```python\nfrom sklearn.svm import SVC\nfrom sklearn.metrics import roc_auc_score\n\nsvm = SVC(kernel='rbf')\nsvm.fit(X_train_scaled, y_train)\n\ny_pred = svm.predict(X_test_scaled)\nprint(\"AUC:\", roc_auc_score(y_test, y_pred))\n```\n\nO que está errado na lógica da avaliação?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A `roc_auc_score` só aceita probabilidades vindas de `predict_proba`; o `decision_function` também falharia nesse cálculo da área.",
+          "explanation": "A função aceita qualquer escore que ordene as amostras, e `decision_function` do `SVC` serve. O que ela não aproveita bem é rótulo 0/1. Probabilidades são uma opção, não a única.",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "Falta `probability=True` na criação do `SVC`; sem ele nenhum método do modelo entrega escore algum que sirva para a AUC.",
+          "explanation": "Sem `probability=True` o `predict_proba` fica indisponível, mas o `decision_function` continua funcionando e entrega o escore de distância ao hiperplano. Por isso a falta não impede a AUC; o erro é ter usado o `predict`.",
+          "correct": false
+        },
+        {
+          "id": "c",
+          "text": "A AUC recebeu rótulos 0/1 de `predict`; ela precisa de escores contínuos, como o `decision_function`, para varrer os limiares.",
+          "explanation": "A curva ROC é feita variando o limiar sobre uma nota contínua. Com rótulos 0/1 só existe um ponto de corte, e a área resultante perde informação. Num exemplo nosso, `predict` deu AUC de 0,926 e `decision_function` deu 0,974 com o mesmo modelo. O `SVC` fornece escores sem precisar de `probability=True`.",
+          "correct": true
+        },
+        {
+          "id": "d",
+          "text": "A AUC só existe para três ou mais classes; para duas classes o certo é reportar apenas a acurácia e o relatório de classificação.",
+          "explanation": "A AUC clássica é definida para classificação binária, que é o caso mais comum. Para várias classes é que se usam adaptações (um-contra-todos). O problema do trecho é o tipo de entrada passada à função.",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "**Ideia central:** AUC mede o quanto o modelo **ordena** bem os positivos acima dos negativos. Para ordenar, ela precisa de uma **nota contínua**, não de um sim/não.\n\n**Analogia:** é como avaliar um sistema de priorização de tickets. Se você só guarda \"urgente ou não urgente\", perde a informação de quem é mais urgente que quem; com a nota, dá para cortar em qualquer ponto.\n\n```python\nscores = svm.decision_function(X_test_scaled)   # distância assinada ao hiperplano\nprint(\"AUC:\", roc_auc_score(y_test, scores))\n```\n\nO sinal e a distância ao hiperplano separam as classes; quanto maior o valor, mais o ponto está do lado positivo. Memorize: no `SVC`, **`decision_function` serve para ROC/AUC sem `probability=True`**."
+    },
+    {
+      "id": "b4-c05",
+      "label": "Hiperparâmetro escolhido pelo teste",
+      "type": "single",
+      "prompt": "Leia o trecho. Ele escolhe o valor de `C` de um SVM e informa a acurácia esperada em produção.\n\n```python\nmelhor_nota, melhor_C = 0, None\nfor C in [0.1, 1, 10, 100]:\n    modelo = SVC(C=C).fit(X_train_scaled, y_train)\n    nota = modelo.score(X_test_scaled, y_test)\n    if nota > melhor_nota:\n        melhor_nota, melhor_C = nota, C\n\nprint(\"Melhor C:\", melhor_C, \"| acurácia esperada:\", melhor_nota)\n```\n\nQual é o erro de lógica?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O laço deveria usar `X_train_scaled` no `score`, porque só o conjunto de treino permite comparar valores de `C` de forma justa e repetível.",
+          "explanation": "Comparar pela nota do treino seria pior: um `C` alto decora o treino e sempre venceria. Os candidatos devem ser comparados em dados que o modelo não usou para aprender, mas que não sejam o teste final (validação cruzada).",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "O erro é testar só quatro valores de `C`; com menos de dez candidatos a comparação entre eles não tem validade estatística.",
+          "explanation": "Não existe número mínimo mágico de candidatos. O que invalida o resultado é a origem da nota usada na comparação, não a quantidade de valores testados.",
+          "correct": false
+        },
+        {
+          "id": "c",
+          "text": "Está tudo certo: o `fit` usa apenas o treino, então o teste continua sem influenciar o modelo e a nota final permanece confiável.",
+          "explanation": "O `fit` não vê o teste, mas a **decisão** sobre qual `C` ficar vê. Escolher o melhor modelo olhando o teste é uma forma de vazamento indireto: o modelo final foi selecionado por causa do teste.",
+          "correct": false
+        },
+        {
+          "id": "d",
+          "text": "O teste escolheu o `C`: a nota do vencedor deixa de ser estimativa honesta. A escolha deve usar validação cruzada no treino.",
+          "explanation": "O laço compara os candidatos pela nota no teste e depois divulga essa mesma nota como esperada. O teste virou parte do ajuste. No nosso exemplo sintético o vencedor foi `C=0.1`, por coincidência o mesmo que a validação cruzada escolheria, mas o procedimento continua inválido: em outros dados ele infla a nota.",
+          "correct": true
+        }
+      ],
+      "generalExplanation": "**Ideia central:** o teste deve ser usado **uma única vez**, no fim. Para comparar hiperparâmetros usa-se **validação** (cross-validation) dentro do treino.\n\n**Analogia:** é como ajustar o código até passar no teste de aceitação e depois afirmar que o sistema foi aprovado no teste de aceitação. Você aprendeu o gabarito.\n\n```python\nfrom sklearn.model_selection import GridSearchCV\n\nbusca = GridSearchCV(SVC(), {'C': [0.1, 1, 10, 100]}, cv=5)\nbusca.fit(X_train_scaled, y_train)          # escolhe C só com o treino\nprint(\"Melhor C:\", busca.best_params_)\nprint(\"Acurácia no teste:\", busca.score(X_test_scaled, y_test))   # uma vez\n```\n\nNa prova, qualquer variação de \"escolhi o K, o C, o gamma ou o limiar olhando o teste\" é o mesmo erro."
+    },
+    {
+      "id": "b4-c06",
+      "label": "Pipeline com passos em ordem trocada",
+      "type": "single",
+      "prompt": "Leia o trecho. Ele monta um Pipeline com padronização e SVM.\n\n```python\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.svm import SVC\n\npip = Pipeline([\n    ('classificador', SVC(kernel='rbf')),\n    ('padronizador', StandardScaler())\n])\npip.fit(X_train, y_train)\n```\n\nO que há de errado?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O `Pipeline` não aceita `SVC` como passo; para SVM é preciso padronizar manualmente com `fit_transform` em `X_train` e em `X_test`.",
+          "explanation": "O `Pipeline` aceita qualquer estimador com a interface do scikit-learn, inclusive `SVC`. E a sugestão de aplicar `fit_transform` também no teste repetiria o erro de vazamento visto antes.",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "A ordem está invertida: o `StandardScaler` (transformador) vem antes e o `SVC` (estimador final) fica na última posição.",
+          "explanation": "O Pipeline passa os dados de um passo ao seguinte, e só o último passo pode ser um estimador que prevê. Ao executar este trecho, o scikit-learn lança `TypeError` dizendo que os passos intermediários precisam ser transformadores. Troque a ordem e o `fit` roda.",
+          "correct": true
+        },
+        {
+          "id": "c",
+          "text": "A ordem está correta: o modelo vem primeiro para aprender os pesos e o escalonador depois ajusta a escala das previsões.",
+          "explanation": "O escalonador atua sobre os **atributos de entrada**, antes do modelo, nunca sobre as previsões. Se o modelo vier primeiro, receberia dados brutos e o padronizador nunca seria alimentado.",
+          "correct": false
+        },
+        {
+          "id": "d",
+          "text": "Faltou passar `random_state` aos dois passos; sem ele o Pipeline não consegue definir a ordem de execução.",
+          "explanation": "A ordem de execução é a ordem da lista, sem sorteio. `StandardScaler` nem possui `random_state`. Os nomes dos passos ('classificador', 'padronizador') são livres.",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "**Ideia central:** um `Pipeline` é uma **linha de montagem**. Cada etapa transforma e entrega à próxima; a última é quem decide (`predict`).\n\n**Analogia:** é uma cadeia de middlewares. O que prepara a requisição (autenticação, normalização) vem antes do handler final. Colocar o handler no começo faz o resto da cadeia nunca ser alcançado.\n\n```python\npip = Pipeline([\n    ('padronizador', StandardScaler()),   # transforma\n    ('classificador', SVC(kernel='rbf'))  # decide (sempre por último)\n])\npip.fit(X_train, y_train)    # ajusta o escalonador SÓ no treino e treina o SVC\npip.predict(X_test)          # aplica a mesma escala no teste automaticamente\n```\n\nVantagem na prova: o Pipeline evita os erros de vazamento, porque o `fit` dos passos acontece só com os dados passados."
+    },
+    {
+      "id": "b4-c07",
+      "label": "Ativação identidade e o XOR",
+      "type": "single",
+      "prompt": "Leia o trecho. Ele tenta aprender o XOR (4 exemplos: [0,0]→0, [0,1]→1, [1,0]→1, [1,1]→0), que não é linearmente separável.\n\n```python\nfrom sklearn.neural_network import MLPClassifier\n\nmlp = MLPClassifier(\n    hidden_layer_sizes=(100, 100, 100),\n    activation='identity',\n    max_iter=1000,\n    random_state=42\n)\nmlp.fit(X_xor, y_xor)\nprint(mlp.score(X_xor, y_xor))\n```\n\nA rede, mesmo com três camadas de 100 neurônios, ficou em 50% de acurácia. Por quê?",
+      "options": [
+        {
+          "id": "a",
+          "text": "`'identity'` é linear: empilhar camadas lineares dá um modelo linear, que não separa o XOR; o certo é `'relu'` ou `'tanh'`.",
+          "explanation": "Slide 45: sem função de ativação não linear a rede é essencialmente uma regressão linear. Na execução, `identity` deu 50% e, trocando por `relu` ou `tanh`, a mesma rede chegou a 100% no XOR. O número de camadas não ajuda enquanto a ativação é linear.",
+          "correct": true
+        },
+        {
+          "id": "b",
+          "text": "Faltam neurônios: o XOR só é resolvido com mais de 500 neurônios por camada, então três camadas de 100 continuam insuficientes.",
+          "explanation": "O XOR é resolvido por uma rede minúscula (basta uma camada oculta com poucos neurônios) desde que a ativação seja não linear. Aumentar neurônios não cura um problema que é de linearidade.",
+          "correct": false
+        },
+        {
+          "id": "c",
+          "text": "O `max_iter=1000` é alto demais: a rede passa do ponto ótimo e acaba esquecendo o XOR por excesso de iterações no treino.",
+          "explanation": "Mais iterações podem causar overfitting em bases ruidosas, mas aqui a acurácia fica em 50% porque a rede não tem capacidade de representar o XOR, não porque treinou demais.",
+          "correct": false
+        },
+        {
+          "id": "d",
+          "text": "Com só 4 exemplos nenhuma rede aprende o XOR, mesmo com ativação não linear; é preciso uma base com milhares de linhas.",
+          "explanation": "Falso: executamos a mesma arquitetura com `relu` e `tanh` e ela acertou 4 de 4. Para o XOR a quantidade de exemplos é irrelevante, pois o problema é definido pelos 4 casos.",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "**Ideia central (Aula 10, slides 18 e 45):** perceptron de camada única só resolve problemas **linearmente separáveis**. Camadas intermediárias ajudam **somente com função de ativação não linear**.\n\n**Analogia:** compor funções lineares é como encadear conversões de unidade: de metros para centímetros e depois para milímetros dá no fim uma única conversão (multiplicar por 1000). Dez conversões seguidas continuam sendo uma só. Só uma função que dobra o espaço (ReLU, tanh) cria algo que uma conversão sozinha não faz.\n\n```python\nmlp = MLPClassifier(hidden_layer_sizes=(8,), activation='relu',\n                    solver='lbfgs', max_iter=1000, random_state=42)\n```\n\nNa prova: `activation='identity'` em rede para problema não linear é erro de lógica."
+    },
+    {
+      "id": "b4-c08",
+      "label": "Aviso de convergência",
+      "type": "single",
+      "prompt": "Leia o trecho. Ao executar, o terminal mostrou: `ConvergenceWarning: Stochastic Optimizer: Maximum iterations (5) reached and the optimization hasn't converged yet.`\n\n```python\nfrom sklearn.neural_network import MLPClassifier\n\nrede = MLPClassifier(hidden_layer_sizes=(100,), max_iter=5, random_state=42)\nrede.fit(X_train_scaled, y_train)\nprint(\"Teste:\", rede.score(X_test_scaled, y_test))\n```\n\nO que o aviso quer dizer e qual é a conduta correta?",
+      "options": [
+        {
+          "id": "a",
+          "text": "É só informativo: a rede treinou até o fim e a nota de teste é confiável, bastando silenciar o aviso com o módulo `warnings`.",
+          "explanation": "O texto diz o oposto: o limite de iterações foi atingido **sem** convergir. Silenciar o aviso esconderia um modelo subtreinado, com nota próxima do acaso.",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "A rede é pequena demais; aumentar `hidden_layer_sizes` de 100 para 1000 neurônios resolve o aviso sem mexer em `max_iter`.",
+          "explanation": "O aviso fala em iterações, não em tamanho. Com mais neurônios cada época ainda pode ser insuficiente (e fica mais lenta). A correção direta é dar mais épocas ao otimizador.",
+          "correct": false
+        },
+        {
+          "id": "c",
+          "text": "O treino foi cortado em 5 épocas antes de o erro estabilizar; aumente `max_iter` (por exemplo, 500) e confira a nota de novo.",
+          "explanation": "`max_iter` é o teto de épocas (passadas completas pelos dados). Aqui o otimizador parou antes de convergir. Num exemplo nosso, com `max_iter=5` a acurácia foi 53,6% no treino e 48,7% no teste; com `max_iter=500` subiu para 94,2% e 94,0%.",
+          "correct": true
+        },
+        {
+          "id": "d",
+          "text": "O otimizador está lento demais; reduzir `max_iter` para 1 acelera a chegada ao mínimo e faz o aviso desaparecer.",
+          "explanation": "Reduzir as épocas só piora: com menos iterações o otimizador tem ainda menos chance de chegar ao mínimo. O aviso sumiria só porque o limite seria cortado, mas a rede ficaria ainda mais fraca.",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "**Ideia central (Aula 10, slide 24):** o treino repete passos de gradiente até o erro parar de cair (convergência). `max_iter` é o **timeout** desse laço.\n\n**Analogia:** é um `while` com limite de tentativas. Se o limite é 5 e o problema pede 200, o laço sai por timeout e devolve um resultado pela metade. O aviso é o log dizendo \"saí por timeout\".\n\n```python\nrede = MLPClassifier(hidden_layer_sizes=(100,), max_iter=500, random_state=42)\nrede.fit(X_train_scaled, y_train)\nprint(rede.n_iter_)   # quantas épocas foram feitas de fato\n```\n\nNa prova: `ConvergenceWarning` pede mais iterações (ou outra taxa de aprendizado/escala), nunca ser ignorado."
+    },
+    {
+      "id": "b4-c09",
+      "label": "Reduzir C para curar o underfitting",
+      "type": "single",
+      "prompt": "Leia o trecho. O modelo original `SVC(kernel='rbf', C=1.0, gamma=0.001)` teve 85,8% de acurácia no treino e 86,7% no teste: notas parecidas e modestas, sinal de um modelo simples demais (underfitting). Para dar mais capacidade ao modelo, o engenheiro mudou apenas o `C`.\n\n```python\nmodelo_ajustado = SVC(kernel='rbf', C=0.0001, gamma=0.001)\nmodelo_ajustado.fit(X_train_scaled, y_train)\n```\n\nEssa mudança corrige o underfitting?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Sim: `C` menor deixa o SVM mais flexível, pois a penalidade por errar diminui e ele consegue chegar a zero erro no treino.",
+          "explanation": "Inverteu a relação. `C` menor tolera mais erros, então o modelo erra mais no treino, não menos. Quem força o treino a zerar erros é `C` grande (margem rígida).",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "Não: `C` menor aumenta a regularização e alarga a margem, deixando o modelo ainda mais simples; o treino caiu para 50,9%.",
+          "explanation": "Slide 21: `C` é o inverso da força de regularização; `C` pequeno significa penalidade pequena por errar e margem mole (soft margin). Slide 22: `C` baixo pode levar a underfitting. No exemplo nosso, `C=0.0001` deu 50,9% no treino e 47,3% no teste, e `C=100` deu 87,6% e 88,7%.",
+          "correct": true
+        },
+        {
+          "id": "c",
+          "text": "Sim, mas só se o kernel também mudar para `'linear'`; sozinho, o `C` nunca altera a capacidade de um SVM com kernel RBF.",
+          "explanation": "`C` altera a capacidade em qualquer kernel, linear ou não. No exemplo, só mudando o `C` a acurácia de treino foi de 85,8% para 50,9%, sem mexer no kernel.",
+          "correct": false
+        },
+        {
+          "id": "d",
+          "text": "Não, porque o `C` só atua no kernel linear; no kernel RBF quem controla a flexibilidade da fronteira é apenas o `gamma`.",
+          "explanation": "Slide 21: o `C` está presente tanto no SVM linear quanto no não linear. No RBF existem os dois controles: `C` (folga da margem) e `gamma` (raio de influência de cada ponto).",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "**Ideia central (Aula 11, slides 21 e 22):** `C` grande = penalidade alta por errar = margem rígida = fronteira complexa (risco de **overfitting**). `C` pequeno = penalidade baixa = margem mole = fronteira simples (risco de **underfitting**).\n\n**Analogia:** `C` é o rigor do code review. Rigor altíssimo rejeita qualquer exceção e leva a regras decoradas para cada caso; rigor baixíssimo aprova tudo e o modelo deixa passar o padrão real.\n\n| Sintoma | Ajuste |\n| :-- | :-- |\n| Underfitting (ruim no treino e no teste) | aumentar `C` e/ou aumentar `gamma` |\n| Overfitting (ótimo no treino, ruim no teste) | diminuir `C` e/ou diminuir `gamma` |\n\nEscolha `C` e `gamma` por validação cruzada, não por intuição."
+    },
+    {
+      "id": "b4-c10",
+      "label": "Aumentar gamma para curar o overfitting",
+      "type": "single",
+      "prompt": "Leia o trecho. O modelo `SVC(kernel='rbf', gamma=500)` obteve 100% no treino e 73,3% no teste (overfitting). Para tentar resolver, o desenvolvedor mudou o `gamma`:\n\n```python\nmodelo_novo = SVC(kernel='rbf', gamma=5000)\nmodelo_novo.fit(X_train_scaled, y_train)\nprint(modelo_novo.score(X_test_scaled, y_test))\n```\n\nQual será o efeito dessa mudança?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Melhora: `gamma` maior faz cada ponto influenciar uma região maior, o que suaviza a fronteira e reduz o sobreajuste do modelo.",
+          "explanation": "É a relação contrária. `gamma` menor amplia a influência e suaviza; `gamma` maior concentra a influência em volta de cada ponto e deixa a fronteira recortada.",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "Nada muda na nota: no kernel RBF o `gamma` só afeta o tempo de treino e o uso de memória, não a acurácia obtida.",
+          "explanation": "`gamma` define a forma da fronteira, então muda a acurácia (e muito, como vimos: 73,3% passou a 50,0% no teste). O tempo de treino também varia, mas não é o único efeito.",
+          "correct": false
+        },
+        {
+          "id": "c",
+          "text": "O `fit` falha: valores de `gamma` acima de 1000 não são aceitos, e o scikit-learn exige `gamma='scale'` nesses casos.",
+          "explanation": "O scikit-learn aceita qualquer número positivo (e as opções `'scale'` e `'auto'`). O código roda sem erro; o problema é de lógica, não de execução.",
+          "correct": false
+        },
+        {
+          "id": "d",
+          "text": "Piora: `gamma` maior encolhe o raio de influência de cada ponto e a fronteira vira ilhas; no teste, a nota caiu a 50,0%.",
+          "explanation": "Slide 24: aumentar `gamma` faz pontos distantes serem desconsiderados, levando a fronteiras restritas e complexas (overfitting). No exemplo nosso, `gamma=500` deu 100% e 73,3%, `gamma=5000` deu 100% e 50,0%, e `gamma=1` (menor) deu 95,1% e 92,7%.",
+          "correct": true
+        }
+      ],
+      "generalExplanation": "**Ideia central (Aula 11, slides 23 e 24):** `gamma` controla o **raio de influência** de cada ponto de treino.\n\n- `gamma` **alto**: cada ponto só influencia a vizinhança imediata. Fronteira recortada, ilhas. Risco de **overfitting**.\n- `gamma` **baixo**: cada ponto influencia uma região grande. Fronteira suave. Risco de **underfitting**.\n\n**Analogia:** é o tamanho da área de cobertura de um alerta. Cobertura minúscula = um alerta específico para cada incidente já visto (decorar). Cobertura enorme = um alerta genérico que ignora as diferenças.\n\nPara combater overfitting, **reduzir** `gamma` (e/ou `C`):\n\n```python\nmodelo_novo = SVC(kernel='rbf', gamma=1, C=1)\n```"
+    },
+    {
+      "id": "b4-c11",
+      "label": "Classificador para prever número contínuo",
+      "type": "single",
+      "prompt": "Leia o trecho. A meta é prever a temperatura média diária (valores como 23.4, 28.1 e 19.8 graus).\n\n```python\nfrom sklearn.neural_network import MLPClassifier\n\nmodelo = MLPClassifier(hidden_layer_sizes=(64, 32))\nmodelo.fit(X_train, y_train_temperatura)\n```\n\nQual é o erro de modelagem?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Falta `activation='softmax'` na camada oculta, necessária para o `MLPClassifier` aceitar alvos com casas decimais.",
+          "explanation": "Softmax é função de saída para classificação multiclasse (slide 50) e não se usa em camada oculta. O problema não é a ativação, é a escolha de um classificador para um alvo contínuo.",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "O `MLPClassifier` aceita o alvo e trata cada temperatura distinta como uma classe; só fica lento e com acurácia baixa.",
+          "explanation": "O `fit` nem chega a rodar: o scikit-learn bloqueia alvo contínuo em classificadores com `ValueError`. Se rodasse, ainda assim seria inadequado, mas na prática o erro aparece antes.",
+          "correct": false
+        },
+        {
+          "id": "c",
+          "text": "O alvo é contínuo e exige regressão: o certo é `MLPRegressor`; o `MLPClassifier` recusa o `fit` com `ValueError`.",
+          "explanation": "Temperatura é um número real, não uma categoria. Ao executar, o `MLPClassifier` verifica o tipo do alvo e lança `ValueError: Unknown label type`. O `MLPRegressor` usa erro quadrático e saída linear (slide 52), próprios para regressão.",
+          "correct": true
+        },
+        {
+          "id": "d",
+          "text": "A arquitetura está invertida: a primeira camada (64) deveria ser menor que a segunda (32) para prever valores contínuos.",
+          "explanation": "Redes em funil (64 e depois 32) são comuns e não há exigência de ordem crescente. Para prever números contínuos a escolha que importa é o tipo de modelo e de saída, não o tamanho relativo das camadas.",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "**Ideia central:** o **tipo do alvo** decide o tipo de modelo. Categoria = classificador; número contínuo = regressor.\n\n**Analogia:** é a assinatura de um método: um método que devolve `enum` não serve para devolver `double`.\n\n| Alvo | Classe | Saída (slide 52) |\n| :-- | :-- | :-- |\n| categoria binária | `MLPClassifier` | sigmoide |\n| várias categorias | `MLPClassifier` | softmax |\n| número contínuo | `MLPRegressor` | linear |\n\n```python\nfrom sklearn.neural_network import MLPRegressor\nmodelo = MLPRegressor(hidden_layer_sizes=(64, 32), max_iter=500, random_state=42)\nmodelo.fit(X_train_scaled, y_train_temperatura)\n```"
+    },
+    {
+      "id": "b4-c12",
+      "label": "SVC para prever preço",
+      "type": "single",
+      "prompt": "Leia o trecho. A meta é prever o preço de venda de carros usados, em reais (valores como 38.500 e 61.900).\n\n```python\nfrom sklearn.svm import SVC\n\nmodelo = SVC(kernel='rbf')\nmodelo.fit(X_train_scaled, y_train_preco)\n```\n\nO que está errado e qual é a classe correta do `sklearn.svm`?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Preço é contínuo: o `SVC` é classificador e rejeita o alvo com `ValueError`; a variante para regressão é o `SVR`.",
+          "explanation": "O slide 3 diz que o SVM serve para classificação e regressão; no scikit-learn, a classificação é `SVC` e a regressão é `SVR` (Support Vector Regression). Ao executar com alvo contínuo, o `SVC` lança `ValueError: Unknown label type: continuous`.",
+          "correct": true
+        },
+        {
+          "id": "b",
+          "text": "Nada: o `SVC` com kernel RBF aceita alvo contínuo e arredonda cada preço para a classe mais próxima durante o `fit`.",
+          "explanation": "O `SVC` não arredonda nada: ele bloqueia o `fit` com `ValueError`, porque exige rótulos discretos. Para transformar preço em classe seria preciso definir faixas explicitamente, o que perde informação.",
+          "correct": false
+        },
+        {
+          "id": "c",
+          "text": "O correto é `OneClassSVM`, a versão do SVM que estima valores numéricos usando uma única classe como referência de treino.",
+          "explanation": "`OneClassSVM` é usado para detecção de anomalias e novidades (decide se um ponto é típico ou estranho), não para prever números.",
+          "correct": false
+        },
+        {
+          "id": "d",
+          "text": "O correto é `LinearSVC`, que é o regressor linear do módulo e dispensa a escolha de kernel e de `gamma`.",
+          "explanation": "`LinearSVC` é classificador (SVM linear para classes). Não possui versão contínua: para regressão o nome é `SVR`, e `LinearSVR` para a versão linear.",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "**Ideia central:** os SVMs do scikit-learn se dividem por **tipo de alvo**: `SVC` (classificação), `SVR` (regressão) e `OneClassSVM` (anomalias).\n\n**Analogia:** é a mesma regra do `MLPClassifier` versus `MLPRegressor`: o tipo do que se devolve escolhe a classe.\n\n```python\nfrom sklearn.svm import SVR\nmodelo = SVR(kernel='rbf', C=100, gamma='scale')\nmodelo.fit(X_train_scaled, y_train_preco)\n```\n\nAs ideias de margem, `C` e `gamma` continuam valendo; em `SVR` a margem vira um corredor de tolerância em volta da curva de previsão."
+    },
+    {
+      "id": "b4-c13",
+      "label": "Leitura de hidden_layer_sizes",
+      "type": "single",
+      "prompt": "Leia o trecho. O desenvolvedor quer **três camadas ocultas com 64 neurônios cada**.\n\n```python\nfrom sklearn.neural_network import MLPClassifier\n\nmlp = MLPClassifier(hidden_layer_sizes=(3, 64), max_iter=500)\nmlp.fit(X_train_scaled, y_train)\n```\n\nQual é o erro de lógica na configuração?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O trecho está certo: o primeiro número é a quantidade de camadas ocultas e o segundo, o número de neurônios de cada uma.",
+          "explanation": "Essa leitura é o erro típico. Quantidade de camadas não é parâmetro separado: ela é o **comprimento** da tupla. O primeiro número é, portanto, o tamanho da primeira camada.",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "Falta uma vírgula final: com `(3, 64)` o Python lê um único inteiro; o correto seria `(3, 64,)`.",
+          "explanation": "Vírgula final só é necessária para tuplas de um elemento, como `(64,)`. Em `(3, 64)` já há vírgula entre os dois valores, então a tupla é válida.",
+          "correct": false
+        },
+        {
+          "id": "c",
+          "text": "O scikit-learn aceita no máximo dois valores em `hidden_layer_sizes`; para três camadas é preciso encadear duas redes.",
+          "explanation": "Não há limite: `(128, 64, 32)` cria três camadas ocultas (a rede completa tem 5 camadas contando entrada e saída) e muito mais é possível. Quem decide o número de camadas é o tamanho da tupla.",
+          "correct": false
+        },
+        {
+          "id": "d",
+          "text": "`(3, 64)` cria só duas camadas ocultas (3 e 64 neurônios); para três camadas de 64 o certo é `(64, 64, 64)`.",
+          "explanation": "Cada número da tupla é **uma camada**, e o valor é o seu número de neurônios. Executamos o trecho: a rede ficou com 4 camadas no total (entrada, duas ocultas e saída), e a primeira camada oculta tem apenas 3 neurônios, um gargalo.",
+          "correct": true
+        }
+      ],
+      "generalExplanation": "**Ideia central:** em `hidden_layer_sizes=(n1, n2, n3)`, **cada elemento é uma camada oculta** e o número é a quantidade de neurônios. O **comprimento** da tupla é o número de camadas ocultas.\n\n**Analogia:** é a lista de serviços de uma arquitetura em camadas, com a capacidade de cada um. `(64, 64, 64)` são três serviços de capacidade 64; `(3, 64)` são dois serviços, o primeiro com capacidade 3, que vira gargalo.\n\n- `(64,)` = 1 camada oculta de 64 (a vírgula é obrigatória com um só elemento)\n- `(64, 32)` = 2 camadas ocultas\n- `(64, 64, 64)` = 3 camadas ocultas de 64 neurônios\n\nA camada de entrada (uma por atributo) e a de saída são montadas sozinhas pelo scikit-learn."
+    },
+    {
+      "id": "b4-c14",
+      "label": "Taxa de aprendizado gigante",
+      "type": "single",
+      "prompt": "Leia o trecho. Ele treina uma rede com gradiente descendente estocástico.\n\n```python\nfrom sklearn.neural_network import MLPClassifier\n\nmodelo = MLPClassifier(learning_rate_init=100.0, solver='sgd', random_state=0)\nmodelo.fit(X_train_scaled, y_train)\nprint(modelo.loss_, modelo.score(X_test_scaled, y_test))\n```\n\nA perda final ficou astronômica (cerca de 2e99) e a acurácia em 51,7%, nível de chute. Qual é a causa?",
+      "options": [
+        {
+          "id": "a",
+          "text": "`learning_rate_init=100.0` dá passos enormes: os pesos saltam sobre o mínimo e a perda explode; o slide 41 indica 0.001 a 0.3.",
+          "explanation": "Slide 41: taxa muito grande pode falhar em convergir por passar do mínimo. Executamos o trecho: a perda final foi cerca de 1,98e99 e a acurácia de teste 51,7%. Com `learning_rate_init=0.01` a perda ficou em 0,21 e a acurácia em 94,2%.",
+          "correct": true
+        },
+        {
+          "id": "b",
+          "text": "O `solver='sgd'` não aceita taxa fixa; só o `adam` permite definir `learning_rate_init` manualmente, então o valor foi ignorado.",
+          "explanation": "O `sgd` usa exatamente uma taxa única que não muda durante o treino (slide 36). É o `adam` que adapta a taxa por peso. O parâmetro `learning_rate_init` vale para ambos.",
+          "correct": false
+        },
+        {
+          "id": "c",
+          "text": "A taxa está alta, mas o problema real é a falta de `early_stopping=True`, que impede a perda de explodir durante o treino.",
+          "explanation": "Parada antecipada interrompe quando a nota de validação não melhora; ela não impede passos gigantes de desestabilizar os pesos. A causa raiz é a taxa.",
+          "correct": false
+        },
+        {
+          "id": "d",
+          "text": "Taxa alta acelera a convergência; o que falhou foi o `fit` com dados padronizados, que o `sgd` não suporta sem ajustes.",
+          "explanation": "O `sgd` suporta dados padronizados (e até depende deles). Taxa alta não acelera nada quando ultrapassa a região estável: ela faz o erro oscilar e divergir.",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "**Ideia central (Aula 10, slides 31, 32 e 41):** a atualização é `peso_novo = peso_atual - taxa × gradiente`. A taxa é o **tamanho do passo**.\n\n**Analogia:** é a bola descendo o vale (slide 27). Passo minúsculo: demora, mas chega. Passo gigante: a bola salta de um lado ao outro do vale, cada salto mais alto que o anterior, e voa para fora.\n\nValores usuais: 0.001, 0.003, 0.01, 0.03, 0.1, 0.3.\n\n```python\nmodelo = MLPClassifier(learning_rate_init=0.01, solver='sgd', max_iter=500, random_state=0)\n```\n\nSintomas de taxa grande demais: perda enorme ou `NaN`, acurácia de chute. Sintoma de taxa pequena demais: lentidão e `ConvergenceWarning`."
+    },
+    {
+      "id": "b4-c15",
+      "label": "early_stopping e a nota de validação interna",
+      "type": "single",
+      "prompt": "Leia o trecho. Ele treina uma rede com parada antecipada e informa a \"acurácia final\".\n\n```python\nfrom sklearn.neural_network import MLPClassifier\n\nmlp = MLPClassifier(hidden_layer_sizes=(100,), early_stopping=True,\n                    max_iter=500, random_state=0)\nmlp.fit(X_train_scaled, y_train)\n\nprint(\"Épocas feitas:\", mlp.n_iter_)\nprint(\"Acurácia final:\", mlp.best_validation_score_)\n```\n\nQual é o erro de lógica?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Com `early_stopping=True` o conjunto de teste é usado como validação interna; por isso a nota impressa já é a final e o erro é apenas o nome do atributo.",
+          "explanation": "O teste nunca é usado internamente. A validação é uma fatia do **treino**, sorteada pelo próprio `fit`. O teste que você separou continua intocado e precisa ser usado explicitamente com `score`.",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "`best_validation_score_` vem de 10% do treino e decidiu a parada; a nota final deve sair do teste, com `mlp.score(X_test_scaled, y_test)`.",
+          "explanation": "Slide 38: a parada antecipada usa parte do treino como validação. O `fit` separa 10% das linhas (padrão), monitora a nota nessa parte e para quando não melhora por `n_iter_no_change` épocas (padrão 10). Num exemplo nosso, a rede parou em 30 das 500 épocas, com nota de validação 0,844 (poucas amostras); no teste real deu 0,86. A nota usada para parar não é um teste independente.",
+          "correct": true
+        },
+        {
+          "id": "c",
+          "text": "O atributo `best_validation_score_` só existe sem `early_stopping`; com ele ligado fica vazio e a nota impressa é sempre zero.",
+          "explanation": "É o contrário: ele só é preenchido quando `early_stopping=True` (sem isso vale `None`). O erro do trecho não é o atributo estar vazio, é interpretá-lo como acurácia final.",
+          "correct": false
+        },
+        {
+          "id": "d",
+          "text": "O erro é `max_iter=500`: com a parada antecipada ligada, o valor precisa ser igual a `n_iter_no_change`, senão o treino nem começa.",
+          "explanation": "Não existe essa relação. `max_iter` é o teto de épocas; a parada antecipada pode interromper antes dele, e foi o que ocorreu (30 épocas feitas de 500 permitidas).",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "**Ideia central (Aula 10, slides 37 e 38):** parada antecipada é um **regularizador**: o treino para quando o desempenho numa fatia de validação deixa de melhorar, antes de a rede começar a decorar o treino.\n\n**Analogia:** é o *timeout* inteligente do laço: em vez de rodar 500 épocas, ele observa a homologação e para quando ela piora.\n\nPontos que a prova cobra:\n\n- a validação sai do **treino** (10% por padrão), não do teste;\n- o modelo treina com os 90% restantes;\n- o teste continua sendo usado uma vez, no fim;\n- `n_iter_no_change` (padrão 10) é a paciência em épocas.\n\n```python\nprint(\"Acurácia no teste:\", mlp.score(X_test_scaled, y_test))\n```"
+    },
+    {
+      "id": "b4-c16",
+      "label": "predict_proba sem probability=True",
+      "type": "multiple",
+      "prompt": "Leia o trecho. Ele quer calcular a AUC de um SVM.\n\n```python\nfrom sklearn.svm import SVC\nfrom sklearn.metrics import roc_auc_score\n\nsvm = SVC(kernel='linear')\nsvm.fit(X_train_scaled, y_train)\n\nprob = svm.predict_proba(X_test_scaled)[:, 1]\nprint(\"AUC:\", roc_auc_score(y_test, prob))\n```\n\nAo executar, ocorre um `AttributeError`: o `SVC` não tem `predict_proba` nessa configuração. Quais correções resolvem o problema? (marque todas as corretas)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Trocar a linha por `scores = svm.decision_function(X_test_scaled)` e passar `scores` para a `roc_auc_score`.",
+          "explanation": "O `decision_function` entrega a distância assinada ao hiperplano, um escore contínuo que ordena as amostras e serve para ROC/AUC. Não precisa de `probability=True` e dá a mesma AUC (0,952 no nosso exemplo, igual ao caminho calibrado).",
+          "correct": true
+        },
+        {
+          "id": "b",
+          "text": "Trocar por `svm.predict_log_proba(X_test_scaled)`, que não depende de `probability`.",
+          "explanation": "`predict_log_proba` depende da mesma calibração: sem `probability=True` ele também falha. Ele só devolve o logaritmo das probabilidades.",
+          "correct": false
+        },
+        {
+          "id": "c",
+          "text": "Criar o modelo com `SVC(kernel='linear', probability=True)`, que habilita a calibração interna e o `predict_proba`.",
+          "explanation": "Com `probability=True` o scikit-learn faz uma calibração extra (validação cruzada interna) que deixa o treino mais lento, mas libera `predict_proba`. Executamos: a AUC no nosso exemplo (luas, 600 linhas) foi 0,952. Por isso o padrão é `False`.",
+          "correct": true
+        },
+        {
+          "id": "d",
+          "text": "Trocar o kernel para `'rbf'`; só o RBF fornece `predict_proba`.",
+          "explanation": "Nenhum kernel fornece probabilidades por padrão. A disponibilidade depende do parâmetro `probability`, não do kernel escolhido.",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "**Ideia central:** o SVM **não produz probabilidades** por natureza; produz uma **distância assinada** até o hiperplano. Probabilidades só existem se você pedir a calibração extra (`probability=True`).\n\n**Analogia:** é uma feature flag desligada por padrão porque custa caro (treino mais lento). Se o código chama a função sem ligar a flag, dá erro em tempo de execução. Mas existe a alternativa barata: usar o escore bruto.\n\nDuas soluções válidas:\n\n```python\n# 1) pedir calibração\nsvm = SVC(kernel='linear', probability=True).fit(X_train_scaled, y_train)\nauc = roc_auc_score(y_test, svm.predict_proba(X_test_scaled)[:, 1])\n\n# 2) usar o escore bruto\nsvm = SVC(kernel='linear').fit(X_train_scaled, y_train)\nauc = roc_auc_score(y_test, svm.decision_function(X_test_scaled))\n```"
+    },
+    {
+      "id": "b4-c17",
+      "label": "MLP sem padronização",
+      "type": "single",
+      "prompt": "Leia o trecho. Ele treina uma rede neural para prever inadimplência.\n\n```python\nfrom sklearn.neural_network import MLPClassifier\nfrom sklearn.model_selection import train_test_split\n\n# X tem 'Idade' (18 a 70) e 'Renda_Anual' (20.000 a 300.000)\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)\n\nmlp = MLPClassifier(hidden_layer_sizes=(50,), max_iter=300, random_state=42)\nmlp.fit(X_train, y_train)\nprint(\"Acurácia:\", mlp.score(X_test, y_test))\n```\n\nQual é o problema de lógica?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Falta padronizar: `Renda_Anual` domina as somas ponderadas da rede e `Idade` quase não pesa no ajuste dos pesos.",
+          "explanation": "Entradas em escalas muito diferentes desequilibram as somas ponderadas e o gradiente. Num exemplo nosso (a classe depende sobretudo da idade), o MLP com dados brutos acertou 51,7% no teste, nível de chute, e com `StandardScaler` acertou 94,2%.",
+          "correct": true
+        },
+        {
+          "id": "b",
+          "text": "Nada: o MLP aprende os pesos sozinho e compensa colunas em escalas diferentes; a padronização só importa para árvores e florestas.",
+          "explanation": "Está invertido: **árvores** não dependem de escala (cada corte olha uma coluna), enquanto redes, SVM e k-NN dependem. A rede ajusta pesos por gradiente, e esse ajuste sofre com colunas gigantes.",
+          "correct": false
+        },
+        {
+          "id": "c",
+          "text": "O erro é `hidden_layer_sizes=(50,)`: uma única camada oculta não permite que a rede lide com colunas em escalas diferentes.",
+          "explanation": "O número de camadas não resolve a diferença de escala. Mesmo com muitas camadas, as entradas gigantes continuariam dominando a primeira soma ponderada.",
+          "correct": false
+        },
+        {
+          "id": "d",
+          "text": "O problema é o `max_iter=300`: com colunas de escalas distintas a rede só converge se tiver ao menos 10.000 épocas de treino.",
+          "explanation": "Dar mais épocas ajuda pouco quando a escala está desbalanceada; o ajuste continua enviesado para a coluna maior. A correção direta é padronizar, o que também reduz o número de épocas necessárias.",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "**Ideia central:** MLP, SVM e k-NN pedem **atributos em escalas comparáveis**. Árvores e florestas não.\n\n**Analogia:** é como configurar um sistema de pontuação em que um campo vai de 0 a 1 e outro de 0 a 1.000.000. O algoritmo de otimização passa o tempo ajustando o campo grande e ignora o outro.\n\n```python\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.preprocessing import StandardScaler\n\npipe = Pipeline([\n    ('scaler', StandardScaler()),\n    ('mlp', MLPClassifier(hidden_layer_sizes=(50,), max_iter=300, random_state=42))\n])\npipe.fit(X_train, y_train)\nprint(\"Acurácia:\", pipe.score(X_test, y_test))\n```"
+    },
+    {
+      "id": "b4-c18",
+      "label": "Validação cruzada com o escalonador fora do Pipeline",
+      "type": "single",
+      "prompt": "Leia o trecho. Ele estima a acurácia de um SVM por validação cruzada com 5 dobras.\n\n```python\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.model_selection import cross_val_score\nfrom sklearn.svm import SVC\n\nX_scaled = StandardScaler().fit_transform(X)\nnotas = cross_val_score(SVC(), X_scaled, y, cv=5)\nprint(\"Acurácia média:\", notas.mean())\n```\n\nQual é o erro de lógica?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O `cross_val_score` só aceita dados brutos; é preciso passar `X` e o `SVC` se padroniza sozinho durante o `fit` de cada dobra.",
+          "explanation": "O `SVC` não padroniza nada sozinho. Sem escalonador, ele receberia atributos em escalas distintas. O correto é incluir o escalonador **no Pipeline** passado ao `cross_val_score`.",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "O valor `cv=5` é insuficiente para um SVM; a validação cruzada só é considerada válida com `cv=10` ou mais dobras, no mínimo.",
+          "explanation": "Não existe valor obrigatório. 5 e 10 são os mais usados, e o número de dobras troca precisão da estimativa por tempo de processamento.",
+          "correct": false
+        },
+        {
+          "id": "c",
+          "text": "Nada a corrigir: padronizar antes da validação cruzada é a ordem recomendada, já que a escala precisa ficar fixa em todas as rodadas para a comparação ser justa.",
+          "explanation": "A escala **não** precisa ser fixa entre rodadas; ela deve ser recalculada a cada rodada só com as dobras de treino, como se cada rodada fosse um experimento completo e independente.",
+          "correct": false
+        },
+        {
+          "id": "d",
+          "text": "O escalonador viu todas as linhas, inclusive as de validação; ele deve ir num `Pipeline`, reajustado em cada rodada só com o treino.",
+          "explanation": "Em cada rodada da validação cruzada, uma dobra faz o papel de teste. Se a média e o desvio já foram calculados com todas as linhas, essa dobra influenciou o pré-processamento. No nosso exemplo as duas formas deram 92,7%: o efeito é pequeno com padronização simples, mas o procedimento está errado e pode inflar a nota em bases pequenas.",
+          "correct": true
+        }
+      ],
+      "generalExplanation": "**Ideia central:** na validação cruzada, **cada rodada é um mini-experimento** (treino e teste). Todo pré-processamento que aprende algo (`fit`) precisa acontecer **dentro** da rodada. A forma de garantir isso é o `Pipeline`.\n\n**Analogia:** é como rodar um pipeline de CI para cada ramo. Se o passo de calibração roda uma vez antes de tudo, com todos os dados, os testes de cada ramo já foram contaminados.\n\n```python\nfrom sklearn.pipeline import Pipeline\n\npipe = Pipeline([('scaler', StandardScaler()), ('svm', SVC())])\nnotas = cross_val_score(pipe, X, y, cv=5)    # o scaler é refeito em cada rodada\nprint(\"Acurácia média:\", notas.mean())\n```"
+    },
+    {
+      "id": "b4-c19",
+      "label": "Kernel inadequado ao formato dos dados",
+      "type": "single",
+      "prompt": "Leia o trecho. Os dados são dois **círculos concêntricos**: a classe 0 forma um anel interno e a classe 1, um anel externo, ambos com ruído leve.\n\n```python\nfrom sklearn.svm import SVC\n\nmodelo = SVC(kernel='linear', C=1.0)\nmodelo.fit(X_train, y_train)\nprint(\"Treino:\", modelo.score(X_train, y_train))\nprint(\"Teste:\", modelo.score(X_test, y_test))\n```\n\nA acurácia ficou em torno de 50% no treino e no teste. O que explica o resultado?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O kernel linear falhou por falta de padronização; com `StandardScaler` aplicado antes do `fit`, ele passa a separar os círculos.",
+          "explanation": "Padronizar muda a escala, não o formato da fronteira. Testamos: o linear padronizado continuou em 47,2% no teste. O problema é geométrico: uma reta não envolve um anel.",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "Uma reta não separa anel interno de anel externo; o kernel linear é inadequado, e o `rbf` (truque do kernel) resolve.",
+          "explanation": "Slides 17 a 19: o classificador linear é útil quando o limite é linear; para limites não lineares usa-se o truque do kernel, que mapeia para uma dimensão maior. Executamos: `linear` deu 50,9% no treino e 47,2% no teste; `rbf` deu 100% e 100%.",
+          "correct": true
+        },
+        {
+          "id": "c",
+          "text": "O valor de `C=1.0` é baixo demais; com `C=1000` a margem fica rígida e o hiperplano reto passa a separar as duas classes.",
+          "explanation": "`C` altera a tolerância a erros, mas não torna o modelo curvo. Testamos `C=1000` com kernel linear: 47,2% no teste. A reta continua sem conseguir separar os anéis.",
+          "correct": false
+        },
+        {
+          "id": "d",
+          "text": "Basta trocar `SVC` por `LinearSVC`, que usa um algoritmo mais poderoso e consegue traçar fronteiras curvas em bases pequenas.",
+          "explanation": "`LinearSVC` é uma implementação especializada em **fronteiras lineares** para bases grandes. Não cria curvas; no mesmo teste ele deu 37,6%.",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "**Ideia central (Aula 11, slides 17 a 19):** o kernel escolhe o **formato da fronteira**. `'linear'` = reta (ou hiperplano). `'rbf'`, `'poly'` e `'sigmoid'` = fronteiras curvas, via truque do kernel.\n\n**Analogia:** é escolher a estrutura de dados certa. Tentar guardar uma árvore em um array simples não falha na compilação, mas o resultado nunca representa o problema.\n\n| Dados | Kernel sugerido |\n| :-- | :-- |\n| classes separáveis por uma reta | `'linear'` |\n| fronteira curva, sem conhecimento prévio | `'rbf'` (padrão) |\n\n```python\nmodelo = SVC(kernel='rbf', C=1.0, gamma='scale')\n```\n\nNa prova: nota de chute com kernel linear em dados claramente curvos aponta para kernel inadequado, não para falta de dados."
+    },
+    {
+      "id": "b4-c20",
+      "label": "C e gamma escolhidos sem validação cruzada",
+      "type": "single",
+      "prompt": "Leia o trecho. Ele procura os melhores `C` e `gamma` de um SVM.\n\n```python\nmelhor = None\nfor C in [0.1, 1, 10, 100]:\n    for gamma in [0.1, 1, 10, 100]:\n        m = SVC(C=C, gamma=gamma).fit(X_train_scaled, y_train)\n        nota = m.score(X_train_scaled, y_train)\n        if melhor is None or nota > melhor[0]:\n            melhor = (nota, C, gamma)\n\nprint(\"Escolhidos:\", melhor)\n```\n\nQual é o erro de lógica?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Falta calcular a nota com o teste dentro do laço; só assim a escolha reflete a acurácia real que o modelo terá em dados novos.",
+          "explanation": "Usar o teste para escolher seria outro erro (vazamento indireto): o teste passaria a participar da seleção. A alternativa correta é a validação cruzada dentro do treino.",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "O erro é testar `C` e `gamma` ao mesmo tempo; os dois só podem ser ajustados em sequência, nunca em conjunto, para não se misturarem.",
+          "explanation": "Os dois interagem, então devem ser ajustados juntos (a grade `GridSearchCV` testa todas as combinações). Ajustar em sequência pode perder a melhor combinação.",
+          "correct": false
+        },
+        {
+          "id": "c",
+          "text": "A comparação usa a nota do treino, que premia quem decora; a escolha deve vir de validação cruzada (`GridSearchCV`) só no treino.",
+          "explanation": "Quanto maior `C` e `gamma`, mais o SVM decora o treino e mais alta fica a nota do treino. Executamos: a escolha por nota de treino foi `C=100, gamma=100` (100% no treino, 89,3% no teste). O `GridSearchCV(cv=5)` escolheu `C=10, gamma=1` (94,9% na validação, 93,3% no teste).",
+          "correct": true
+        },
+        {
+          "id": "d",
+          "text": "Está correto: a maior acurácia de treino indica o modelo que melhor aprendeu os padrões e, portanto, o que melhor vai generalizar.",
+          "explanation": "Aprender o treino não garante generalizar. O modelo que acerta 100% no treino pode estar decorando, como aconteceu aqui (100% no treino e 89,3% no teste).",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "**Ideia central:** hiperparâmetros não se aprendem pelo treino: se escolhem por **validação cruzada** (Aula 4) dentro do treino. Nota de treino sempre favorece o modelo mais complexo.\n\n**Analogia:** escolher a configuração do sistema pelo desempenho em um teste de carga que o próprio código já conhece. Quem decora o teste ganha.\n\n```python\nfrom sklearn.model_selection import GridSearchCV\n\ngrade = {'C': [0.1, 1, 10, 100], 'gamma': [0.1, 1, 10, 100]}\nbusca = GridSearchCV(SVC(), grade, cv=5).fit(X_train_scaled, y_train)\nprint(busca.best_params_)\nprint(\"Teste:\", busca.score(X_test_scaled, y_test))\n```\n\nSlide 31: o ajuste de hiperparâmetros exige vários testes e escolhas indevidas de `C` e `gamma` levam a overfitting. A validação cruzada é o remédio."
+    },
+    {
+      "id": "b4-c21",
+      "label": "Ordem das ações: SVM do início ao relatório",
+      "type": "single",
+      "prompt": "Um engenheiro quer treinar um SVM e relatar precisão e recall. As etapas abaixo estão fora de ordem:\n\n- **1)** prever as classes do teste com o modelo treinado (`pip.predict(X_test)`)\n- **2)** separar `X` e `y` e dividir em treino e teste (`train_test_split`)\n- **3)** montar o `Pipeline` (`StandardScaler` e `SVC`) e chamar `fit` só com o treino\n- **4)** calcular precisão e recall comparando `y_test` com as previsões\n\nQual é a ordem correta?",
+      "options": [
+        {
+          "id": "a",
+          "text": "2 -> 3 -> 1 -> 4 (divide, treina, prevê, mede)",
+          "explanation": "Dividir primeiro isola o teste. Em seguida o `fit` do Pipeline aprende a escala e o modelo só com o treino. Só então se prevê o teste e, por fim, comparam-se as previsões com `y_test`.",
+          "correct": true
+        },
+        {
+          "id": "b",
+          "text": "3 -> 2 -> 1 -> 4 (treina com tudo, depois divide, prevê e mede)",
+          "explanation": "O `fit` vem antes da divisão: o modelo e o escalonador treinariam com todas as linhas, incluindo as que depois virariam teste. Seria vazamento, e a nota final ficaria otimista.",
+          "correct": false
+        },
+        {
+          "id": "c",
+          "text": "2 -> 1 -> 3 -> 4 (divide, prevê, treina e só então mede)",
+          "explanation": "A previsão (`predict`) vem antes do `fit`: o modelo ainda não foi treinado e o scikit-learn lançaria `NotFittedError`. Não dá para prever com quem nunca estudou.",
+          "correct": false
+        },
+        {
+          "id": "d",
+          "text": "2 -> 3 -> 4 -> 1 (divide, treina, mede e só depois prevê)",
+          "explanation": "As métricas são calculadas antes das previsões existirem: não há `y_pred` para comparar com `y_test`. A comparação só pode acontecer depois do `predict`.",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "**Regra de ouro da ordem:** **dividir -> ajustar (fit) só no treino -> prever no teste -> avaliar**.\n\n**Analogia:** é o ciclo de desenvolvimento: separar o ambiente de homologação (teste), construir e calibrar tudo em desenvolvimento (treino), executar na homologação e só então medir.\n\n```python\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)\n\npip = Pipeline([('scaler', StandardScaler()), ('svm', SVC())])\npip.fit(X_train, y_train)\n\ny_pred = pip.predict(X_test)\nprint(classification_report(y_test, y_pred))\n```\n\nTrês perguntas rápidas na prova: (1) a divisão vem antes de qualquer `fit`? (2) o `fit` vem antes do `predict`? (3) a avaliação usa o teste?"
+    },
+    {
+      "id": "b4-c22",
+      "label": "Ordem das ações: limpeza, imputação, escala e rede",
+      "type": "single",
+      "prompt": "Uma tabela de sensores tem linhas duplicadas, o valor sentinela -999 na temperatura e células vazias. O objetivo é treinar um `MLPClassifier`. As etapas abaixo estão fora de ordem:\n\n- **1)** padronizar os atributos (`fit` no treino; `transform` em treino e teste)\n- **2)** remover duplicatas e trocar -999 por `NaN`\n- **3)** treinar o `MLPClassifier` com o treino\n- **4)** dividir em treino e teste\n- **5)** imputar as células vazias com a média do treino\n- **6)** medir a acurácia no teste\n\nQual é a ordem correta?",
+      "options": [
+        {
+          "id": "a",
+          "text": "4 -> 2 -> 5 -> 1 -> 3 -> 6 (divide primeiro e só depois limpa duplicatas e sentinela)",
+          "explanation": "Dividir antes de remover duplicatas é arriscado: uma cópia da mesma leitura pode cair no treino e outra no teste, e o teste deixa de ser inédito para o modelo.",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "2 -> 5 -> 4 -> 1 -> 3 -> 6 (limpa, imputa com a base inteira e só então divide)",
+          "explanation": "A imputação acontece antes da divisão, então a média inclui o teste. É o vazamento clássico: as linhas de teste influenciam o preenchimento do treino.",
+          "correct": false
+        },
+        {
+          "id": "c",
+          "text": "2 -> 4 -> 5 -> 1 -> 3 -> 6 (limpa, divide, imputa, padroniza, treina, mede)",
+          "explanation": "Limpeza estrutural (duplicatas e sentinela) não aprende nada e vem antes da divisão, evitando cópias iguais em treino e teste. Depois divide, imputa com a média do treino, padroniza com o treino, treina e mede no teste.",
+          "correct": true
+        },
+        {
+          "id": "d",
+          "text": "2 -> 4 -> 5 -> 3 -> 1 -> 6 (limpa, divide, imputa, treina e só então padroniza)",
+          "explanation": "A padronização vem depois do treino: a rede aprenderia com valores em escalas brutas e seria avaliada com valores padronizados. O modelo precisa ser treinado com os mesmos dados que recebe depois.",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "**Regra:** primeiro o que **não aprende nada** com os dados (limpar, corrigir códigos, remover duplicatas); depois **divide**; depois o que **aprende** (imputar, escalar, treinar), sempre com o `fit` só no treino; por fim **avalia no teste**.\n\n**Analogia:** é a ordem de um deploy. Corrigir o código-fonte (limpeza) vem antes de abrir o ramo de homologação; a configuração do ambiente (média, escala) é gravada em desenvolvimento e só replicada na homologação.\n\n```python\ndf = df.drop_duplicates().replace(-999, np.nan)\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)\n\nimp = SimpleImputer(strategy='mean').fit(X_train)\nX_train, X_test = imp.transform(X_train), imp.transform(X_test)\n\nsc = StandardScaler().fit(X_train)\nX_train, X_test = sc.transform(X_train), sc.transform(X_test)\n\nmlp = MLPClassifier(hidden_layer_sizes=(50,), max_iter=500, random_state=42).fit(X_train, y_train)\nprint(mlp.score(X_test, y_test))\n```\n\nObservação: o `MLPClassifier` não aceita `NaN`; sem imputar, o `fit` falha."
+    },
+    {
+      "id": "b4-c23",
+      "label": "Ordem das ações: escolher C e gamma",
+      "type": "single",
+      "prompt": "O engenheiro precisa escolher `C` e `gamma` de um SVM e relatar a acurácia esperada. As etapas abaixo estão fora de ordem:\n\n- **1)** dividir em treino e teste\n- **2)** montar o `Pipeline` (`StandardScaler` e `SVC`) e a grade de valores de `C` e `gamma`\n- **3)** rodar a busca com validação cruzada usando só o treino\n- **4)** escolher a combinação com a melhor nota média da validação cruzada\n- **5)** avaliar o modelo escolhido no teste, uma única vez\n\nQual é a ordem correta?",
+      "options": [
+        {
+          "id": "a",
+          "text": "2 -> 3 -> 1 -> 4 -> 5 (monta, busca na base toda e só depois divide)",
+          "explanation": "A busca roda antes da divisão: a validação cruzada passa a usar a base inteira, inclusive as linhas que viram teste. A escolha dos hiperparâmetros já enxergou o teste.",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "1 -> 2 -> 5 -> 3 -> 4 (divide, monta, testa antes de buscar e de escolher)",
+          "explanation": "O teste é consultado antes da busca terminar. Não faz sentido avaliar no teste antes de existir um modelo escolhido, e um teste usado cedo deixa de ser independente.",
+          "correct": false
+        },
+        {
+          "id": "c",
+          "text": "1 -> 2 -> 3 -> 5 -> 4 (divide, monta, busca, testa os candidatos e só então escolhe)",
+          "explanation": "Avaliar vários candidatos no teste e só depois escolher é o mesmo que escolher pelo teste: a nota do teste decidiria o vencedor e deixaria de ser estimativa honesta.",
+          "correct": false
+        },
+        {
+          "id": "d",
+          "text": "1 -> 2 -> 3 -> 4 -> 5 (divide, monta, busca no treino, escolhe, testa)",
+          "explanation": "Divide, monta o Pipeline e a grade, busca por validação cruzada no treino, escolhe pelo desempenho na validação e só no fim usa o teste, uma vez.",
+          "correct": true
+        }
+      ],
+      "generalExplanation": "**Regra:** o teste decide **nada**; ele só **mede**. Quem decide é a validação dentro do treino.\n\n**Analogia:** tuning de configuração em staging, com uma única janela de teste em produção ao final. Se a produção entra no ciclo de ajuste, ela deixa de ser prova independente.\n\n```python\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)\n\npipe = Pipeline([('scaler', StandardScaler()), ('svm', SVC())])\ngrade = {'svm__C': [0.1, 1, 10, 100], 'svm__gamma': [0.1, 1, 10, 100]}\n\nbusca = GridSearchCV(pipe, grade, cv=5).fit(X_train, y_train)\nprint(busca.best_params_)\nprint(\"Acurácia no teste:\", busca.score(X_test, y_test))   # uma vez\n```\n\nDois detalhes: com o Pipeline dentro do `GridSearchCV`, o escalonador é refeito em cada dobra; e o `GridSearchCV` já deixa o melhor modelo treinado com o treino inteiro (`best_estimator_`)."
+    },
+    {
+      "id": "b4-c24",
+      "label": "Alvo dentro dos atributos",
+      "type": "single",
+      "prompt": "Leia o trecho. Ele treina uma rede para prever a coluna `classe`, e a acurácia de teste foi 100%.\n\n```python\ndf = pd.read_csv(\"clientes.csv\")        # inclui a coluna 'classe'\n\nX = df                                   # todas as colunas\ny = df[\"classe\"]\n\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)\nscaler = StandardScaler().fit(X_train)\nmlp = MLPClassifier(hidden_layer_sizes=(50,), max_iter=500, random_state=42)\nmlp.fit(scaler.transform(X_train), y_train)\nprint(mlp.score(scaler.transform(X_test), y_test))\n```\n\nQual é o erro de lógica?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A nota de 100% mostra que a rede é excelente; para confirmar basta aumentar o `test_size` e repetir a avaliação várias vezes.",
+          "explanation": "Nota perfeita em tarefa real é sinal de alerta, não de qualidade. Aumentar o teste não resolve se o gabarito está nos atributos; a nota continuaria perfeita.",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "O alvo `classe` ficou dentro de `X`; é preciso `df.drop('classe', axis=1)`. A nota perfeita é o gabarito vazado.",
+          "explanation": "`X = df` inclui a própria resposta como coluna de entrada, e a rede apenas copia o valor. Executamos o trecho com dados sintéticos: 100% no teste. Em produção não existe essa coluna, então o modelo desabaria.",
+          "correct": true
+        },
+        {
+          "id": "c",
+          "text": "O `train_test_split` não aceita um `DataFrame` inteiro; é preciso passar `df.values` para que a divisão funcione corretamente.",
+          "explanation": "O `train_test_split` aceita DataFrames normalmente e preserva as colunas. A divisão funciona; o problema é o conteúdo de `X`, não o seu formato.",
+          "correct": false
+        },
+        {
+          "id": "d",
+          "text": "A coluna `classe` deve ser padronizada junto com `X` antes do `fit`, para que o alvo fique na mesma escala dos atributos.",
+          "explanation": "Padronizar o alvo de classificação é um erro por si só: ele deixa de ser rótulo. E o problema aqui é a presença do alvo entre os atributos, não a escala dele.",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "**Ideia central:** os atributos `X` só podem conter **o que existirá na hora da previsão**. O alvo `y` é o que se quer descobrir.\n\n**Analogia:** é passar a resposta da prova junto com o enunciado. Em desenvolvimento o teste passa com 100%, em produção a coluna não existe e o sistema falha.\n\n```python\nX = df.drop(\"classe\", axis=1)   # tudo, menos a resposta\ny = df[\"classe\"]\n```\n\nSinais de alerta: acurácia perfeita, ou quase, sem esforço; atributos com nomes parecidos com o alvo; colunas que só são conhecidas depois do evento (datas de desfecho, status final)."
+    },
+    {
+      "id": "b4-c25",
+      "label": "Acurácia medida no treino",
+      "type": "single",
+      "prompt": "Leia o trecho. Ele treina uma rede e imprime a \"acurácia do modelo\".\n\n```python\nfrom sklearn.neural_network import MLPClassifier\n\nmlp = MLPClassifier(hidden_layer_sizes=(200, 200), max_iter=3000, random_state=42)\nmlp.fit(X_train_scaled, y_train)\n\nprint(\"Acurácia do modelo:\", mlp.score(X_train_scaled, y_train))\n```\n\nQual é o erro de lógica?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A rede é grande demais e por isso o `score` fica bloqueado; reduza `hidden_layer_sizes` para `(10,)` para conseguir medir a acurácia.",
+          "explanation": "O `score` não é bloqueado por tamanho de rede. Uma rede pequena pode até ajudar contra overfitting, mas o erro do trecho é onde a nota é medida, não o tamanho da rede.",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "O `score` do `MLPClassifier` calcula o erro quadrático; para obter a acurácia é preciso usar a função `accuracy_score`.",
+          "explanation": "O `score` de qualquer classificador do scikit-learn devolve a acurácia média. Medir em `X_train_scaled` é que torna a nota inútil como estimativa de desempenho futuro.",
+          "correct": false
+        },
+        {
+          "id": "c",
+          "text": "A nota foi medida nos mesmos dados do `fit`; a rede grande decora o treino. A nota que vale vem de `X_test_scaled` e `y_test`.",
+          "explanation": "Num exemplo nosso (200 linhas, ruído alto), a rede acertou 99,3% no treino e 81,7% no teste. Uma diferença de cerca de 18 pontos entre as duas notas é o retrato do overfitting, escondido por quem só olha o treino.",
+          "correct": true
+        },
+        {
+          "id": "d",
+          "text": "Medir no treino é correto para redes neurais, porque a regularização embutida torna a nota do treino uma boa estimativa da do teste.",
+          "explanation": "A rede tem uma regularização leve (`alpha`) que não impede a memorização de grandes arquiteturas. No exemplo, a diferença foi de cerca de 18 pontos; a nota de treino não estima o teste.",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "**Ideia central:** a nota do treino mede **memória**; a nota do teste mede **generalização**. Comparar as duas diagnostica o modelo:\n\n| Treino | Teste | Diagnóstico |\n| :-- | :-- | :-- |\n| alto | alto | bom ajuste |\n| alto | muito menor | overfitting |\n| baixo | baixo | underfitting |\n\n**Analogia:** é medir a qualidade do sistema com os casos de teste que você usou para escrevê-lo.\n\n```python\nprint(\"Treino:\", mlp.score(X_train_scaled, y_train))\nprint(\"Teste:\", mlp.score(X_test_scaled, y_test))\n```\n\nPara reduzir o overfitting em redes (Aula 10, slides 37 a 40): parada antecipada, regularização L2 (`alpha` maior), menos neurônios."
+    },
+    {
+      "id": "b4-c26",
+      "label": "Falta transformar o teste",
+      "type": "single",
+      "prompt": "Leia o trecho. Ele ajusta um escalonador no treino e treina uma rede.\n\n```python\nscaler = StandardScaler().fit(X_train)\nX_train_scaled = scaler.transform(X_train)\n\nmlp = MLPClassifier(hidden_layer_sizes=(50,), max_iter=500, random_state=42)\nmlp.fit(X_train_scaled, y_train)\n\nprint(\"Acurácia no teste:\", mlp.score(X_test, y_test))\n```\n\nFalta alguma etapa? Qual?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Falta chamar `scaler.fit(X_test)` para que o teste também fique com média zero e desvio um, igual ao treino padronizado.",
+          "explanation": "Ajustar o escalonador no teste vaza informação e usa uma régua diferente da do treino. O certo é aplicar `transform` com a régua aprendida no treino.",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "Falta `scaler.transform(X_test)`: a rede aprendeu com dados padronizados e está sendo avaliada com dados brutos.",
+          "explanation": "Modelo e entrada precisam falar a mesma língua. No nosso exemplo, a acurácia foi 83,3% com `X_test` bruto e 93,3% com `scaler.transform(X_test)`. A etapa que falta é só `transform`, nunca novo `fit`.",
+          "correct": true
+        },
+        {
+          "id": "c",
+          "text": "Falta chamar `mlp.fit` uma segunda vez, agora com `X_test`, para que a rede conheça a distribuição dos dados de teste.",
+          "explanation": "Treinar com o teste destrói a avaliação: o modelo passaria a conhecer as respostas. O teste só serve para medir.",
+          "correct": false
+        },
+        {
+          "id": "d",
+          "text": "Não falta nada: o `StandardScaler` ajustado no treino passa a ser aplicado automaticamente em tudo o que for passado ao `score`.",
+          "explanation": "O escalonador é um objeto separado do modelo; o `score` do `mlp` não conhece o `scaler`. Só um `Pipeline` encadeia os dois e transforma o teste sozinho.",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "**Ideia central:** tudo o que o modelo viu no treino (escala, imputação, codificação) precisa ser aplicado **igual** a qualquer dado que ele receba depois.\n\n**Analogia:** treinar o sistema com datas em ISO e depois enviar datas no formato brasileiro. O código roda, a resposta sai errada.\n\nPara esquecer menos, use `Pipeline`, que aplica as mesmas transformações a treino, teste e dados novos:\n\n```python\npipe = Pipeline([('scaler', StandardScaler()),\n                 ('mlp', MLPClassifier(hidden_layer_sizes=(50,), max_iter=500, random_state=42))])\npipe.fit(X_train, y_train)\nprint(pipe.score(X_test, y_test))\n```"
+    }
+  ]
+}

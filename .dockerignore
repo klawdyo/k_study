@@ -1,0 +1,27 @@
+# nada disto entra na imagem (segredos, dados dos alunos, lixo de desenvolvimento)
+.env
+.env.*
+!.env.example
+data/
+*.db
+*.db-wal
+*.db-shm
+content/
+.git/
+.gitignore
+.tasks/
+tests/
+**/__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+build/
+dist/
+*.zip
+*.m4a
+*.webm
+*.mp3
+*.wav
+progress.json
