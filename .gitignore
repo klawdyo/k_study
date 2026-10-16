@@ -6,7 +6,12 @@ venv/
 .pytest_cache/
 build/
 dist/
-# never commit study data, progress, downloaded audio or models
+# banco de dados dos alunos (e-mails, progresso, estatísticas): nunca vai para o git
+data/
+*.db
+*.db-wal
+*.db-shm
+# progresso antigo, áudios baixados
 progress.json
 *.m4a
 *.webm
