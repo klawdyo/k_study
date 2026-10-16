@@ -7,16 +7,18 @@ Uma única conexão compartilhada entre as threads do servidor, protegida por um
 import hashlib
 import json
 import os
-import re
 import sqlite3
 import threading
 from contextlib import contextmanager
 from datetime import datetime, timezone
+from datetime import timedelta
 from pathlib import Path
 
-EMAIL = re.compile(r"^[^@\s]+@[^@\s.]+(\.[^@\s.]+)+$")
+from . import security
+
 MAX_BEAT_SECONDS = 30            # limite por chamada de beat/leave
 MAX_VISIT_SECONDS = 4 * 3600     # teto de uma visita
+SESSION_SLIDING_DAYS, SESSION_ABSOLUTE_DAYS = 30, 90
 
 
 def now() -> str:
@@ -26,8 +28,7 @@ def now() -> str:
 
 def normalize_email(text) -> str | None:
     """Normaliza (strip + minúsculas) e valida de forma simples. Devolve None se inválido."""
-    email = str(text or "").strip().lower()
-    return email if len(email) <= 254 and EMAIL.match(email) else None
+    return security.normalize_email(text)
 
 
 def hash_token(token: str) -> str:
@@ -65,7 +66,31 @@ def _migration_1(conn: sqlite3.Connection) -> None:
             conn.execute(statement)
 
 
-MIGRATIONS = [_migration_1]      # a posição + 1 é o número da versão; nunca reordene nem edite uma já publicada
+def _migration_2(conn: sqlite3.Connection) -> None:
+    """v1 -> v2: senhas, nome, admin, sessões com CSRF e validade, capa/ativa, assets, auditoria, tentativas."""
+    statements = [
+        "ALTER TABLE students ADD COLUMN name TEXT NOT NULL DEFAULT ''",
+        "ALTER TABLE students ADD COLUMN password_hash TEXT NOT NULL DEFAULT ''",
+        "ALTER TABLE students ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE trails ADD COLUMN cover TEXT",
+        "ALTER TABLE trails ADD COLUMN active INTEGER NOT NULL DEFAULT 1",
+        "ALTER TABLE items ADD COLUMN transcript TEXT",
+        "DROP TABLE sessions",       # sessões antigas não têm CSRF nem validade: todos entram de novo
+        """CREATE TABLE sessions (token_hash TEXT PRIMARY KEY,
+                                  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+                                  csrf_token TEXT NOT NULL, created_at TEXT, last_seen_at TEXT, expires_at TEXT,
+                                  user_agent TEXT)""",
+        "UPDATE trails SET manifest_mtime=0",      # força a reindexação (capa, assets, transcrições)
+        "CREATE TABLE assets (trail TEXT, path TEXT, kind TEXT, size INTEGER, PRIMARY KEY (trail, path))",
+        "CREATE TABLE login_attempts (key TEXT NOT NULL, at TEXT NOT NULL)",
+        "CREATE INDEX login_attempts_key ON login_attempts(key, at)",
+        "CREATE TABLE audit_log (id INTEGER PRIMARY KEY, at TEXT, student_id INTEGER, action TEXT, detail TEXT, ip TEXT)",
+    ]
+    for statement in statements:
+        conn.execute(statement)
+
+
+MIGRATIONS = [_migration_1, _migration_2]      # a posição + 1 é o número da versão; nunca reordene nem edite uma já publicada
 
 
 class Database:
@@ -130,56 +155,81 @@ class Database:
         with self.tx() as conn:
             conn.execute(sql, params)
 
-    # ---- alunos e sessões ----
-    def login(self, email: str, token: str, user_agent: str = "", replace_token: str | None = None):
-        """Vincula o navegador (token) ao aluno do e-mail; cadastra se não existir. Devolve (aluno, criado)."""
+    # ---- contas e sessões ----
+    def count_students(self) -> int:
+        return self.one("SELECT COUNT(*) AS n FROM students")["n"]
+
+    def find_student(self, email: str):
+        return self.one("SELECT * FROM students WHERE email=?", (email,))
+
+    def create_student(self, email: str, name: str, password_hash: str):
+        """Cria a conta. O PRIMEIRO cadastro vira admin, decidido dentro da transação. Devolve (aluno, é_primeiro).
+        Levanta sqlite3.IntegrityError se o e-mail já existir."""
         stamp = now()
         with self.tx() as conn:
-            row = conn.execute("SELECT id, email FROM students WHERE email=?", (email,)).fetchone()
-            created = row is None
-            if created:
-                cursor = conn.execute("INSERT INTO students(email, created_at, last_seen_at) VALUES(?,?,?)",
-                                      (email, stamp, stamp))
-                student = {"id": cursor.lastrowid, "email": email}
-            else:
-                student = {"id": row["id"], "email": row["email"]}
-                conn.execute("UPDATE students SET last_seen_at=? WHERE id=?", (stamp, student["id"]))
+            first = conn.execute("SELECT COUNT(*) AS n FROM students").fetchone()["n"] == 0
+            cursor = conn.execute("INSERT INTO students(email, name, password_hash, is_admin, created_at, last_seen_at) "
+                                  "VALUES(?,?,?,?,?,?)", (email, name, password_hash, 1 if first else 0, stamp, stamp))
+        return {"id": cursor.lastrowid, "email": email, "name": name, "is_admin": first}, first
+
+    def set_credentials(self, student_id: int, name: str | None, password_hash: str) -> None:
+        if name is None:
+            self.run("UPDATE students SET password_hash=? WHERE id=?", (password_hash, student_id))
+        else:
+            self.run("UPDATE students SET name=?, password_hash=? WHERE id=?", (name, password_hash, student_id))
+
+    def set_admin(self, student_id: int, value: bool = True) -> None:
+        self.run("UPDATE students SET is_admin=? WHERE id=?", (1 if value else 0, student_id))
+
+    def create_session(self, student_id: int, token: str, csrf: str, user_agent: str = "",
+                       replace_token: str | None = None) -> None:
+        """Sessão nova (o token é trocado a cada login); a sessão anterior do navegador é descartada."""
+        moment = datetime.now(timezone.utc)
+        stamp = moment.isoformat(timespec="seconds")
+        expires = (moment + timedelta(days=SESSION_SLIDING_DAYS)).isoformat(timespec="seconds")
+        with self.tx() as conn:
+            conn.execute("DELETE FROM sessions WHERE expires_at<?", (stamp,))
             if replace_token:
                 conn.execute("DELETE FROM sessions WHERE token_hash=?", (hash_token(replace_token),))
-            conn.execute("INSERT INTO sessions(token_hash, student_id, created_at, last_seen_at, user_agent) "
-                         "VALUES(?,?,?,?,?)", (hash_token(token), student["id"], stamp, stamp, (user_agent or "")[:300]))
-        return student, created
+            conn.execute("INSERT INTO sessions(token_hash, student_id, csrf_token, created_at, last_seen_at, "
+                         "expires_at, user_agent) VALUES(?,?,?,?,?,?,?)",
+                         (hash_token(token), student_id, csrf, stamp, stamp, expires, (user_agent or "")[:300]))
+            conn.execute("UPDATE students SET last_seen_at=? WHERE id=?", (stamp, student_id))
 
     def student_for_token(self, token: str | None, touch: bool = True):
-        """Aluno ({id, email}) dono do token, ou None. Atualiza last_seen_at (no máximo uma vez por minuto)."""
+        """Aluno ({id, email, name, is_admin, csrf_token}) dono do token, ou None (inexistente ou expirada).
+        A validade é deslizante (30 dias) e absoluta (90 dias desde a criação)."""
         if not token:
             return None
         digest = hash_token(token)
-        row = self.one("SELECT s.id, s.email, ss.last_seen_at AS seen FROM sessions ss "
-                       "JOIN students s ON s.id = ss.student_id WHERE ss.token_hash=?", (digest,))
+        row = self.one("SELECT s.id, s.email, s.name, s.is_admin, ss.csrf_token, ss.created_at, ss.last_seen_at AS seen, "
+                       "ss.expires_at FROM sessions ss JOIN students s ON s.id = ss.student_id "
+                       "WHERE ss.token_hash=?", (digest,))
         if row is None:
             return None
-        stamp = now()
+        moment = datetime.now(timezone.utc)
+        stamp = moment.isoformat(timespec="seconds")
+        if (row["expires_at"] or "") < stamp:
+            self.run("DELETE FROM sessions WHERE token_hash=?", (digest,))
+            return None
         if touch and (row["seen"] or "") < stamp[:16]:        # compara até o minuto
+            created = datetime.fromisoformat(row["created_at"])
+            expires = min(moment + timedelta(days=SESSION_SLIDING_DAYS),
+                          created + timedelta(days=SESSION_ABSOLUTE_DAYS)).isoformat(timespec="seconds")
             with self.tx() as conn:
-                conn.execute("UPDATE sessions SET last_seen_at=? WHERE token_hash=?", (stamp, digest))
+                conn.execute("UPDATE sessions SET last_seen_at=?, expires_at=? WHERE token_hash=?", (stamp, expires, digest))
                 conn.execute("UPDATE students SET last_seen_at=? WHERE id=?", (stamp, row["id"]))
-        return {"id": row["id"], "email": row["email"]}
+        return {"id": row["id"], "email": row["email"], "name": row["name"], "is_admin": bool(row["is_admin"]),
+                "csrf_token": row["csrf_token"]}
 
     def logout(self, token: str | None) -> None:
         if token:
             self.run("DELETE FROM sessions WHERE token_hash=?", (hash_token(token),))
 
-    def get_or_create_student(self, email: str) -> tuple[dict, bool]:
-        """Para a CLI (import-progress): devolve (aluno, criado) sem criar sessão."""
-        stamp = now()
-        with self.tx() as conn:
-            row = conn.execute("SELECT id, email FROM students WHERE email=?", (email,)).fetchone()
-            if row:
-                return {"id": row["id"], "email": row["email"]}, False
-            cursor = conn.execute("INSERT INTO students(email, created_at, last_seen_at) VALUES(?,?,?)",
-                                  (email, stamp, stamp))
-            return {"id": cursor.lastrowid, "email": email}, True
+    def audit(self, student_id: int | None, action: str, detail: str = "", ip: str = "") -> None:
+        """Registro de logins e ações do admin. Nunca grave senhas ou tokens aqui."""
+        self.run("INSERT INTO audit_log(at, student_id, action, detail, ip) VALUES(?,?,?,?,?)",
+                 (now(), student_id, action, (detail or "")[:500], ip))
 
     # ---- trilhas (índice) ----
     def trail_exists(self, slug: str) -> bool:
@@ -188,8 +238,18 @@ class Database:
     def has_item(self, trail: str, block: str, item: str) -> bool:
         return self.one("SELECT 1 FROM items WHERE trail=? AND block_id=? AND item_id=?", (trail, block, item)) is not None
 
-    def list_trails(self, student_id: int | None = None) -> list[dict]:
-        rows = self.query("SELECT * FROM trails ORDER BY title COLLATE NOCASE, slug")
+    def trail_active(self, slug: str) -> bool:
+        row = self.one("SELECT active FROM trails WHERE slug=?", (slug,))
+        return bool(row and row["active"])
+
+    def set_trail_active(self, slug: str, active: bool) -> bool:
+        with self.tx() as conn:
+            cursor = conn.execute("UPDATE trails SET active=? WHERE slug=?", (1 if active else 0, slug))
+            return cursor.rowcount > 0
+
+    def list_trails(self, student_id: int | None = None, only_active: bool = True) -> list[dict]:
+        rows = self.query("SELECT * FROM trails " + ("WHERE active=1 " if only_active else "")
+                          + "ORDER BY title COLLATE NOCASE, slug")
         out = []
         for t in rows:
             slug = t["slug"]
@@ -197,21 +257,26 @@ class Database:
             total = self.one("SELECT COUNT(*) AS n, COALESCE(SUM(CASE WHEN optional=0 THEN 1 ELSE 0 END),0) AS req, "
                              "COALESCE(SUM(CASE WHEN optional=0 THEN COALESCE(minutes,0) ELSE 0 END),0) AS minutes "
                              "FROM items WHERE trail=?", (slug,))
-            done = 0
+            done = required_done = 0
             if student_id is not None:
-                done = self.one("SELECT COUNT(*) AS n FROM progress p JOIN items i ON i.trail=p.trail AND "
-                                "i.block_id=p.block_id AND i.item_id=p.item_id "
-                                "WHERE p.student_id=? AND p.trail=? AND p.done=1 AND i.optional=0",
-                                (student_id, slug))["n"]
+                counts = self.one("SELECT COUNT(*) AS n, COALESCE(SUM(CASE WHEN i.optional=0 THEN 1 ELSE 0 END),0) AS req "
+                                  "FROM progress p JOIN items i ON i.trail=p.trail AND i.block_id=p.block_id "
+                                  "AND i.item_id=p.item_id WHERE p.student_id=? AND p.trail=? AND p.done=1",
+                                  (student_id, slug))
+                done, required_done = counts["n"], counts["req"]
             try:
                 tags = json.loads(t["tags"] or "[]")
             except ValueError:
                 tags = []
             out.append({"slug": slug, "title": t["title"], "description": t["description"] or "",
-                        "language": t["language"], "level": t["level"], "tags": tags, "blocks": n_blocks,
-                        "items": total["n"], "requiredItems": total["req"], "minutes": round(total["minutes"]),
-                        "done": done})
+                        "language": t["language"], "level": t["level"], "tags": tags,
+                        "cover": f"/api/trails/{slug}/cover" if t["cover"] else None, "active": bool(t["active"]),
+                        "blocks": n_blocks, "items": total["n"], "requiredItems": total["req"],
+                        "minutes": round(total["minutes"]), "done": done, "requiredDone": required_done})
         return out
+
+    def asset(self, trail: str, path: str):
+        return self.one("SELECT * FROM assets WHERE trail=? AND path=?", (trail, path))
 
     # ---- progresso (por aluno e por trilha) ----
     def progress_state(self, student_id: int, trail: str) -> dict:

@@ -17,3 +17,6 @@ progress.json
 *.webm
 *.mp3
 *.wav
+
+# segredos locais
+.env

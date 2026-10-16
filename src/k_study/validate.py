@@ -1,7 +1,8 @@
 """Validador de trilhas. Rode antes de dar um bloco por pronto:  kstudy validate [slug]
 
 Verificações que tornam uma trilha INVÁLIDA (problemas), para cada bloco listado em trail.json:
-  * trail.json: schema `trail/v1`, id igual ao nome da pasta, slug válido, título, blocos existentes;
+  * trail.json: schema `trail/v1`, id igual ao nome da pasta, slug válido, título, blocos existentes,
+    capa (cover) existente em png/jpg/webp de até 1 MB;
   * ids de itens únicos; tipos conhecidos; caminhos existem e ficam dentro da pasta da trilha;
   * imagens citadas em Markdown, enunciados e explicações existem;
   * vídeos: URL válida do YouTube; trechos com fim > início; transcrição existe quando citada;
@@ -174,6 +175,17 @@ def inspect(trail_dir: Path) -> tuple[list[str], list[str], list[str]]:
         problems.append(f"slug inválido: {data.name!r} (use só a-z, 0-9 e hífen)")
     if not str(manifest.get("title") or "").strip():
         problems.append("trail.json: falta o título (title)")
+    cover = manifest.get("cover")
+    if cover is not None:
+        target = (data / cover).resolve() if isinstance(cover, str) and cover and "\\" not in cover else None
+        if target is None or data not in target.parents:
+            problems.append("trail.json: a capa (cover) deve ser um caminho relativo dentro da pasta da trilha")
+        elif not target.is_file():
+            problems.append(f"trail.json: capa não encontrada: {cover}")
+        elif target.suffix.lower() not in (".png", ".jpg", ".jpeg", ".webp"):
+            problems.append("trail.json: a capa deve ser png, jpg ou webp")
+        elif target.stat().st_size > 1_000_000:
+            problems.append("trail.json: a capa passa de 1 MB")
     seen_blocks = set()
     for entry in blocks:
         if not isinstance(entry, dict) or not entry.get("id") or not entry.get("file"):

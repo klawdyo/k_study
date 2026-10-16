@@ -11,7 +11,7 @@ def test_open_cria_visita_e_beat_leave_somam_segundos(student, db):
     assert student.call("POST", "/api/track", {"event": "leave", "visit": visit, "seconds": 3})[1]["seconds"] == 23
     row = db.one("SELECT * FROM visits WHERE id=?", (visit,))
     assert row["seconds"] == 23 and (row["trail"], row["block_id"], row["item_id"]) == ("demo", "block-1", "r")
-    assert row["student_id"] == db.one("SELECT id FROM students")["id"]
+    assert row["student_id"] == db.one("SELECT id FROM students WHERE email='ana@exemplo.com'")["id"]
 
 
 def test_limites_de_segundos_por_chamada(student):
@@ -27,10 +27,10 @@ def test_teto_por_visita(student, db):
     assert student.call("POST", "/api/track", {"event": "beat", "visit": visit, "seconds": 30})[1]["seconds"] == 14400
 
 
-def test_visita_de_outro_aluno_e_recusada(make_browser):
+def test_visita_de_outro_aluno_e_recusada(make_browser, admin):
     a, b = make_browser(), make_browser()
-    a.login("ana@exemplo.com")
-    b.login("bia@exemplo.com")
+    a.register("ana@exemplo.com", "Ana")
+    b.register("bia@exemplo.com", "Bia")
     visit = a.call("POST", "/api/track", OPEN)[1]["visit"]
     status, err = b.call("POST", "/api/track", {"event": "beat", "visit": visit, "seconds": 10})
     assert status == 404 and err["error"] == "visit_not_found"
@@ -46,9 +46,9 @@ def test_eventos_e_campos_invalidos(student):
     assert student.call("POST", "/api/track", {**OPEN, "trail": "nada"})[0] == 404
 
 
-def test_sendbeacon_com_content_type_de_texto(student):
-    """navigator.sendBeacon costuma enviar text/plain; o corpo continua sendo JSON."""
+def test_sendbeacon_leva_o_csrf_no_corpo(student):
+    """navigator.sendBeacon não envia cabeçalhos: o token vai no corpo JSON."""
     visit = student.call("POST", "/api/track", OPEN)[1]["visit"]
-    status, body = student.call("POST", "/api/track", '{"event":"leave","visit":%d,"seconds":4}' % visit,
-                                headers={"Content-Type": "text/plain;charset=UTF-8"})
+    payload = '{"event":"leave","visit":%d,"seconds":4,"csrf":"%s"}' % (visit, student.csrf)
+    status, body = student.call("POST", "/api/track", payload, csrf=False)
     assert status == 200 and body["seconds"] == 4

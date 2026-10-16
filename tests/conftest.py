@@ -5,15 +5,21 @@ from http.cookies import SimpleCookie
 
 import pytest
 
+from k_study import security
 from k_study.db import Database
 from k_study.server import make_server
+
+PASSWORD = "senha-segura-1"
 
 
 @pytest.fixture(autouse=True)
 def clean_env(monkeypatch):
-    """Nunca usar o conteúdo, o banco ou a senha reais da máquina."""
-    for name in ("K_STUDY_CONTENT", "K_STUDY_DB", "K_STUDY_ADMIN_PASSWORD"):
+    """Nunca usar o conteúdo, o banco ou o segredo reais da máquina; scrypt barato só nos testes."""
+    for name in ("K_STUDY_CONTENT", "K_STUDY_DB", "K_STUDY_ENV", "K_STUDY_SECRET", "K_STUDY_HTTPS",
+                 "K_STUDY_SPECS_ROOT", "K_STUDY_ALLOWED_HOSTS", "K_STUDY_HOST", "GOOGLE_CLIENT_ID",
+                 "GOOGLE_CLIENT_SECRET"):
         monkeypatch.delenv(name, raising=False)
+    monkeypatch.setattr(security, "SCRYPT_N", 2 ** 10)
 
 
 def write_json(path, doc):
@@ -68,12 +74,16 @@ def db(tmp_path):
 
 
 class Browser:
-    """Cliente HTTP com cookie próprio (um 'navegador')."""
+    """Cliente HTTP com cookies próprios (um 'navegador') que guarda e envia o token CSRF."""
 
     def __init__(self, port):
-        self.port, self.cookie = port, None
+        self.port, self.cookies, self.csrf = port, {}, None
 
-    def raw(self, method, path, body=None, headers=None, host=None):
+    @property
+    def cookie(self):
+        return "; ".join(f"{k}={v}" for k, v in self.cookies.items()) or None
+
+    def raw(self, method, path, body=None, headers=None, host=None, csrf=True):
         conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=10)
         payload = body if isinstance(body, (bytes, str)) else (json.dumps(body) if body is not None else None)
         send = {"Content-Type": "application/json", **(headers or {})}
@@ -81,14 +91,19 @@ class Browser:
             send["Host"] = host
         if self.cookie:
             send["Cookie"] = self.cookie
+        if csrf and method not in ("GET", "HEAD") and self.csrf and "X-CSRF-Token" not in send:
+            send["X-CSRF-Token"] = self.csrf
         conn.request(method, path, payload, send)
         response = conn.getresponse()
         data = response.read()
         for key, value in response.getheaders():
             if key.lower() == "set-cookie":
                 jar = SimpleCookie(value)
-                if "kstudy_sid" in jar:
-                    self.cookie = f"kstudy_sid={jar['kstudy_sid'].value}" if jar["kstudy_sid"].value else None
+                for name, morsel in jar.items():
+                    if morsel.value:
+                        self.cookies[name] = morsel.value
+                    else:
+                        self.cookies.pop(name, None)
         out = response.status, data, dict(response.getheaders())
         conn.close()
         return out
@@ -100,8 +115,26 @@ class Browser:
             return status, json.loads(data)
         return status, data
 
-    def login(self, email):
-        return self.call("POST", "/api/login", {"email": email})
+    def me(self):
+        """GET /api/auth/me e guarda o token CSRF devolvido."""
+        status, body = self.call("GET", "/api/auth/me")
+        self.csrf = body["csrfToken"]
+        return body
+
+    def register(self, email="ana@exemplo.com", name="Ana", password=PASSWORD):
+        self.me()
+        status, body = self.call("POST", "/api/auth/register", {
+            "email": email, "name": name, "password": password, "passwordConfirm": password})
+        if status == 200:
+            self.csrf = body["csrfToken"]
+        return status, body
+
+    def login(self, email="ana@exemplo.com", password=PASSWORD):
+        self.me()
+        status, body = self.call("POST", "/api/auth/login", {"email": email, "password": password})
+        if status == 200:
+            self.csrf = body["csrfToken"]
+        return status, body
 
 
 def start(server):
@@ -130,7 +163,16 @@ def make_browser(server):
 
 
 @pytest.fixture()
-def student(browser):
-    """Um navegador já logado como ana@exemplo.com."""
-    browser.login("ana@exemplo.com")
-    return browser
+def admin(make_browser):
+    """O primeiro cadastro: administrador (admin@exemplo.com)."""
+    b = make_browser()
+    assert b.register("admin@exemplo.com", "Admin")[1]["isFirstAdmin"] is True
+    return b
+
+
+@pytest.fixture()
+def student(make_browser, admin):
+    """Um navegador logado como ana@exemplo.com (aluna comum; o admin já existe)."""
+    b = make_browser()
+    assert b.register("ana@exemplo.com", "Ana")[0] == 200
+    return b

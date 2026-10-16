@@ -6,6 +6,7 @@ Reindexa uma trilha quando muda a assinatura (soma dos mtimes do trail.json e do
 Mudanças só no texto de uma leitura (.md) não alteram a assinatura: use `kstudy sync --force` para recalcular minutos.
 """
 import json
+import os
 import re
 import threading
 from pathlib import Path
@@ -14,6 +15,9 @@ from .db import Database, now
 
 SLUG = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 WORDS_PER_MINUTE = 180
+ITEM_EXTENSIONS = {".json", ".md", ".pdf"}                 # arquivos de aula servíveis
+IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
+COVER_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
 _lock = threading.Lock()
 
 
@@ -61,16 +65,47 @@ def estimate_minutes(item: dict, block_dir: Path) -> float | None:
     return None
 
 
+def safe_relative(folder: Path, base: Path, relative, extensions: set) -> str | None:
+    """Caminho (relativo à pasta da trilha, com `/`) de `relative` resolvido a partir de `base`.
+    None se sair da pasta da trilha, não for arquivo ou tiver extensão fora da lista permitida."""
+    if not isinstance(relative, str) or not relative or "\x00" in relative or "\\" in relative:
+        return None
+    try:
+        root = folder.resolve()
+        target = (base / relative).resolve()
+    except (OSError, ValueError):
+        return None
+    if root not in target.parents or not target.is_file() or target.suffix.lower() not in extensions:
+        return None
+    return target.relative_to(root).as_posix()
+
+
+def _asset(conn, slug: str, folder: Path, relative: str, kind: str) -> None:
+    conn.execute("INSERT OR REPLACE INTO assets(trail, path, kind, size) VALUES(?,?,?,?)",
+                 (slug, relative, kind, (folder / relative).stat().st_size))
+
+
 def _index_trail(conn, folder: Path, manifest: dict, mtime: float) -> None:
     slug = folder.name
-    conn.execute("INSERT INTO trails(slug, title, description, language, level, tags, manifest_mtime, synced_at) "
-                 "VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(slug) DO UPDATE SET title=excluded.title, "
+    cover = safe_relative(folder, folder, manifest.get("cover"), COVER_EXTENSIONS)
+    conn.execute("INSERT INTO trails(slug, title, description, language, level, tags, cover, manifest_mtime, synced_at) "
+                 "VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT(slug) DO UPDATE SET title=excluded.title, "
                  "description=excluded.description, language=excluded.language, level=excluded.level, "
-                 "tags=excluded.tags, manifest_mtime=excluded.manifest_mtime, synced_at=excluded.synced_at",
+                 "tags=excluded.tags, cover=excluded.cover, manifest_mtime=excluded.manifest_mtime, "
+                 "synced_at=excluded.synced_at",         # `active` não é tocado: a decisão do admin sobrevive
                  (slug, manifest.get("title") or slug, manifest.get("description") or "", manifest.get("language"),
-                  manifest.get("level"), json.dumps(manifest.get("tags") or [], ensure_ascii=False), mtime, now()))
+                  manifest.get("level"), json.dumps(manifest.get("tags") or [], ensure_ascii=False), cover, mtime, now()))
     conn.execute("DELETE FROM blocks WHERE trail=?", (slug,))
     conn.execute("DELETE FROM items WHERE trail=?", (slug,))
+    conn.execute("DELETE FROM assets WHERE trail=?", (slug,))
+    if cover:
+        _asset(conn, slug, folder, cover, "cover")
+    figures = folder / "figures"
+    if figures.is_dir():
+        for image in sorted(figures.iterdir()):
+            relative = safe_relative(folder, folder, f"figures/{image.name}", IMAGE_EXTENSIONS)
+            if relative and re.match(r"^[A-Za-z0-9._-]+$", image.name):
+                _asset(conn, slug, folder, relative, "figure")
     for position, entry in enumerate(manifest.get("blocks") or []):
         if not isinstance(entry, dict) or not entry.get("id"):
             continue
@@ -82,15 +117,24 @@ def _index_trail(conn, folder: Path, manifest: dict, mtime: float) -> None:
         conn.execute("INSERT OR REPLACE INTO blocks(trail, block_id, title, position, file) VALUES(?,?,?,?,?)",
                      (slug, entry["id"], entry.get("title") or block.get("title") or entry["id"], position,
                       entry.get("file")))
+        block_file = safe_relative(folder, folder, entry.get("file"), {".json"})
+        if block_file:
+            _asset(conn, slug, folder, block_file, "block")
         order = 0
         for section in block.get("sections") or []:
             for item in section.get("items") or []:
                 if not isinstance(item, dict) or not item.get("id") or not item.get("type"):
                     continue
+                item_file = safe_relative(folder, block_path.parent, item.get("path"), ITEM_EXTENSIONS)
+                transcript = safe_relative(folder, block_path.parent, item.get("transcript"), {".json"})
+                if item_file:
+                    _asset(conn, slug, folder, item_file, "item")
+                if transcript:
+                    _asset(conn, slug, folder, transcript, "transcript")
                 conn.execute("INSERT OR REPLACE INTO items(trail, block_id, item_id, section, position, type, title, "
-                             "path, optional, minutes) VALUES(?,?,?,?,?,?,?,?,?,?)",
+                             "path, transcript, optional, minutes) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
                              (slug, entry["id"], item["id"], section.get("id"), order, item["type"],
-                              item.get("title") or item["id"], item.get("path"), 1 if item.get("optional") else 0,
+                              item.get("title") or item["id"], item_file, transcript, 1 if item.get("optional") else 0,
                               estimate_minutes(item, block_path.parent)))
                 order += 1
 
@@ -126,6 +170,7 @@ def sync(content_dir, db: Database, force: bool = False) -> dict:
                 with db.tx() as conn:
                     conn.execute("DELETE FROM items WHERE trail=?", (row["slug"],))
                     conn.execute("DELETE FROM blocks WHERE trail=?", (row["slug"],))
+                    conn.execute("DELETE FROM assets WHERE trail=?", (row["slug"],))
                     conn.execute("DELETE FROM trails WHERE slug=?", (row["slug"],))
                 result["removed"].append(row["slug"])
     return result

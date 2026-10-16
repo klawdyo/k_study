@@ -33,10 +33,10 @@ def test_anotacoes_e_texto_vazio_apaga(student):
     assert "block-1/r" not in state["notes"]
 
 
-def test_progresso_e_separado_por_aluno(make_browser):
+def test_progresso_e_separado_por_aluno(make_browser, admin):
     a, b = make_browser(), make_browser()
-    a.login("ana@exemplo.com")
-    b.login("bia@exemplo.com")
+    a.register("ana@exemplo.com", "Ana")
+    b.register("bia@exemplo.com", "Bia")
     a.call("PUT", f"{BASE}/items/block-1/r", {"done": True})
     a.call("PUT", f"{BASE}/answers/block-1/q/q01", {"chosen": ["a"], "correct": True})
     assert b.call("GET", BASE)[1] == {"items": {}, "answers": {}, "notes": {}}
@@ -54,11 +54,13 @@ def test_progresso_e_separado_por_trilha(student, content):
     assert trails["demo"]["done"] == 1 and trails["outra"]["done"] == 0
 
 
-def test_so_itens_obrigatorios_contam_em_done(student):
+def test_done_conta_toda_aula_e_required_done_so_as_obrigatorias(student):
     student.call("PUT", f"{BASE}/items/block-1/v", {"done": True})              # v é opcional
-    assert student.call("GET", "/api/trails")[1][0]["done"] == 0
+    t = student.call("GET", "/api/trails")[1][0]
+    assert t["done"] == 1 and t["requiredDone"] == 0 and t["items"] == 3
     student.call("PUT", f"{BASE}/items/block-1/r", {"done": True})
-    assert student.call("GET", "/api/trails")[1][0]["done"] == 1
+    t = student.call("GET", "/api/trails")[1][0]
+    assert t["done"] == 2 and t["requiredDone"] == 1
 
 
 def test_item_ou_trilha_inexistente_e_ids_invalidos(student):

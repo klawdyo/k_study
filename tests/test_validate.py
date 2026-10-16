@@ -133,3 +133,17 @@ def test_json_de_questoes_quebrado_nao_derruba_o_validador(trail_dir):
 def test_lista_de_trilhas(content):
     assert trail_slugs(content) == ["demo"]
     assert trail_slugs(content / "nao-existe") == []
+
+
+def test_capa_do_manifesto(trail_dir):
+    def set_cover(value):
+        edit(trail_dir / "trail.json", lambda d: d.update(cover=value))
+        return validate(trail_dir)[1]
+
+    (trail_dir / "capa.png").write_bytes(b"x")
+    assert set_cover("capa.png") == []
+    assert any("capa não encontrada" in p for p in set_cover("nao-existe.png"))
+    assert any("png, jpg ou webp" in p for p in set_cover("block-1/read.md"))
+    assert any("dentro da pasta" in p for p in set_cover("../fora.png"))
+    (trail_dir / "grande.webp").write_bytes(b"x" * 1_000_001)
+    assert any("1 MB" in p for p in set_cover("grande.webp"))

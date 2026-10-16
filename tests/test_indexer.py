@@ -15,7 +15,7 @@ def test_sync_indexa_trilhas_blocos_e_itens(content, db):
         ("block-1", "B", 0, "block-1/block.json")]
     items = {r["item_id"]: r for r in db.query("SELECT * FROM items ORDER BY position")}
     assert list(items) == ["r", "v", "q"] and [i["position"] for i in items.values()] == [0, 1, 2]
-    assert items["r"]["type"] == "markdown" and items["r"]["section"] == "s" and items["r"]["path"] == "read.md"
+    assert items["r"]["type"] == "markdown" and items["r"]["section"] == "s" and items["r"]["path"] == "block-1/read.md"
     assert items["v"]["optional"] == 1 and items["r"]["optional"] == 0
     assert items["v"]["minutes"] == 1.5                      # um trecho de 90 s
     assert items["r"]["minutes"] == 2                        # ~362 palavras / 180
@@ -57,7 +57,7 @@ def test_sync_e_barato_e_reindexa_quando_o_manifesto_muda(content, db):
 def test_trilha_removida_sai_do_indice_mas_progresso_fica(content, db):
     make_trail(content, "outra", "Outra")
     sync(content, db)
-    student, _ = db.get_or_create_student("ana@exemplo.com")
+    student, _ = db.create_student("ana@exemplo.com", "Ana", "x")
     db.set_done(student["id"], "outra", "block-1", "r", True)
     db.set_answer(student["id"], "outra", "block-1", "q", "q01", ["a"], True)
     db.set_note(student["id"], "outra", "block-1", "r", "nota")
@@ -100,9 +100,42 @@ def test_pasta_de_conteudo_inexistente(tmp_path, db):
     assert sync(tmp_path / "nao-existe", db) == {"indexed": [], "removed": [], "skipped": {}}
 
 
-def test_servidor_enxerga_trilha_nova_sem_reiniciar(browser, content):
+def test_servidor_enxerga_trilha_nova_sem_reiniciar(student, content):
+    browser = student
     assert len(browser.call("GET", "/api/trails")[1]) == 1
     make_trail(content, "nova", "Nova")
     assert [t["slug"] for t in browser.call("GET", "/api/trails")[1]] == ["demo", "nova"]
     shutil.rmtree(content / "nova")
     assert [t["slug"] for t in browser.call("GET", "/api/trails")[1]] == ["demo"]
+
+
+def test_assets_capa_transcricao_e_figuras(content, db):
+    from conftest import write_json
+    folder = content / "demo"
+    (folder / "figures").mkdir()
+    (folder / "figures" / "a.png").write_bytes(b"png")
+    (folder / "figures" / "mau.svg").write_text("<svg/>", encoding="utf-8")
+    (folder / "capa.webp").write_bytes(b"webp")
+    manifest = json.loads((folder / "trail.json").read_text(encoding="utf-8"))
+    manifest["cover"] = "capa.webp"
+    write_json(folder / "trail.json", manifest)
+    sync(content, db)
+    assets = {r["path"]: r["kind"] for r in db.query("SELECT path, kind FROM assets WHERE trail='demo'")}
+    assert assets == {"capa.webp": "cover", "figures/a.png": "figure", "block-1/block.json": "block",
+                      "block-1/read.md": "item", "block-1/q.json": "item",
+                      "transcripts/aaaaaaaaaaa.json": "transcript"}
+    assert db.one("SELECT cover FROM trails")["cover"] == "capa.webp"
+    assert db.one("SELECT transcript FROM items WHERE item_id='v'")["transcript"] == "transcripts/aaaaaaaaaaa.json"
+    assert db.list_trails()[0]["cover"] == "/api/trails/demo/cover"
+
+
+def test_capa_invalida_e_ignorada(content, db):
+    from conftest import write_json
+    folder = content / "demo"
+    (content / "fora.png").write_bytes(b"x")
+    manifest = json.loads((folder / "trail.json").read_text(encoding="utf-8"))
+    manifest["cover"] = "../fora.png"
+    write_json(folder / "trail.json", manifest)
+    sync(content, db)
+    assert db.one("SELECT cover FROM trails")["cover"] is None
+    assert db.one("SELECT COUNT(*) AS n FROM assets WHERE kind='cover'")["n"] == 0

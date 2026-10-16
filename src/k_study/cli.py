@@ -1,15 +1,19 @@
 """Linha de comando do k_study:  kstudy <comando>   (ou  py main.py <comando>;  sem comando = serve)
 
-  serve            sobe o servidor dos alunos (porta 8765)
-  admin            sobe o painel do admin (porta 8766, só em 127.0.0.1 por padrão)
+  serve            sobe o servidor (alunos em /, administração em /admin/; porta 8765)
   validate [slug]  valida a estrutura de uma trilha (ou de todas); erros reprovam, heurísticas só avisam
   sync             reindexa content/ no banco
   trails           lista as trilhas e seus números
   new-trail SLUG   cria content/<slug>/ com trail.json e a estrutura mínima
-  import-progress  importa um progress.json antigo para um aluno
+  pack SLUG        valida e gera o pacote zip importável de uma trilha
+  import-trail ZIP importa um pacote zip de trilha (mesma rotina do upload do admin)
+  set-admin EMAIL  torna uma conta existente administradora (recuperação)
+  reset-password EMAIL  define uma nova senha (pedida no terminal, sem eco)
+  import-progress  importa um progress.json antigo para uma conta existente
 
 Códigos de saída: 0 ok, 1 problemas de validação, 2 erro de uso ou de ambiente.
 Pasta de conteúdo: --content-dir ou K_STUDY_CONTENT (padrão ./content). Banco: --db ou K_STUDY_DB (padrão ./data/k_study.db).
+Segredos: --env ou K_STUDY_ENV (padrão ./.env).
 """
 import argparse
 import json
@@ -38,7 +42,8 @@ _PTBR = {
 argparse._ = lambda text: _PTBR.get(text, text)
 
 SLUG = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
-COMMANDS = ("serve", "admin", "validate", "sync", "trails", "new-trail", "import-progress")
+COMMANDS = ("serve", "validate", "sync", "trails", "new-trail", "pack", "import-trail", "set-admin",
+            "reset-password", "import-progress")
 
 
 class UsageError(Exception):
@@ -62,10 +67,15 @@ def db_path_of(args) -> Path:
     return default_db_path(args.db)
 
 
+def env_path_of(args) -> Path:
+    return Path(getattr(args, "env", None) or os.environ.get("K_STUDY_ENV") or ".env")
+
+
 def build_parser() -> argparse.ArgumentParser:
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--content-dir", metavar="PASTA", help="pasta com as trilhas (padrão: $K_STUDY_CONTENT ou ./content)")
     common.add_argument("--db", metavar="ARQUIVO", help="arquivo do banco SQLite (padrão: $K_STUDY_DB ou ./data/k_study.db)")
+    common.add_argument("--env", metavar="ARQUIVO", help="arquivo .env com o segredo (padrão: $K_STUDY_ENV ou ./.env)")
 
     ap = argparse.ArgumentParser(prog="kstudy", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter,
                                  add_help=False)
@@ -80,13 +90,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     s = add("serve", "sobe o servidor dos alunos")
     s.add_argument("--port", type=int, default=8765, help="porta (padrão 8765)")
+    s.add_argument("--host", metavar="ENDEREÇO", default=None,
+                   help="endereço em que escuta (padrão: 127.0.0.1, ou $K_STUDY_HOST); em Docker use 0.0.0.0")
     s.add_argument("--lan", action="store_true",
-                   help="aceita também outros computadores da sua rede privada (sem senha; o firewall pode pedir permissão)")
-
-    s = add("admin", "sobe o painel do admin (estatísticas)")
-    s.add_argument("--port", type=int, default=8766, help="porta (padrão 8766)")
-    s.add_argument("--lan", action="store_true", help="escuta na rede local (exige --password)")
-    s.add_argument("--password", help="senha do painel (ou a variável K_STUDY_ADMIN_PASSWORD); obrigatória com --lan")
+                   help="aceita também outros computadores da sua rede privada (o firewall pode pedir permissão)")
 
     s = add("validate", "valida uma trilha (ou todas)")
     s.add_argument("slug", nargs="?", help="trilha a validar (padrão: todas)")
@@ -101,9 +108,23 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--title", required=True, help="título da trilha")
     s.add_argument("--description", default="", help="descrição curta")
 
-    s = add("import-progress", "importa um progress.json antigo para um aluno")
+    s = add("pack", "valida e gera o pacote zip importável de uma trilha")
+    s.add_argument("slug", help="trilha a empacotar")
+    s.add_argument("--out", metavar="ARQUIVO", help="arquivo de saída (padrão: <slug>.zip na pasta atual)")
+
+    s = add("import-trail", "importa um pacote zip de trilha")
+    s.add_argument("file", metavar="ARQUIVO.zip", help="pacote da trilha")
+    s.add_argument("--replace", action="store_true", help="troca a trilha se o slug já existir (o progresso é mantido)")
+
+    s = add("set-admin", "torna uma conta existente administradora")
+    s.add_argument("email", help="e-mail da conta")
+
+    s = add("reset-password", "define uma nova senha para uma conta existente")
+    s.add_argument("email", help="e-mail da conta")
+
+    s = add("import-progress", "importa um progress.json antigo para uma conta existente")
     s.add_argument("file", metavar="ARQUIVO.json", help="progress.json antigo (não é alterado)")
-    s.add_argument("--email", required=True, help="e-mail do aluno (criado se não existir)")
+    s.add_argument("--email", required=True, help="e-mail da conta (ela precisa existir)")
     s.add_argument("--trail", required=True, metavar="SLUG", help="trilha que recebe o progresso")
     return ap
 
@@ -112,24 +133,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 def cmd_serve(args) -> int:
     from .server import serve
-    serve(content_dir_of(args), db_path_of(args), args.port, args.lan)
-    return 0
-
-
-def cmd_admin(args) -> int:
-    password = args.password or os.environ.get("K_STUDY_ADMIN_PASSWORD") or None
-    if args.lan and not password:
-        raise UsageError("com --lan o painel exige uma senha: use --password ou K_STUDY_ADMIN_PASSWORD.")
-    try:
-        from .admin.server import run
-    except ModuleNotFoundError as exc:
-        if (exc.name or "").startswith("k_study.admin"):
-            raise UsageError("o painel do admin (k_study.admin.server) ainda não está instalado neste projeto.")
-        raise
-    db = db_path_of(args)
-    if not db.exists():
-        print(f"aviso: o banco {db} ainda não existe; ele é criado ao subir `kstudy serve`.", file=sys.stderr)
-    run(db, args.port, args.lan, password)
+    serve(content_dir_of(args), db_path_of(args), args.port, args.lan, env_path_of(args),
+          args.host or os.environ.get("K_STUDY_HOST") or "127.0.0.1")
     return 0
 
 
@@ -210,6 +215,91 @@ def cmd_new_trail(args) -> int:
     return 0
 
 
+def _packages():
+    try:
+        from . import packages
+    except ImportError:
+        raise UsageError("o módulo de pacotes (k_study.packages) ainda não está instalado neste projeto.")
+    return packages
+
+
+def cmd_pack(args) -> int:
+    packages = _packages()
+    out = Path(args.out) if args.out else Path(f"{args.slug}.zip")
+    try:
+        warnings = packages.pack_trail(content_dir_of(args), args.slug, out)
+    except packages.PackageError as exc:
+        print("PROBLEMAS:", file=sys.stderr)
+        for problem in exc.problems:
+            print(" -", problem, file=sys.stderr)
+        return 1
+    for warning in warnings:
+        print(" ~", warning)
+    print(f"Pacote gerado: {out.resolve()}")
+    return 0
+
+
+def cmd_import_trail(args) -> int:
+    from .db import Database
+    from .indexer import sync
+    packages = _packages()
+    source = Path(args.file)
+    try:
+        data = source.read_bytes()
+    except OSError as exc:
+        raise UsageError(f"não consegui ler {source}: {exc.strerror or exc}")
+    try:
+        result = packages.import_trail_zip(content_dir_of(args), data, replace=args.replace)
+    except packages.PackageError as exc:
+        print("O pacote foi recusado:", file=sys.stderr)
+        for problem in exc.problems:
+            print(" -", problem, file=sys.stderr)
+        return 1
+    sync(content_dir_of(args), Database(db_path_of(args)), force=True)
+    for warning in result.get("warnings", []):
+        print(" ~", warning)
+    print(f"Trilha {result['slug']} {'substituída' if result.get('replaced') else 'importada'}.")
+    return 0
+
+
+def _existing_student(args):
+    from .db import Database, normalize_email
+    email = normalize_email(args.email)
+    if email is None:
+        raise UsageError(f"e-mail inválido: {args.email!r}")
+    db = Database(db_path_of(args))
+    row = db.find_student(email)
+    if row is None:
+        raise UsageError(f"não existe conta com o e-mail {email}. A pessoa precisa se cadastrar na interface primeiro.")
+    return db, row
+
+
+def cmd_set_admin(args) -> int:
+    db, row = _existing_student(args)
+    db.set_admin(row["id"], True)
+    db.audit(row["id"], "set_admin", "pela linha de comando")
+    print(f"{row['email']} agora é administradora.")
+    return 0
+
+
+def cmd_reset_password(args) -> int:
+    import getpass
+    from . import security
+    db, row = _existing_student(args)
+    secret = security.ensure_secret(env_path_of(args))
+    first = getpass.getpass("Nova senha: ")
+    problem = security.check_password_policy(first, row["email"])
+    if problem:
+        raise UsageError(problem)
+    if getpass.getpass("Repita a nova senha: ") != first:
+        raise UsageError("a confirmação não confere; nada foi alterado.")
+    db.set_credentials(row["id"], None, security.hash_password(first, secret))
+    db.run("DELETE FROM sessions WHERE student_id=?", (row["id"],))
+    db.audit(row["id"], "reset_password", "pela linha de comando")
+    print(f"Senha de {row['email']} redefinida; as sessões abertas foram encerradas.")
+    return 0
+
+
 def cmd_import_progress(args) -> int:
     from .db import Database, normalize_email
     from .indexer import sync
@@ -229,12 +319,15 @@ def cmd_import_progress(args) -> int:
     sync(content_dir_of(args), db)
     if not db.trail_exists(args.trail):
         raise UsageError(f"trilha não encontrada: {args.trail}")
-    student, created = db.get_or_create_student(email)
+    row = db.find_student(email)
+    if row is None:
+        raise UsageError(f"não existe conta com o e-mail {email}. Cadastre-se na interface e rode o comando de novo.")
+    student, created = {"id": row["id"], "email": row["email"]}, False
     counts = db.import_state(student["id"], args.trail, state)
     known = {(r["block_id"], r["item_id"]) for r in db.query("SELECT block_id, item_id FROM items WHERE trail=?", (args.trail,))}
     keys = set(state.get("items") or {}) | set(state.get("answers") or {}) | set(state.get("notes") or {})
     unknown = sorted(k for k in keys if tuple(k.split("/", 1)) not in known)
-    print(f"Aluno {email} ({'criado' if created else 'já existia'}). Importados: {counts['items']} itens, "
+    print(f"Conta {email}. Importados: {counts['items']} itens, "
           f"{counts['answers']} respostas, {counts['notes']} anotações; ignorados por formato inválido: {counts['skipped']}.")
     if unknown:
         print(f"aviso: {len(unknown)} chave(s) não existem hoje na trilha (ficam guardadas): {', '.join(unknown[:5])}"
@@ -242,8 +335,9 @@ def cmd_import_progress(args) -> int:
     return 0
 
 
-HANDLERS = {"serve": cmd_serve, "admin": cmd_admin, "validate": cmd_validate, "sync": cmd_sync, "trails": cmd_trails,
-            "new-trail": cmd_new_trail, "import-progress": cmd_import_progress}
+HANDLERS = {"serve": cmd_serve, "validate": cmd_validate, "sync": cmd_sync, "trails": cmd_trails,
+            "new-trail": cmd_new_trail, "pack": cmd_pack, "import-trail": cmd_import_trail, "set-admin": cmd_set_admin,
+            "reset-password": cmd_reset_password, "import-progress": cmd_import_progress}
 
 
 def main(argv=None) -> int:
