@@ -1,183 +1,137 @@
-"""HTTP API + static web UI. Standard library only.
+"""Servidor dos alunos: API JSON + arquivos estáticos da interface (src/k_study/web/). Apenas biblioteca padrão.
 
-Single source of truth:
-  * CONTENT  = files inside the data folder, read only through this API.
-  * PROGRESS = one JSON file (<data>/progress.json), changed only through this API.
-The web UI keeps no state of its own.
+Rotas (contrato em docs/arquitetura.md, seção 6). Erros: {"error": "<codigo>", "message": "<texto em português>"}.
+  GET    /api/me                                                    {student: {email} | null}
+  POST   /api/login          {email}                                {student, created} + Set-Cookie kstudy_sid
+  POST   /api/logout                                                {ok: true}
+  GET    /api/trails                                                lista de trilhas (+ progresso do aluno logado)
+  GET    /api/trails/<slug>                                         o trail.json
+  GET    /api/trails/<slug>/files/<caminho>                         qualquer arquivo dentro da pasta da trilha
+  GET    /api/trails/<slug>/progress                                {items, answers, notes} do aluno
+  PUT    /api/trails/<slug>/progress/items/<bloco>/<item>           {done}
+  PUT    /api/trails/<slug>/progress/answers/<bloco>/<item>/<q>     {chosen, correct}
+  DELETE /api/trails/<slug>/progress/answers/<bloco>/<item>/<q>
+  PUT    /api/trails/<slug>/progress/notes/<bloco>/<item>           {text}   (vazio apaga)
+  POST   /api/track          {event: open|beat|leave, ...}          rastreio de tempo
+Toda escrita de progresso devolve o estado completo atualizado da trilha.
 
-Routes
-  GET    /api/setup                                           {configured, dataDir, source, home, sep}
-  POST   /api/setup/pick                                      opens the OS file dialog; returns the folder of the chosen config.json
-  PUT    /api/setup                                           {"path": "..."}  choose and save the data folder
-  GET    /api/config                                          <data>/config.json            (409 until configured)
-  GET    /api/content/<path>                                  any file inside the data folder
-  GET    /api/progress                                        full state {items, answers, notes}
-  PUT    /api/progress/items/<block>/<item>                   {"done": true|false}
-  PUT    /api/progress/answers/<block>/<item>/<question>      {"chosen": ["a"], "correct": true}
-  DELETE /api/progress/answers/<block>/<item>/<question>      removes the answer
-  PUT    /api/progress/notes/<block>/<item>                   {"text": "..."}
-Every progress write saves the file atomically and returns the full updated state.
-Localhost only, single user, no authentication. The app never lists the disk: the user picks config.json in the
-operating system's own dialog or pastes the path. Requests whose Host header is not localhost are refused (DNS rebinding).
-
-Optional LAN mode (`study serve --lan`): listens on all interfaces so another computer on the same private network can
-use the app. Still no authentication, so it only accepts clients from private/loopback addresses, and only a request
-from this very computer may change the data folder. Host headers that are IP literals (or this computer's name) are
-accepted; any other name is refused.
+Segurança: confere o cabeçalho Host (proteção contra DNS rebinding) e, quando há Origin, que seja o mesmo host;
+com --lan só aceita clientes de redes privadas e escuta em todas as interfaces; protege contra caminho fora da pasta.
 """
 import ipaddress
 import json
 import mimetypes
-import os
+import re
+import secrets
 import socket
-import tempfile
-import threading
-from datetime import datetime, timezone
 from functools import partial
+from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
-from . import paths, picker, settings
-from .paths import progress_file
+from . import indexer
+from .db import Database, normalize_email
 
 WEB = Path(__file__).parent / "web"
+COOKIE = "kstudy_sid"
+COOKIE_MAX_AGE = 31536000
+SLUG = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+ID = re.compile(r"^[\w.\-]{1,100}$")
+MAX_BODY = 1_000_000
+MAX_NOTE = 50_000
 
 mimetypes.add_type("text/markdown; charset=utf-8", ".md")
 mimetypes.add_type("application/json; charset=utf-8", ".json")
 mimetypes.add_type("text/javascript; charset=utf-8", ".js")
 
 
-def now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
-
-
-def empty_state() -> dict:
-    return {"items": {}, "answers": {}, "notes": {}}
-
-
-class Store:
-    """Reads and writes the progress file. One lock: the app has a single user."""
-
-    def __init__(self, path: Path):
-        self.path = path
-        self.lock = threading.Lock()
-
-    def read(self) -> dict:
-        state = empty_state()
-        if self.path.exists():
-            try:
-                saved = json.loads(self.path.read_text(encoding="utf-8"))
-            except ValueError:
-                saved = {}
-            state.update({k: v for k, v in saved.items() if k in state})
-        return state
-
-    def write(self, state: dict) -> None:
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        fd, tmp = tempfile.mkstemp(dir=self.path.parent, suffix=".tmp")   # atomic: never a half-written file
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(state, f, ensure_ascii=False, indent=2)
-        os.replace(tmp, self.path)
-
-    def mutate(self, kind: str, method: str, parts: list[str], body: dict):
-        """Applies one change. Returns the new state, or None if the route is unknown."""
-        with self.lock:
-            state = self.read()
-            if kind == "items" and method == "PUT" and len(parts) == 2:
-                state["items"]["/".join(parts)] = {"done": bool(body.get("done")), "at": now()}
-            elif kind == "notes" and method == "PUT" and len(parts) == 2:
-                text, key = str(body.get("text", "")), "/".join(parts)
-                if text.strip():
-                    state["notes"][key] = text
-                else:
-                    state["notes"].pop(key, None)
-            elif kind == "answers" and len(parts) == 3:
-                key = "/".join(parts[:2])
-                if method == "PUT":
-                    state["answers"].setdefault(key, {})[parts[2]] = {
-                        "chosen": list(body.get("chosen", [])), "correct": bool(body.get("correct")), "at": now()}
-                elif method == "DELETE":
-                    state["answers"].get(key, {}).pop(parts[2], None)
-                else:
-                    return None
-            else:
-                return None
-            self.write(state)
-            return state
-
-
-class Context:
-    """The data folder in use (None until configured) and its progress store."""
-
-    def __init__(self, data: Path | None, source: str, lan: bool = False):
-        self.data, self.source, self.store, self.lan = None, "none", None, lan
-        self.lock = threading.Lock()
-        if data:
-            self.use(data, source)
-
-    def use(self, data: Path, source: str) -> None:
-        with self.lock:
-            self.data, self.source = data, source
-            self.store = Store(progress_file(data))
-
-
 def inside(root: Path, relative: str) -> Path | None:
-    """Resolves `relative` under `root`; None if it tries to escape the folder."""
-    root = root.resolve()
-    target = (root / relative).resolve()
+    """Resolve `relative` sob `root`; None se tentar sair da pasta."""
+    try:
+        root = root.resolve()
+        target = (root / relative).resolve()
+    except (OSError, ValueError):
+        return None
     return target if target == root or root in target.parents else None
 
 
-class Handler(BaseHTTPRequestHandler):
-    server_version = "StudyApp/0.3"
+class App:
+    """Estado compartilhado pelas requisições."""
 
-    def __init__(self, ctx: Context, *args, **kwargs):
-        self.ctx = ctx
+    def __init__(self, content_dir: Path, db: Database, lan: bool = False):
+        self.content_dir, self.db, self.lan = Path(content_dir), db, lan
+
+
+class Handler(BaseHTTPRequestHandler):
+    server_version = "KStudy/0.3"
+
+    def __init__(self, app: App, *args, **kwargs):
+        self.app = app
         super().__init__(*args, **kwargs)
 
-    # ---- responses ----
-    def _send(self, status: int, body: bytes, content_type: str):
+    def handle(self):
+        try:
+            super().handle()
+        except (ConnectionError, TimeoutError):      # o navegador fechou a aba no meio da resposta
+            pass
+
+    # ---- respostas ----
+    def _send(self, status: int, body: bytes, content_type: str, headers: dict | None = None):
         self.send_response(status)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
+        for key, value in (headers or {}).items():
+            self.send_header(key, value)
         self.end_headers()
         if self.command != "HEAD":
             self.wfile.write(body)
 
-    def _json(self, status: int, obj):
-        self._send(status, json.dumps(obj, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
+    def _json(self, status: int, obj, headers: dict | None = None):
+        self._send(status, json.dumps(obj, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8", headers)
+
+    def _error(self, status: int, code: str, message: str):
+        return self._json(status, {"error": code, "message": message})
 
     def _file(self, path: Path | None):
         if path is None or not path.is_file():
-            return self._json(404, {"error": "file not found"})
+            return self._error(404, "not_found", "Arquivo não encontrado.")
         self._send(200, path.read_bytes(), mimetypes.guess_type(str(path))[0] or "application/octet-stream")
 
-    def _body(self):
-        length = int(self.headers.get("Content-Length") or 0)
-        if not length:
+    def _read_raw(self) -> bytes | None:
+        """Lê o corpo da requisição (sempre, para o cliente conseguir receber qualquer resposta de erro).
+        None se for grande demais (a resposta 413 já foi enviada)."""
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            length = -1
+        if length < 0 or length > MAX_BODY:
+            remaining = min(max(length, 0), 20 * MAX_BODY)       # descarta o excesso para o cliente receber o 413
+            while remaining > 0:
+                chunk = self.rfile.read(min(65536, remaining))
+                if not chunk:
+                    break
+                remaining -= len(chunk)
+            self._error(413, "body_too_large", "Corpo da requisição grande demais.")
+            return None
+        return self.rfile.read(length) if length else b""
+
+    def _parse(self, raw: bytes):
+        """Corpo JSON como dict ({} se vazio); None se inválido (a resposta de erro já foi enviada)."""
+        if not raw:
             return {}
         try:
-            return json.loads(self.rfile.read(length).decode("utf-8"))
+            body = json.loads(raw.decode("utf-8"))
         except ValueError:
+            self._error(400, "invalid_json", "JSON inválido.")
             return None
+        if not isinstance(body, dict):
+            self._error(400, "invalid_json", "O corpo deve ser um objeto JSON.")
+            return None
+        return body
 
-    def _setup_info(self) -> dict:
-        return {"configured": self.ctx.data is not None, "dataDir": str(self.ctx.data) if self.ctx.data else None,
-                "source": self.ctx.source, "home": str(Path.home()), "sep": os.sep,
-                "savedDir": settings.saved_data_dir()}
-
-    def _host_ok(self) -> bool:
-        """Refuse requests addressed to any host other than localhost (DNS-rebinding protection)."""
-        host = (self.headers.get("Host") or "").rsplit(":", 1)[0].strip("[]").lower()
-        if host in ("localhost", "127.0.0.1", "::1"):
-            return True
-        if self.ctx.lan and self._client_ok() and (self._is_ip(host) or host in self._own_names()):
-            return True
-        self._json(403, {"error": "forbidden_host"})
-        return False
-
+    # ---- segurança ----
     @staticmethod
     def _is_ip(text: str) -> bool:
         try:
@@ -192,7 +146,7 @@ class Handler(BaseHTTPRequestHandler):
         return {name, name + ".local", name + ".lan"}
 
     def _client_ok(self) -> bool:
-        """LAN mode: only private or loopback clients (never the open internet)."""
+        """Modo --lan: só clientes de rede privada ou loopback (nunca a internet aberta)."""
         try:
             ip = ipaddress.ip_address(self.client_address[0].split("%")[0])
         except ValueError:
@@ -201,94 +155,238 @@ class Handler(BaseHTTPRequestHandler):
             ip = ip.ipv4_mapped
         return ip.is_private or ip.is_loopback or ip.is_link_local
 
-    def _from_this_computer(self) -> bool:
-        try:
-            return ipaddress.ip_address(self.client_address[0].split("%")[0]).is_loopback
-        except ValueError:
+    def _host_ok(self) -> bool:
+        """Recusa clientes de fora (com --lan) e cabeçalhos Host que não sejam deste computador."""
+        if self.app.lan and not self._client_ok():
+            self._error(403, "forbidden_client", "Só computadores da rede local podem acessar.")
             return False
+        raw = self.headers.get("Host") or ""
+        host = raw.strip("[]").lower() if raw.endswith("]") else raw.rsplit(":", 1)[0].strip("[]").lower()
+        if host in ("localhost", "127.0.0.1", "::1"):
+            return True
+        if self.app.lan and (self._is_ip(host) or host in self._own_names()):
+            return True
+        self._error(403, "forbidden_host", "Endereço de acesso não permitido.")
+        return False
 
-    def _need_data(self) -> bool:
-        if self.ctx.data is None:
-            self._json(409, {"error": "setup_required"})
+    def _origin_ok(self) -> bool:
+        origin = self.headers.get("Origin")
+        if origin and urlparse(origin).netloc.lower() != (self.headers.get("Host") or "").lower():
+            self._error(403, "forbidden_origin", "Origem da requisição não permitida.")
             return False
         return True
 
-    # ---- reads ----
+    # ---- identidade ----
+    def _token(self) -> str | None:
+        header = self.headers.get("Cookie")
+        if not header:
+            return None
+        try:
+            jar = SimpleCookie(header)
+        except Exception:
+            return None
+        morsel = jar.get(COOKIE)
+        return morsel.value if morsel else None
+
+    def _student(self, required: bool = True):
+        student = self.app.db.student_for_token(self._token())
+        if student is None and required:
+            self._error(401, "login_required", "Informe seu e-mail para continuar.")
+        return student
+
+    # ---- utilidades de trilha ----
+    def _sync(self):
+        indexer.sync(self.app.content_dir, self.app.db)
+
+    def _trail_dir(self, slug: str) -> Path | None:
+        if not SLUG.match(slug):
+            return None
+        folder = self.app.content_dir / slug
+        return folder if (folder / "trail.json").is_file() else None
+
+    def _need_trail(self, slug: str) -> bool:
+        if not SLUG.match(slug) or not self.app.db.trail_exists(slug):
+            self._sync()
+            if not SLUG.match(slug) or not self.app.db.trail_exists(slug):
+                self._error(404, "trail_not_found", "Trilha não encontrada.")
+                return False
+        return True
+
+    def _need_item(self, slug: str, block: str, item: str) -> bool:
+        """A trilha e o item precisam existir no índice (reindexa uma vez se faltar)."""
+        if not (ID.match(block) and ID.match(item)):
+            self._error(400, "invalid_id", "Identificador de bloco ou item inválido.")
+            return False
+        if not self._need_trail(slug):
+            return False
+        if not self.app.db.has_item(slug, block, item):
+            self._sync()
+            if not self.app.db.has_item(slug, block, item):
+                self._error(404, "item_not_found", "Item não encontrado nesta trilha.")
+                return False
+        return True
+
+    # ---- GET ----
     def do_GET(self):
         if not self._host_ok():
             return None
-        url = urlparse(self.path)
-        path = unquote(url.path)
-        if path == "/api/setup":
-            return self._json(200, self._setup_info())
-        if path == "/api/config":
-            return self._file(inside(self.ctx.data, "config.json")) if self._need_data() else None
-        if path.startswith("/api/content/"):
-            return self._file(inside(self.ctx.data, path[len("/api/content/"):])) if self._need_data() else None
-        if path == "/api/progress":
-            if not self._need_data():
-                return None
-            with self.ctx.store.lock:
-                return self._json(200, self.ctx.store.read())
+        path = unquote(urlparse(self.path).path)
+        if "\x00" in path:
+            return self._error(400, "invalid_path", "Caminho inválido.")
         if path.startswith("/api/"):
-            return self._json(404, {"error": "unknown route"})
+            return self._api_get(path.split("/")[2:])
         return self._file(inside(WEB, "index.html" if path in ("", "/") else path.lstrip("/")))
 
     do_HEAD = do_GET
 
-    # ---- writes ----
-    def _choose_folder(self, body: dict):
-        if self.ctx.source in ("flag", "env"):
-            return self._json(409, {"error": "locked", "message": "The data folder was fixed by --data-dir or STUDY_DATA_DIR."})
-        path = Path(str(body.get("path", ""))).expanduser().resolve()
-        if not paths.is_data_dir(path):
-            return self._json(400, {"error": "not_a_data_folder", "message": f"{path} has no config.json."})
-        settings.save_data_dir(path)
-        self.ctx.use(path, "saved")
-        return self._json(200, self._setup_info())
+    def _api_get(self, parts: list[str]):
+        db = self.app.db
+        if parts == ["me"]:
+            student = self._student(required=False)
+            return self._json(200, {"student": {"email": student["email"]} if student else None})
+        if parts == ["trails"]:
+            self._sync()
+            student = self._student(required=False)
+            return self._json(200, db.list_trails(student["id"] if student else None))
+        if len(parts) >= 2 and parts[0] == "trails":
+            slug, rest = parts[1], parts[2:]
+            folder = self._trail_dir(slug)
+            if folder is None:
+                self._sync()
+                return self._error(404, "trail_not_found", "Trilha não encontrada.")
+            if not rest:
+                return self._file(folder / "trail.json")
+            if rest[0] == "files" and len(rest) > 1:
+                return self._file(inside(folder, "/".join(rest[1:])))
+            if rest == ["progress"]:
+                student = self._student()
+                if student is None:
+                    return None
+                return self._json(200, db.progress_state(student["id"], slug))
+        return self._error(404, "not_found", "Rota desconhecida.")
 
-    def _mutate(self, method: str):
-        if not self._host_ok():
-            return None
-        parts = [p for p in unquote(urlparse(self.path).path).split("/") if p]
-        body = self._body()
-        if body is None:
-            return self._json(400, {"error": "invalid JSON"})
-        if parts[:2] == ["api", "setup"] and not self._from_this_computer():
-            return self._json(403, {"error": "local_only", "message": "The data folder can only be changed from the computer running the server."})
-        if parts == ["api", "setup"] and method == "PUT":
-            return self._choose_folder(body)
-        if parts == ["api", "setup", "pick"] and method == "POST":
-            if self.ctx.source in ("flag", "env"):
-                return self._json(409, {"error": "locked", "message": "The data folder was fixed by --data-dir or STUDY_DATA_DIR."})
-            return self._json(200, picker.pick_config_file(str(self.ctx.data.parent) if self.ctx.data else None))
-        if len(parts) < 4 or parts[:2] != ["api", "progress"]:
-            return self._json(404, {"error": "unknown route"})
-        if not self._need_data():
-            return None
-        state = self.ctx.store.mutate(parts[2], method, parts[3:], body)
-        return self._json(404, {"error": "unknown route"}) if state is None else self._json(200, state)
+    # ---- escritas ----
+    def do_POST(self):
+        self._write("POST")
 
     def do_PUT(self):
-        self._mutate("PUT")
+        self._write("PUT")
 
     def do_DELETE(self):
-        self._mutate("DELETE")
+        self._write("DELETE")
 
-    def do_POST(self):
-        self._mutate("POST")
+    def _write(self, method: str):
+        raw = self._read_raw()
+        if raw is None or not self._host_ok() or not self._origin_ok():
+            return None
+        body = self._parse(raw)
+        if body is None:
+            return None
+        parts = [p for p in unquote(urlparse(self.path).path).split("/") if p]
+        if parts[:1] != ["api"]:
+            return self._error(404, "not_found", "Rota desconhecida.")
+        parts = parts[1:]
+        if method == "POST":
+            if parts == ["login"]:
+                return self._login(body)
+            if parts == ["logout"]:
+                self.app.db.logout(self._token())
+                return self._json(200, {"ok": True}, {"Set-Cookie": self._cookie("", 0)})
+            if parts == ["track"]:
+                return self._track(body)
+        elif len(parts) >= 4 and parts[0] == "trails" and parts[2] == "progress":
+            return self._progress(method, parts[1], parts[3], parts[4:], body)
+        return self._error(404, "not_found", "Rota desconhecida.")
+
+    @staticmethod
+    def _cookie(token: str, max_age: int = COOKIE_MAX_AGE) -> str:
+        return f"{COOKIE}={token}; HttpOnly; SameSite=Lax; Path=/; Max-Age={max_age}"
+
+    def _login(self, body: dict):
+        email = normalize_email(body.get("email"))
+        if email is None:
+            return self._error(400, "invalid_email", "Informe um e-mail válido.")
+        token = secrets.token_urlsafe(32)
+        student, created = self.app.db.login(email, token, self.headers.get("User-Agent", ""),
+                                             replace_token=self._token())
+        return self._json(200, {"student": {"email": student["email"]}, "created": created},
+                          {"Set-Cookie": self._cookie(token)})
+
+    def _progress(self, method: str, slug: str, kind: str, rest: list[str], body: dict):
+        student = self._student()
+        if student is None:
+            return None
+        db, sid = self.app.db, student["id"]
+        if kind in ("items", "notes") and len(rest) == 2 and method == "PUT":
+            if not self._need_item(slug, rest[0], rest[1]):
+                return None
+            if kind == "items":
+                db.set_done(sid, slug, rest[0], rest[1], bool(body.get("done")))
+            else:
+                text = body.get("text", "")
+                if not isinstance(text, str):
+                    return self._error(400, "invalid_text", "O texto da anotação deve ser uma string.")
+                if len(text) > MAX_NOTE:
+                    return self._error(413, "note_too_long", "Anotação grande demais.")
+                db.set_note(sid, slug, rest[0], rest[1], text)
+        elif kind == "answers" and len(rest) == 3 and method in ("PUT", "DELETE"):
+            block, item, question = rest
+            if not ID.match(question):
+                return self._error(400, "invalid_id", "Identificador de questão inválido.")
+            if method == "PUT":
+                if not self._need_item(slug, block, item):
+                    return None
+                chosen = body.get("chosen", [])
+                if (not isinstance(chosen, list) or len(chosen) > 20
+                        or not all(isinstance(c, str) and len(c) <= 100 for c in chosen)):
+                    return self._error(400, "invalid_chosen", "O campo chosen deve ser uma lista curta de textos.")
+                db.set_answer(sid, slug, block, item, question, chosen, bool(body.get("correct")))
+            else:
+                if not self._need_trail(slug):
+                    return None
+                db.delete_answer(sid, slug, block, item, question)
+        else:
+            return self._error(404, "not_found", "Rota desconhecida.")
+        return self._json(200, db.progress_state(sid, slug))
+
+    def _track(self, body: dict):
+        student = self._student()
+        if student is None:
+            return None
+        event = body.get("event")
+        if event == "open":
+            trail, block, item = (str(body.get(k, "")) for k in ("trail", "block", "item"))
+            if not self._need_item(trail, block, item):
+                return None
+            return self._json(200, {"visit": self.app.db.open_visit(student["id"], trail, block, item)})
+        if event in ("beat", "leave"):
+            visit, seconds = body.get("visit"), body.get("seconds")
+            if (isinstance(visit, bool) or not isinstance(visit, int) or isinstance(seconds, bool)
+                    or not isinstance(seconds, (int, float))):
+                return self._error(400, "invalid_track", "Informe visit e seconds numéricos.")
+            total = self.app.db.add_seconds(student["id"], visit, int(seconds))
+            if total is None:
+                return self._error(404, "visit_not_found", "Visita não encontrada.")
+            return self._json(200, {"ok": True, "seconds": total})
+        return self._error(400, "invalid_track", "Evento de rastreio desconhecido.")
 
     def log_message(self, fmt, *args):
         pass
 
 
-def make_server(data: Path | None, port: int = 8765, host: str = "127.0.0.1", source: str = "flag",
-                lan: bool = False) -> ThreadingHTTPServer:
-    return ThreadingHTTPServer(("0.0.0.0" if lan else host, port), partial(Handler, Context(data, source, lan)))
+def make_server(content_dir, db, port: int = 8765, host: str = "127.0.0.1", lan: bool = False) -> ThreadingHTTPServer:
+    """Cria o servidor (sem iniciá-lo). `db` é um Database ou o caminho do arquivo; indexa o conteúdo antes."""
+    if not isinstance(db, Database):
+        db = Database(db)
+    app = App(Path(content_dir), db, lan)
+    indexer.sync(app.content_dir, db)
+    server = ThreadingHTTPServer(("0.0.0.0" if lan else host, port), partial(Handler, app))
+    server.app = app
+    return server
 
 
 def lan_address() -> str | None:
-    """Best guess of this computer's address on the local network (no packet is sent)."""
+    """Melhor palpite do endereço deste computador na rede local (nenhum pacote é enviado)."""
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
             probe.connect(("10.255.255.255", 1))
@@ -297,15 +395,20 @@ def lan_address() -> str | None:
         return None
 
 
-def serve(data: Path | None, port: int = 8765, source: str = "none", lan: bool = False) -> None:
-    server = make_server(data, port, source=source, lan=lan)
-    where = f"{data}  (source: {source})" if data else "not set: the browser will ask for it"
-    print(f"Data folder : {where}\nOpen        : http://localhost:{port}/")
+def serve(content_dir, db_path, port: int = 8765, lan: bool = False) -> None:
+    """Sobe o servidor dos alunos e imprime os endereços (em português)."""
+    server = make_server(content_dir, db_path, port, lan=lan)
+    trails = server.app.db.query("SELECT slug FROM trails ORDER BY slug")
+    print(f"Conteúdo : {Path(content_dir).resolve()}  ({len(trails)} trilha(s))\n"
+          f"Banco    : {Path(db_path).resolve()}\n"
+          f"Abra     : http://localhost:{port}/")
     if lan:
         address = lan_address()
-        print(f"Local network: http://{address or '<this-computer-ip>'}:{port}/   (private networks only, no password;"
-              " the data folder can only be changed on this computer)")
+        print(f"Rede local: http://{address or '<ip-deste-computador>'}:{port}/   (só redes privadas; o acesso é "
+              "identificado apenas pelo e-mail informado, sem senha)")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        pass
+        print("\nServidor encerrado.")
+    finally:
+        server.server_close()
