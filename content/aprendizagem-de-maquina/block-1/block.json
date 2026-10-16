@@ -1,0 +1,2669 @@
+{
+  "schema": "block/v2",
+  "id": "block-1",
+  "title": "Bloco 1 · A base e os dados",
+  "description": "Aulas 1, 3 e 4: o que é aprendizado de máquina, como limpar os dados e como dividi-los entre treino e teste sem se enganar.",
+  "sections": [
+    {
+      "id": "aula-1",
+      "title": "Aula 1 · O que é aprendizado de máquina",
+      "items": [
+        {
+          "id": "a1-v6",
+          "type": "video",
+          "title": "A evolução da IA: de Alan Turing ao Deep Learning",
+          "channel": "Doutor Dimmy",
+          "duration": "10 min",
+          "url": "https://www.youtube.com/watch?v=J6ctBcC8wyI",
+          "goals": [
+            "A IA é um campo amplo e o aprendizado de máquina é um dos seus ramos (slide 10).",
+            "Turing propôs, em 1950, um teste para saber se máquinas pensam: o computador vence se não for distinguido de um humano (slides 10–11).",
+            "A IA teve períodos de entusiasmo e de desilusão (invernos); a fase atual é puxada por dados em grande volume e poder de processamento (slide 17).",
+            "Usos reais: diagnóstico médico, recomendação, assistentes de voz (slides 2, 11, 23)."
+          ],
+          "warnings": [
+            "O vídeo simplifica o teste de Turing; o slide 11 descreve o Jogo da Imitação com três jogadores (computador, humano e um juiz que não vê nenhum dos dois).",
+            "A fala mistura 'IA geral' com 'singularidade' (08:25): são ideias diferentes e nada disso está nos slides. Ignore.",
+            "As datas dos invernos da IA e a frase sobre a retropropagação são simplificações que não estão nos slides: não decore datas.",
+            "Vídeo opcional: é só contexto histórico, sem conteúdo técnico que caia na prova."
+          ],
+          "optional": true,
+          "clips": [
+            {
+              "start": 90,
+              "end": 360,
+              "slides": "2, 10–11, 17",
+              "note": "Linha do tempo da IA: eras, invernos, era do aprendizado profundo e o teste de Turing."
+            },
+            {
+              "start": 389,
+              "end": 450,
+              "slides": "2, 10, 23",
+              "note": "Usos da IA e aprendizado de máquina como um dos ramos da IA."
+            }
+          ],
+          "transcript": "../transcripts/J6ctBcC8wyI.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "01:30–04:49 — verões e invernos da IA, do 'amanhecer' dos anos 50 aos anos 90 (slide 2)",
+              "04:49–05:17 — era do aprendizado profundo: internet, grandes bases de dados e poder computacional (slide 17)",
+              "05:17–06:00 — teste de Turing, 1950 (slides 10–11)",
+              "06:29–07:30 — usos (recomendação, diagnóstico, assistentes) e aprendizado de máquina como ramo da IA (slides 2, 10, 23)"
+            ],
+            "notCovered": "Não cita o artigo 'Computing Machinery and Intelligence' nem os três jogadores do Jogo da Imitação (slide 11); não explica o que é aprendizado de máquina nem GPUs e arquiteturas como CNN e Transformers (slide 17). Nenhum conceito técnico dos demais slides.",
+            "profile": [
+              "**Nível:** iniciante, só conceito, sem código.",
+              "**Foco:** história e panorama da IA.",
+              "**Qualidade:** fala clara, mas rasa e com erros de grafia na legenda (Turin); mistura IA geral com singularidade. Útil só como contexto."
+            ],
+            "verdict": "Aprovar só os trechos 01:30–06:00 e 06:29–07:30 (5:31). Item opcional: serve para o contexto histórico dos slides 2 e 10–11."
+          }
+        },
+        {
+          "id": "a1-v7",
+          "type": "video",
+          "title": "Aplicações em AM: introdução ao aprendizado de máquina (visão geral das tarefas)",
+          "channel": "UNIVESP",
+          "duration": "17:29",
+          "url": "https://www.youtube.com/watch?v=TY45HIJ3RpM",
+          "goals": [
+            "Situar o aprendizado de máquina dentro da IA e ao lado do aprendizado profundo (slides 10, 13).",
+            "Ligar supervisionado a tarefas preditivas e não supervisionado a tarefas descritivas, e ver a diferença entre treino e inferência (slides 30–34, 36, 39).",
+            "Ver agrupamento, associação (fralda e cerveja) e aprendizado por reforço com agente, ambiente, estado e recompensa (slides 37, 63, 73)."
+          ],
+          "warnings": [
+            "A frase de Samuel (02:32–02:47) sai trocada na transcrição ('serem programados explicitamente'); o sentido é aprender SEM ser programado explicitamente, como o próprio vídeo diz em 01:05–01:13.",
+            "O vídeo inclui sumarização entre as tarefas descritivas; os slides 37 só têm agrupamento e associação. Não decorar a sumarização.",
+            "Os exemplos Mendeley e Google Notícias (11:35–12:35) são fracos para agrupamento e ficaram de fora dos trechos.",
+            "Samuel × Mitchell (definições) e o apriori não estão nos slides: extra.",
+            "Os dois últimos trechos (associação e reforço) pertencem aos slides 63 e 73; assista-os ali se preferir dividir o vídeo."
+          ],
+          "clips": [
+            {
+              "start": 24,
+              "end": 196,
+              "slides": "10, 13",
+              "note": "IA contém AM, que contém aprendizado profundo; definições de AM. Ignorar a abertura."
+            },
+            {
+              "start": 196,
+              "end": 306,
+              "slides": "30–34, 67, 73",
+              "note": "Tipos de aprendizado: supervisionado (tarefas preditivas), não supervisionado (descritivas) e reforço."
+            },
+            {
+              "start": 306,
+              "end": 590,
+              "slides": "25–26, 31, 33, 36, 39",
+              "note": "Supervisionado em detalhe: regressão × classificação e a etapa de inferência com dado novo."
+            },
+            {
+              "start": 591,
+              "end": 690,
+              "slides": "34, 37, 57, 63",
+              "note": "Não supervisionado: agrupamento e associação (sumarização é extra)."
+            },
+            {
+              "start": 755,
+              "end": 838,
+              "slides": "63–64",
+              "note": "Associação: história da fralda e da cerveja. O professor a chama de folclórica."
+            },
+            {
+              "start": 877,
+              "end": 963,
+              "slides": "73–74",
+              "note": "Reforço: tarefa, ambiente, agente, estado e recompensa (o rato no labirinto)."
+            }
+          ],
+          "transcript": "../transcripts/TY45HIJ3RpM.json",
+          "review": {
+            "badge": "transcrição lida · trechos aprovados",
+            "covers": [
+              "00:24–03:16 — IA, AM e aprendizado profundo como conjuntos aninhados; definições de AM (slides 10, 13)",
+              "03:16–05:06 — supervisionado (preditivo), não supervisionado (descritivo) e reforço (slides 30–34, 67, 73)",
+              "05:06–09:50 — regressão × classificação, saída contínua × discreta, treino e inferência (slides 25–26, 33, 36, 39)",
+              "09:51–11:30 — tarefas descritivas: agrupamento e associação (slides 34, 37, 57, 63)",
+              "12:35–13:58 — associação: fralda e cerveja (slides 63–64)",
+              "14:37–16:03 — reforço: ambiente, agente, estado, recompensa (slide 73)"
+            ],
+            "notCovered": "Não fala em semissupervisionado nem ativo, nas sete etapas do processo, em hiperparâmetros, em generalização, em classificadores estatísticos × estruturais nem em indução × dedução (slides 18–19, 45–46, 68–72, 75–82).",
+            "profile": [
+              "**Nível:** iniciante a intermediário, só conceito, sem código.",
+              "**Foco:** mapa geral das tarefas de AM e dos tipos de aprendizado, com a mesma terminologia dos slides (preditivas × descritivas).",
+              "**Qualidade:** boa como visão geral; fala com muitos 'né' e a sequência é longa, por isso só os trechos."
+            ],
+            "verdict": "Aprovar só os trechos indicados; os essenciais para as lacunas são os de agrupamento/associação e de reforço. Ignorar sumarização, Mendeley e Google Notícias."
+          },
+          "optional": true,
+          "note": "Visão geral de toda a Aula 1. Os trechos 12:35–13:58 (associação) e 14:37–16:03 (reforço) são a única cobertura em vídeo de associação, junto com o texto; os demais reforçam o que os vídeos anteriores já mostram."
+        },
+        {
+          "id": "a1-v1",
+          "type": "video",
+          "title": "O que é Machine Learning?",
+          "channel": "Didática Tech",
+          "duration": "7:45",
+          "url": "https://www.youtube.com/watch?v=qDmojpkd8rE",
+          "goals": [
+            "Algoritmo convencional: o humano escreve as regras; aprendizado de máquina: a máquina descobre as regras (slide 14).",
+            "O xadrez de 1997 foi vencido por um programa com regras escritas à mão; o de 2017 aprendeu sozinho só com as regras do jogo.",
+            "Aprender é diferente de seguir uma lista de instruções, como na analogia da bicicleta."
+          ],
+          "warnings": [
+            "O vídeo explica o aprendizado como tentativa e erro. Nos slides (13–14), a máquina descobre as regras a partir de dados e amostras. A tentativa e erro lembra o aprendizado por reforço (slide 73), que o vídeo não nomeia. O vídeo seguinte (treino e teste) completa dizendo que o aprendizado vem de dados.",
+            "A legenda diz que o programa jogou 'contra cem mesas': provavelmente era contra si mesmo. Não use essa frase.",
+            "As datas do xadrez (1997, 2017, 2019) aparecem fora de ordem na fala; não decore."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 213,
+              "slides": "13–14, 18",
+              "note": "Definição, analogia da bicicleta e do robô, e o xadrez de 1997 como algoritmo convencional."
+            },
+            {
+              "start": 253,
+              "end": 356,
+              "slides": "14, 73",
+              "note": "Xadrez em 2017: programa aprende sozinho e supera o baseado em regras."
+            }
+          ],
+          "transcript": "../transcripts/qDmojpkd8rE.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:00–00:21 — aprender com base em aprendizado, e não somente em instruções (slide 14)",
+              "00:21–02:32 — analogias da bicicleta e do robô: aprender sem lista de instruções (slides 14, 18)",
+              "02:32–03:33 — xadrez de 1997: programa com todo o conhecimento escrito no código (algoritmo convencional, slide 14)",
+              "04:13–05:56 — xadrez de 2017: programa aprende só com as regras jogando milhões de partidas (slides 14, 73)"
+            ],
+            "notCovered": "Não fala de dados, amostras ou rótulos como fonte do aprendizado; nenhum dos tipos de aprendizado nem as demais definições dos slides 18 em diante. Hardware só aparece como 'poder de processamento' no xadrez.",
+            "profile": [
+              "**Nível:** iniciante absoluto, só analogias e exemplos.",
+              "**Foco:** conceito de aprendizado de máquina e contraste com o algoritmo convencional.",
+              "**Qualidade:** clara e informal, um pouco repetitiva; boa porta de entrada, mas a definição por tentativa e erro é simplificada."
+            ],
+            "verdict": "Aprovar só os trechos 00:00–03:33 e 04:13–05:56 (5:16), sabendo que a definição dos slides é 'regras descobertas a partir de dados'."
+          },
+          "optional": true,
+          "note": "Vídeo do curso \"Introdução a Machine Learning\" (Didática Tech), que você já assistiu: entra só como **revisão**. Dos slides, cobre bem apenas o 14 (algoritmo convencional × aprendizado de máquina)."
+        },
+        {
+          "id": "a1-v5",
+          "type": "video",
+          "title": "Dados de treino e teste",
+          "channel": "Didática Tech",
+          "duration": "5:59",
+          "url": "https://www.youtube.com/watch?v=N2TT2Q83abc",
+          "goals": [
+            "O modelo aprende com dados de treino rotulados (exemplo dos cachorros, slides 25–26).",
+            "Depois do treino, testa-se com dados que ele nunca viu e mede-se o percentual de acertos (acurácia).",
+            "Testar com dados já vistos dá uma medida enganosa, por isso separamos uma parte dos dados só para teste (slides 24–27)."
+          ],
+          "warnings": [
+            "O vídeo não dá a proporção da divisão nem fala de validação cruzada ou de sobreajuste (overfitting) pelo nome.",
+            "Em 04:08–04:18 e 05:24–05:36 a fala está confusa na legenda; a ideia é: uma parte dos dados nunca é vista no treino."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 359,
+              "slides": "24–27, 78, 82",
+              "note": "Vídeo inteiro: dados de treino, dados de teste, acurácia e por que separar."
+            }
+          ],
+          "transcript": "../transcripts/N2TT2Q83abc.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "00:30–01:34 — aprendizado a partir de fotos rotuladas, exemplo dos cachorros (slide 25)",
+              "01:34–02:23 — imagem nova = dado de teste; acurácia como percentual de acertos (slide 26)",
+              "02:23–03:00 — o teste não pode usar dados já vistos (slides 26, 78)",
+              "03:10–04:30 — dados limitados: separar uma parte para treino e outra para teste (slides 27, 78)",
+              "04:30–05:07 — critério de aceitação pelo desempenho no teste"
+            ],
+            "notCovered": "Não dá a proporção treino/teste, não cita validação cruzada, atributo preditivo e atributo alvo (diz só 'rotuladas'), nem generalização ou sobreajuste pelo nome (slides 28–29, 82).",
+            "profile": [
+              "**Nível:** iniciante, só conceito.",
+              "**Foco:** dados de treino e teste e medição por acurácia.",
+              "**Qualidade:** claro e repetitivo na medida; usa o mesmo exemplo dos slides 25–26. Boa."
+            ],
+            "verdict": "Aprovar o vídeo inteiro."
+          },
+          "optional": true,
+          "note": "Vídeo do curso \"Introdução a Machine Learning\" (Didática Tech), que você já assistiu: entra só como **revisão**. Dos slides, cobre bem apenas os 24 a 27 (dados de treino e de teste)."
+        },
+        {
+          "id": "a1-v8",
+          "type": "video",
+          "title": "O que é um dataset para treinar algoritmos (tabela, atributos e alvo)",
+          "duration": "14:50",
+          "url": "https://www.youtube.com/watch?v=BuUjhqd2WnU",
+          "goals": [
+            "Ver que a base de treino vira uma tabela: cada linha é um exemplo e as colunas são os atributos preditivos (x) e o alvo (y) (slides 28–29).",
+            "Entender que, com y presente, o aprendizado é supervisionado e, sem y, é não supervisionado (slides 30–31).",
+            "Distinguir variável discreta (contagem) de contínua (decimal) (slide 36)."
+          ],
+          "warnings": [
+            "Terminologia: o professor diz 'observação', 'instância' ou 'exemplo' (slide 28: padrão, registro, exemplo); 'variável preditora' = atributo preditivo e 'variável resposta' ou 'y' = atributo alvo (slide 29).",
+            "É gravação de aula ao vivo, com perguntas do chat; o trecho 06:00–07:50 (join de tabelas) é desvio e ficou de fora.",
+            "A transcrição troca palavras: 'orgulhismo' = algoritmo; '650 observações' = 150.",
+            "Os minutos 07:58–10:37 (qualitativas nominais × ordinais) não estão nos slides e foram deixados de fora."
+          ],
+          "clips": [
+            {
+              "start": 44,
+              "end": 359,
+              "slides": "28–31",
+              "note": "Exemplo Iris: a tabela de treino, x1…x4 e y, rótulos e aprendizado supervisionado; sem y é não supervisionado."
+            },
+            {
+              "start": 637,
+              "end": 707,
+              "slides": "36",
+              "note": "Variáveis discretas (contagem, inteiros) × contínuas (decimais)."
+            }
+          ],
+          "transcript": "../transcripts/BuUjhqd2WnU.json",
+          "review": {
+            "badge": "transcrição lida · trechos aprovados",
+            "covers": [
+              "00:44–01:43 — base Iris: três espécies, medidas de pétala e sépala (slide 28)",
+              "01:43–04:03 — a base vira tabela; linhas = observações, colunas = x1…x4 e y (slides 28–29)",
+              "04:03–05:00 — dados rotulados = aprendizado supervisionado; 'aprender' é criar uma regra (slides 30–31)",
+              "05:00–05:59 — com imagens também vira tabela; sem variável resposta é não supervisionado (slide 30)",
+              "10:37–11:47 — variáveis quantitativas discretas × contínuas (slide 36)"
+            ],
+            "notCovered": "Não usa os nomes 'atributo preditivo' e 'atributo alvo'; não fala em vetor de características, tarefas preditivas × descritivas nem em divisão treino/teste (slides 29, 32–34, 24–27).",
+            "profile": [
+              "**Nível:** iniciante; exemplo com tabela.",
+              "**Foco:** como formatar um conjunto de dados para treinar um algoritmo.",
+              "**Qualidade:** média; boa didática, mas gravação de sala com ruído."
+            ],
+            "verdict": "Aprovar só os trechos indicados; pular a conversa sobre join e as variáveis qualitativas."
+          },
+          "channel": "Professor Mairon Chaves"
+        },
+        {
+          "id": "a1-v2",
+          "type": "video",
+          "title": "Aprendizado supervisionado × não supervisionado",
+          "channel": "Didática Tech",
+          "duration": "5:36",
+          "url": "https://www.youtube.com/watch?v=JDDqP6IZ4NQ",
+          "goals": [
+            "Supervisionado: os dados vêm com a resposta (rótulo) e o modelo aprende a prever; o nome vem do 'professor' que diz o que é certo (slides 30–31).",
+            "Não supervisionado: não há rótulo; o algoritmo descobre sozinho grupos e relações nos dados (slides 30–31, 34).",
+            "Exemplo de não supervisionado: perfis de clientes de uma empresa (slide 60)."
+          ],
+          "warnings": [
+            "Aqui 'classificar' as plantas significa separar em grupos. Nos slides, classificação é aprendizado supervisionado (slide 39) e o caso sem rótulo se chama agrupamento (slide 57), cujos grupos são rotulados depois pelo cientista de dados.",
+            "O vídeo não usa os nomes agrupamento, associação, atributo alvo nem tarefas preditivas e descritivas; os slides 32–37 os definem.",
+            "O trecho 00:58–01:42 depende de uma aula sobre overfitting e underfitting que não faz parte desta lista; pode ser pulado.",
+            "Cinco categorias viram 'quatro partes' em 03:15: é só um lapso de fala."
+          ],
+          "clips": [
+            {
+              "start": 10,
+              "end": 336,
+              "slides": "30–34, 60",
+              "note": "Vídeo praticamente inteiro: supervisionado × não supervisionado com exemplos."
+            }
+          ],
+          "transcript": "../transcripts/JDDqP6IZ4NQ.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "00:10–00:58 — supervisionado: dados com rótulos, exemplo de imagens de celular, geladeira e flor (slides 30–31)",
+              "01:42–01:55 — origem do nome: um 'professor' diz o que está certo (slides 31, 34)",
+              "01:55–03:55 — não supervisionado: sem informação prévia, plantas separadas em grupos pelo algoritmo (slides 30–31, 57)",
+              "03:55–04:27 — perfis de clientes (segmentação, slide 60)",
+              "04:27–05:07 — resumo: prever com base em valores informados × descobrir relações sozinho (slides 32–34)"
+            ],
+            "notCovered": "Não nomeia classificação, regressão, agrupamento nem associação; não fala em atributo alvo nem em tarefas preditivas × descritivas; não cobre semissupervisionado, ativo e reforço (slides 32–37, 67–73).",
+            "profile": [
+              "**Nível:** iniciante, só conceito com exemplos.",
+              "**Foco:** diferença entre aprendizado supervisionado e não supervisionado.",
+              "**Qualidade:** a melhor explicação intuitiva dessa diferença no conjunto; usa 'classificar' no sentido de agrupar, o que exige atenção."
+            ],
+            "verdict": "Aprovar o vídeo; assistir sabendo que 'classificar' aqui quer dizer agrupar."
+          },
+          "optional": true,
+          "note": "Vídeo do curso \"Introdução a Machine Learning\" (Didática Tech), que você já assistiu: entra só como **revisão**. Dos slides, cobre bem apenas os 30 e 31 (supervisionado × não supervisionado)."
+        },
+        {
+          "id": "a1-v9",
+          "type": "video",
+          "title": "Aprendizado de máquina: supervisionado e não supervisionado (variável resposta)",
+          "channel": "Wlademir Prates",
+          "duration": "7:24",
+          "url": "https://www.youtube.com/watch?v=ZGyY2goDIJY",
+          "goals": [
+            "Reconhecer que supervisionado significa ter uma variável resposta (o atributo alvo) e que ela também se chama dependente ou target (slides 29–30).",
+            "Ligar variáveis independentes ou explicativas aos atributos preditivos (slide 29).",
+            "Ver que resposta categórica é classificação e resposta numérica é regressão, inclusive para 0 e 1 e para faixas etárias (slide 36)."
+          ],
+          "warnings": [
+            "O vídeo diz 'numérica × categórica' onde os slides dizem 'contínuo × discreto' (slide 36); use os termos do slide.",
+            "Em 06:15 o vídeo chama de 'classificações' os perfis de clientes do não supervisionado; nos slides isso é agrupamento (slide 57).",
+            "O trecho 05:07–05:48 (não supervisionado) é confuso e foi deixado de fora; o vídeo anterior da lista cobre melhor esse ponto."
+          ],
+          "clips": [
+            {
+              "start": 53,
+              "end": 306,
+              "slides": "29–30, 36",
+              "note": "Variável resposta (target), dependente × independente, regressão × classificação."
+            },
+            {
+              "start": 412,
+              "end": 438,
+              "slides": "30",
+              "note": "Resumo: a diferença é ter ou não variável resposta."
+            }
+          ],
+          "transcript": "../transcripts/ZGyY2goDIJY.json",
+          "review": {
+            "badge": "transcrição lida · trechos aprovados",
+            "covers": [
+              "00:53–02:00 — supervisionado = existe variável resposta; exemplo de demissão de colaborador (slide 30)",
+              "02:00–02:43 — variável dependente = resposta = target; independentes = explicativas (slide 29)",
+              "02:43–05:06 — regressão (resposta numérica) × classificação (categórica); 0/1 é classificação; faixas etárias viram classes (slide 36)",
+              "06:52–07:18 — resumo: ter ou não variável resposta"
+            ],
+            "notCovered": "Não nomeia agrupamento nem associação; não fala em tarefas preditivas × descritivas nem usa os termos 'atributo alvo' e 'atributo preditivo' (slides 29, 32–37).",
+            "profile": [
+              "**Nível:** iniciante, só conceito.",
+              "**Foco:** variável resposta como critério para supervisionado × não supervisionado, e para classificação × regressão.",
+              "**Qualidade:** média; valor principal é ligar os nomes da estatística aos de AM."
+            ],
+            "verdict": "Aprovar só os trechos indicados, como complemento."
+          },
+          "optional": true,
+          "note": "Complemento aos vídeos já na lista: aqui o foco está nos sinônimos (resposta, dependente, target × explicativas)."
+        },
+        {
+          "id": "a1-v3",
+          "type": "video",
+          "title": "Problemas de classificação e de regressão",
+          "channel": "Didática Tech",
+          "duration": "5:14",
+          "url": "https://www.youtube.com/watch?v=rDIocV_r9Xk",
+          "goals": [
+            "Regressão: prever um valor numérico (preço, tamanho); classificação: prever a classe (spam ou não, tem a doença ou não) (slides 36, 39, 51).",
+            "Classe pode vir escrita como número (0 e 1), mas é só um rótulo: a classe 4 não vale quatro vezes a classe 1.",
+            "Classificação pode ter duas classes (binária) ou várias (multiclasse) (slide 44).",
+            "O primeiro passo do profissional é identificar se o problema é de classificação ou de regressão."
+          ],
+          "warnings": [
+            "O vídeo distingue por 'valor numérico × categoria'; o slide 36 usa alvo contínuo × discreto. Na prova, use os termos do slide.",
+            "'Prever um preço futuro' (00:52) é só exemplo: regressão não precisa ser sobre o futuro.",
+            "O vídeo diz multiclasse; o slide 44 escreve 'multilabel' e depois 'multiclasses'. Trate como multiclasse. O slide também grafa SIM(01) e NÃO(00), e o vídeo usa 1 e 0.",
+            "O vídeo não diz que as duas tarefas são de aprendizado supervisionado (slide 36)."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 314,
+              "slides": "36, 39, 44, 51",
+              "note": "Vídeo inteiro: regressão × classificação e classe numérica como rótulo."
+            }
+          ],
+          "transcript": "../transcripts/rDIocV_r9Xk.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "00:23–01:14 — regressão: prever um valor numérico específico (slides 36, 51)",
+              "01:14–02:22 — classificação: descobrir a classe; binária e multiclasse (slides 39, 44)",
+              "02:22–04:01 — classe escrita como número é só rótulo, não quantidade (slides 36, 44)",
+              "04:01–04:55 — identificar o tipo de problema é o primeiro passo (slides 36, 75)"
+            ],
+            "notCovered": "Não usa os termos atributo alvo discreto × contínuo nem 'predição ou estimação' (slides 36, 51); não diz que ambas são supervisionadas; não cobre classificadores estatísticos × estruturais, fases de aprendizagem e reconhecimento (slides 39, 45–46), nem a equação da regressão.",
+            "profile": [
+              "**Nível:** iniciante, só conceito.",
+              "**Foco:** diferença entre classificação e regressão.",
+              "**Qualidade:** clara e repetitiva de propósito; o trecho do número como rótulo vale mais do que o slide diz."
+            ],
+            "verdict": "Aprovar o vídeo inteiro."
+          },
+          "optional": true,
+          "note": "Vídeo do curso \"Introdução a Machine Learning\" (Didática Tech), que você já assistiu: entra só como **revisão**. Dos slides, cobre bem os 36, 39, 44 e 51 (classificação × regressão, binária × multiclasse)."
+        },
+        {
+          "id": "a1-v10",
+          "type": "video",
+          "title": "Aprendizado supervisionado: introdução aos modelos preditivos",
+          "channel": "UNIVESP",
+          "duration": "20:55",
+          "url": "https://www.youtube.com/watch?v=PkJIxrOYnMw",
+          "goals": [
+            "Entender que o modelo é uma função f chapéu(x) que tenta se aproximar da função real f(x) a partir dos pares (x, y) de treino (slide 53).",
+            "Ver que um classificador prevê rótulos e um regressor prevê valores contínuos, com um exemplo de base de regressão (slides 36, 51).",
+            "Ver que o treino ajusta pesos (w) e viés (b), guiado por uma função de custo (slide 80)."
+          ],
+          "warnings": [
+            "O vídeo escreve f chapéu(x) e fala em 'estimador'; o slide 53 usa h (hipótese) e H (conjunto de hipóteses). Mesma ideia, nomes diferentes; na prova usar os do slide.",
+            "A classificação dos métodos (distância, probabilísticos, conexionistas, simbólicos, margem, em 17:05–20:00) NÃO é a divisão do slide 45–46 (estatísticos × estruturais); ficou fora dos trechos.",
+            "O custo da classificação binária com logaritmos (12:50–16:00) é cálculo e foi deixado de fora.",
+            "O trecho usa notação matemática; é o vídeo mais técnico desta lista."
+          ],
+          "clips": [
+            {
+              "start": 83,
+              "end": 345,
+              "slides": "36, 53",
+              "note": "Função estimadora f chapéu(x) ≈ f(x); classificador × regressor; fronteira entre doentes e saudáveis."
+            },
+            {
+              "start": 490,
+              "end": 560,
+              "slides": "29, 36, 51",
+              "note": "Base de regressão (Suíça 1880): alvo contínuo e coluna do atributo alvo."
+            },
+            {
+              "start": 561,
+              "end": 644,
+              "slides": "80",
+              "note": "Função linear com pesos W e viés; o treino otimiza esses valores."
+            },
+            {
+              "start": 734,
+              "end": 768,
+              "slides": "80",
+              "note": "Função de custo: mede o erro e guia o aprendizado."
+            }
+          ],
+          "transcript": "../transcripts/PkJIxrOYnMw.json",
+          "review": {
+            "badge": "transcrição lida · trechos aprovados",
+            "covers": [
+              "01:23–03:00 — pares entrada/saída; classificação = rótulo discreto, regressão = quantidade contínua (slide 36)",
+              "03:00–05:00 — o modelo é uma função estimadora f chapéu(x) que aproxima f(x); classificador × regressor (slide 53)",
+              "05:00–05:45 — fronteira entre classes × função ajustada aos valores",
+              "08:10–09:20 — base de regressão com atributo alvo contínuo (slides 29, 36, 51)",
+              "09:21–10:44 — função linear com pesos W e viés, otimizados no treino (slide 80)",
+              "12:14–12:49 — função de custo guia o treino (slide 80)"
+            ],
+            "notCovered": "Não cobre a notação com argmax do slide 53, hiperparâmetros (slide 81), as sete etapas do processo (slides 75–81) nem a divisão estatístico × estrutural dos slides 45–46.",
+            "profile": [
+              "**Nível:** intermediário, com notação matemática; sem código.",
+              "**Foco:** como um algoritmo preditivo aprende uma função a partir de pares (x, y).",
+              "**Qualidade:** boa e clara, porém mais técnica; por isso complemento."
+            ],
+            "verdict": "Aprovar só os trechos indicados, como complemento para os slides 53 e 80."
+          },
+          "optional": true,
+          "note": "Aprofundamento opcional para os slides 53 e 80. Ignorar a taxonomia de métodos e as contas de custo."
+        },
+        {
+          "id": "a1-v11",
+          "type": "video",
+          "title": "Agrupamento e o algoritmo k-means (introdução)",
+          "duration": "14:43",
+          "url": "https://www.youtube.com/watch?v=WqMnQuC19Rg",
+          "goals": [
+            "Entender agrupamento (clusterização) como aprendizado não supervisionado que reúne exemplos por similaridade, com aplicações como segmentação de clientes (slides 57, 60).",
+            "Ver que o algoritmo precisa de uma medida de distância e que o número de grupos K muda o resultado (slides 57–58).",
+            "Acompanhar um exemplo passo a passo (k-means) em que os grupos descobertos são depois interpretados por uma pessoa (slides 57, 60)."
+          ],
+          "warnings": [
+            "O k-means em si NÃO está nos slides; os dois últimos trechos (05:16–14:30) vão além do que a aula pede e servem só para entender o que é agrupar.",
+            "O vídeo não diz que um agrupamento pode não ter significado relevante (slide 58) nem fala em outliers e feature engineering por agrupamento (slides 60–61).",
+            "Em 03:39 a fala 'vamos criar novos dados' é confusa; entender como 'descobrir grupos nos dados existentes'.",
+            "A transcrição escreve 'CAMINS' ou 'Kminz' para k-means e 'Marte' para marketing."
+          ],
+          "clips": [
+            {
+              "start": 11,
+              "end": 300,
+              "slides": "30, 34, 37, 57, 60",
+              "note": "O que é agrupamento, aplicações, aprendizado não supervisionado e a ideia de similaridade/distância. Essencial."
+            },
+            {
+              "start": 316,
+              "end": 590,
+              "slides": "58",
+              "note": "Extra: passos do k-means (centroides, atribuir ao mais próximo, recalcular a média) e o papel do K."
+            },
+            {
+              "start": 590,
+              "end": 870,
+              "slides": "57, 60",
+              "note": "Extra: exemplo idade × salário com K = 3 e interpretação dos grupos."
+            }
+          ],
+          "transcript": "../transcripts/WqMnQuC19Rg.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "00:11–02:32 — o que é agrupamento e aplicações: segmentação de clientes, mala direta, notícias, perfis (slide 60)",
+              "02:32–04:00 — agrupamento é não supervisionado: sem supervisor nem atributo alvo (slides 30, 34, 37, 57)",
+              "04:00–05:00 — elementos do mesmo grupo similares, grupos diferentes entre si; precisa de métrica de distância (slide 57)",
+              "05:16–09:50 — k-means: K, centroides, atribuir ao mais próximo, recalcular a média (slide 58: número de clusters)",
+              "09:50–14:30 — exemplo idade × salário e interpretação dos três grupos (slides 57, 60)"
+            ],
+            "notCovered": "Não cobre agrupamento sem significado (slide 58), identificação de outliers e feature engineering (slides 60–61), nem outros algoritmos de agrupamento.",
+            "profile": [
+              "**Nível:** iniciante a intermediário; conceito com desenho passo a passo, sem código.",
+              "**Foco:** o que é agrupar e como o k-means faz isso.",
+              "**Qualidade:** boa; fala calma e clara. O k-means é extra em relação aos slides."
+            ],
+            "verdict": "Aprovar; essencial o primeiro trecho, os outros dois são aprofundamento."
+          },
+          "channel": "IA Expert Academy"
+        },
+        {
+          "id": "a1-v12",
+          "type": "video",
+          "title": "Desvendando o aprendizado semissupervisionado",
+          "channel": "IA Com Clareza",
+          "duration": "14:14",
+          "url": "https://www.youtube.com/watch?v=3rU1H1q0vKI",
+          "goals": [
+            "Entender por que rotular dados é caro e como o semissupervisionado usa poucos dados rotulados e muitos não rotulados (slide 68).",
+            "Seguir o ciclo: treinar com os rotulados, prever os não rotulados, aceitar os rótulos de maior confiança no treino e repetir (slide 70).",
+            "Saber o risco de propagar erros do modelo inicial."
+          ],
+          "warnings": [
+            "O vídeo não cobre o agrupamento semissupervisionado com restrições de pares (slide 69) nem relaciona o aprendizado ativo ao semissupervisionado (slide 72).",
+            "Co-training, SVM semissupervisionada, autoencoders e aplicações (outros trechos) são extras e foram deixados de fora; os pedidos de like e inscrição (00:31–01:23 e 13:58–14:14) também.",
+            "Em 11:28 cita validação cruzada como contramedida; isso é extra aqui."
+          ],
+          "clips": [
+            {
+              "start": 83,
+              "end": 185,
+              "slides": "68",
+              "note": "O problema: muitos dados, pouco rótulo; rotular manualmente é caro."
+            },
+            {
+              "start": 186,
+              "end": 311,
+              "slides": "68, 70",
+              "note": "Como funciona: treina com poucos rótulos, prevê os demais com pseudo-rótulos e refina, repetindo."
+            },
+            {
+              "start": 457,
+              "end": 475,
+              "slides": "70",
+              "note": "Self-training: entram no treino só os exemplos em que o modelo tem mais confiança."
+            },
+            {
+              "start": 607,
+              "end": 683,
+              "slides": "70",
+              "note": "Riscos: dados não rotulados ruins e propagação de erros."
+            }
+          ],
+          "transcript": "../transcripts/3rU1H1q0vKI.json",
+          "review": {
+            "badge": "transcrição lida · trechos aprovados",
+            "covers": [
+              "01:23–03:05 — muitos dados sem rótulo; rotular custa tempo e especialistas; mistura de poucos rotulados com muitos não rotulados (slide 68)",
+              "03:06–05:11 — treino inicial com rotulados, pseudo-rótulos e propagação de rótulos, refino iterativo (slide 70)",
+              "07:37–07:55 — self-training: adiciona ao treino os exemplos de maior confiança (slide 70)",
+              "10:07–11:21 — desafios: qualidade dos dados não rotulados e propagação de erros"
+            ],
+            "notCovered": "Não explica agrupamento semissupervisionado com restrições (slide 69), nem a relação com aprendizado ativo (slide 72), nem a redundância de dados citada no slide 70.",
+            "profile": [
+              "**Nível:** iniciante; só conceito.",
+              "**Foco:** definição e funcionamento do aprendizado semissupervisionado.",
+              "**Qualidade:** média; texto bem estruturado, mas genérico e com muita propaganda de canal."
+            ],
+            "verdict": "Aprovar só os trechos indicados; é o único vídeo da lista que define o semissupervisionado."
+          }
+        },
+        {
+          "id": "a1-v13",
+          "type": "video",
+          "title": "Active (Machine) Learning, Computerphile (em inglês)",
+          "channel": "Computerphile",
+          "duration": "6:10",
+          "url": "https://www.youtube.com/watch?v=ANIw1Mz1SRI",
+          "goals": [
+            "Entender por que rotular é o gargalo e como o aprendizado ativo reduz o trabalho: o humano rotula só o que o modelo não sabe (slide 72).",
+            "Seguir o laço: treinar com poucos dados anotados, prever o resto com um nível de confiança, rotular o incerto, treinar de novo (h0, h1…) (slide 72).",
+            "Ver o critério extra de evitar exemplos redundantes (slide 72: evitar amostras redundantes)."
+          ],
+          "warnings": [
+            "VÍDEO EM INGLÊS: ative a legenda automática. Não há vídeo em português para o aprendizado ativo na lista.",
+            "O vídeo também descreve o 'cooperative learning' (aceitar o rótulo da máquina quando a confiança é alta), que lembra o semissupervisionado do slide 70; o slide 72 trata só do ativo.",
+            "O slide 72 diz que as amostras não selecionadas são descartadas; o vídeo não menciona isso.",
+            "A partir de 05:28 o assunto muda (captchas e aprendizado por similaridade); ignorar."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 333,
+              "slides": "72",
+              "note": "Aprendizado ativo e laço de rotulagem com confiança do modelo (em inglês)."
+            }
+          ],
+          "transcript": "../transcripts/ANIw1Mz1SRI.json",
+          "review": {
+            "badge": "transcrição lida · trecho aprovado",
+            "covers": [
+              "00:00–01:05 — dados = atributos + rótulos; rótulos vêm de pessoas e são caros (slide 72)",
+              "01:05–03:03 — treina-se com uns 10% anotados, prevê-se o resto com confiança e pede-se rótulo ao humano só do incerto (slide 72)",
+              "03:03–04:20 — laço: nova hipótese h0 → h1; escolher exemplos diferentes dos já rotulados (slide 72)",
+              "04:20–05:28 — aprendizado cooperativo e economia de 80–90% do tempo de anotação"
+            ],
+            "notCovered": "Não relaciona o aprendizado ativo ao semissupervisionado (slides 67–72) e não menciona o descarte das amostras não selecionadas.",
+            "profile": [
+              "**Nível:** iniciante a intermediário; conceito com um esquema.",
+              "**Foco:** aprendizado ativo e cooperativo para reduzir o custo de rotular.",
+              "**Qualidade:** boa; falante claro e pausado; só em inglês."
+            ],
+            "verdict": "Aprovar só o trecho indicado; única explicação do aprendizado ativo disponível, aceita em inglês."
+          },
+          "optional": true,
+          "note": "Vídeo em inglês (Computerphile). Entra porque não há candidato em português para o aprendizado ativo; use a legenda automática."
+        },
+        {
+          "id": "a1-v14",
+          "type": "video",
+          "title": "O que é Aprendizagem por Reforço",
+          "duration": "8:54",
+          "url": "https://www.youtube.com/watch?v=5u8yNEN5arQ",
+          "goals": [
+            "Entender o agente que age num ambiente, muda de estado e recebe recompensa positiva ou negativa (slide 73).",
+            "Ver a diferença para o supervisionado: não há base pronta, o agente aprende interagindo (slide 73: aprende sozinho a melhor estratégia).",
+            "Reconhecer exemplos de recompensa: labirinto, cachorro, multa, robô (slides 73–74)."
+          ],
+          "warnings": [
+            "O vídeo não usa os termos política (policy), função de valor nem exploração × aproveitamento.",
+            "A parte final (08:12 em diante) é só indicação de leitura e foi deixada de fora."
+          ],
+          "clips": [
+            {
+              "start": 8,
+              "end": 492,
+              "slides": "73–74",
+              "note": "Agente, ambiente, estado e recompensa; labirinto, cachorro e robôs. Parar antes da indicação de leitura."
+            }
+          ],
+          "transcript": "../transcripts/5u8yNEN5arQ.json",
+          "review": {
+            "badge": "transcrição lida · trecho aprovado",
+            "covers": [
+              "00:08–00:58 — agente num labirinto aprende com erros e acertos até chegar ao objetivo (slide 73)",
+              "01:01–02:04 — ação, estado e recompensa positiva ou negativa (slide 73)",
+              "02:06–02:50 — diferença para o supervisionado: sem base de dados, aprende por interação (slide 73)",
+              "02:52–05:30 — exemplos do dia a dia: torradeira, bolsa de valores, multa de estacionamento",
+              "05:28–08:10 — cachorro, recompensa como sinal +1/−1, robô sem pré-programação, futebol de robôs (slide 74)"
+            ],
+            "notCovered": "Não define política, função de valor nem exploração × aproveitamento; não relaciona o reforço ao semissupervisionado e ao ativo (slide 67).",
+            "profile": [
+              "**Nível:** iniciante; só conceito, com exemplos do cotidiano.",
+              "**Foco:** o que é aprendizado por reforço e como a recompensa guia o agente.",
+              "**Qualidade:** boa; ritmo calmo, poucos erros de transcrição."
+            ],
+            "verdict": "Aprovar só o trecho 00:08–08:12; coerente com o slide 73."
+          },
+          "channel": "IA Expert Academy"
+        },
+        {
+          "id": "a1-v17",
+          "type": "video",
+          "title": "Aprendizado supervisionado, não supervisionado, por reforço, e tarefas de aprendizagem",
+          "channel": "Data Science Agrárias com Liniker Silva",
+          "duration": "8 min",
+          "url": "https://www.youtube.com/watch?v=p7-rBE7uZhU",
+          "optional": true,
+          "goals": [
+            "Tipos de aprendizado e tarefas: supervisionado, por reforço, classificação × aproximação de função (slides 70 a 74)"
+          ],
+          "warnings": [
+            "Vem de um curso de redes neurais: algumas frases falam 'nesse curso'; ignore.",
+            "Descreve o aprendizado por reforço como 'crítico que avalia depois' (reforço atrasado); o slide usa agente, ambiente e recompensa."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 470,
+              "slides": "70–74",
+              "note": "tipos de aprendizado e tarefas"
+            }
+          ],
+          "transcript": "../transcripts/p7-rBE7uZhU.json",
+          "review": {
+            "badge": "transcrição lida · vídeo inteiro",
+            "covers": [
+              "02:00–03:30 supervisionado: um 'professor' fornece exemplos com entrada e saída (exemplo: fotos de cavalos e árvores).",
+              "03:30–04:30 aprendizado sem professor (não supervisionado: sem saídas informadas).",
+              "04:30–06:00 por reforço: um 'crítico' avalia as respostas depois e a máquina se adapta a esse feedback.",
+              "06:00–07:30 tarefas: classificação (saída em categorias) e aproximação de função (saída numérica, ex.: altura da árvore a partir do diâmetro)."
+            ],
+            "notCovered": "Agrupamento, semissupervisionado e aprendizado ativo.",
+            "profile": [
+              "**Nível:** iniciante."
+            ],
+            "verdict": "Opcional: visão geral curta dos tipos de aprendizado e das tarefas. Aprovado pelo agente principal em 11/10 (transcrição estava sem avaliação)."
+          }
+        },
+        {
+          "id": "a1-v4",
+          "type": "video",
+          "title": "Etapas do Machine Learning (resumo básico)",
+          "channel": "Didática Tech",
+          "url": "https://www.youtube.com/watch?v=6Uu6zo0xoig",
+          "goals": [
+            "O processo de AM é uma sequência de etapas: dados, preparação, modelo, treino, avaliação, ajuste e aplicação (slide 75).",
+            "Na preparação entram formatação, normalização, dados faltantes, outliers e seleção de variáveis (slides 76–77).",
+            "Separar treino e teste serve para medir o desempenho e evitar um modelo especialista no treino (slides 78, 81).",
+            "Depois de avaliar, volta-se a ajustar o modelo ou a preparação, até o ganho não compensar mais (slide 81)."
+          ],
+          "warnings": [
+            "O vídeo tem cinco blocos (conhecimento dos dados, pré-processamento, aplicação do modelo, medição, aperfeiçoamento) e o slide 75 tem sete etapas (coleta, preparação, seleção do modelo, treinamento, avaliação, ajuste de parâmetros, aplicação). Na prova, responda com as sete do slide.",
+            "O vídeo separa treino e teste só na etapa de medir os resultados; no slide 78 isso faz parte da preparação, antes do modelo.",
+            "O vídeo chama camadas, neurônios e taxa de aprendizado de 'parâmetros'. Nos slides, parâmetros são o peso w e o viés b (slide 80) e hiperparâmetros são o que controla o aprendizado (slide 81).",
+            "Todo o pré-processamento vem antes da divisão treino/teste no vídeo; ajustar normalização ou imputação com o conjunto inteiro pode vazar informação do teste (ver Aula 3).",
+            "A etapa de aplicação (usar o modelo para prever) não aparece."
+          ],
+          "clips": [
+            {
+              "start": 33,
+              "end": 583,
+              "slides": "75–81",
+              "note": "Mapa do processo: conhecimento dos dados, pré-processamento, modelo, medição e aperfeiçoamento."
+            }
+          ],
+          "transcript": "../transcripts/6Uu6zo0xoig.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:49–01:33 — conhecer o problema e os dados (slides 75–76)",
+              "01:33–03:55 — pré-processamento: formatar, normalizar, faltantes, outliers, seleção e redução de dimensionalidade (slides 76–77)",
+              "03:55–05:57 — escolher e aplicar o modelo (slides 79–80)",
+              "06:01–06:33 — medir resultados com treino/teste, validação cruzada e métrica (slides 78, 81)",
+              "06:33–09:43 — aperfeiçoar: trocar o modelo, mudar parâmetros ou voltar à preparação, até o ganho não compensar (slide 81)"
+            ],
+            "notCovered": "Não trata coleta (quantidade e qualidade) como etapa nem balanceamento (slides 76–77); não cobre a etapa de aplicação do modelo, a equação com w e b (slide 80), o termo hiperparâmetro nem generalização (slides 81–82).",
+            "profile": [
+              "**Nível:** iniciante, visão geral conceitual, sem código.",
+              "**Foco:** mapa do processo de AM, do problema até o ajuste do modelo.",
+              "**Qualidade:** clara, boa visão geral, mas com estrutura diferente do slide 75 (cinco blocos em vez de sete etapas) e com enchimento no início e no fim."
+            ],
+            "verdict": "Aprovar só o trecho 00:33–09:43 (9:10), lembrando que as etapas do slide 75 são sete."
+          },
+          "optional": true,
+          "note": "Vídeo do curso \"Introdução a Machine Learning\" (Didática Tech), que você já assistiu: entra só como **revisão**. Ele **não segue o slide 75** (tem 5 blocos, não as 7 etapas); a leitura da Aula 1 tem a tabela certa."
+        },
+        {
+          "id": "a1-v15",
+          "type": "video",
+          "title": "Explicando os hiperparâmetros (taxa de aprendizado)",
+          "duration": "6:55",
+          "url": "https://www.youtube.com/watch?v=HDLIqanb4cw",
+          "goals": [
+            "Entender que hiperparâmetros são configurações do algoritmo que você escolhe e ajusta por tentativa (slide 81).",
+            "Ver a taxa de aprendizado como a velocidade do aprendizado, com o compromisso entre rápido demais e lento demais (slide 81).",
+            "Saber que existem buscas automáticas (grid search, random search) além do ajuste manual."
+          ],
+          "warnings": [
+            "O vídeo chama de 'parâmetro' o que o slide 81 chama de hiperparâmetro; no slide 80, parâmetros são o peso w e o viés b, aprendidos no treino. Não confundir.",
+            "O 'número de estimadores' (número de árvores) é específico de métodos que combinam árvores (LightGBM) e não está no slide.",
+            "Não aborda a 'quantidade de repetições sobre os dados' (épocas) citada no slide 81.",
+            "Os trechos sobre scale_pos_weight e a documentação do LightGBM (05:58–06:48) foram deixados de fora."
+          ],
+          "clips": [
+            {
+              "start": 19,
+              "end": 74,
+              "slides": "81",
+              "note": "O que são hiperparâmetros: configurações do algoritmo que você escolhe."
+            },
+            {
+              "start": 92,
+              "end": 268,
+              "slides": "81",
+              "note": "Número de árvores, busca manual × grid/random search e taxa de aprendizado (velocidade do aprendizado)."
+            }
+          ],
+          "transcript": "../transcripts/HDLIqanb4cw.json",
+          "review": {
+            "badge": "transcrição lida · trechos aprovados",
+            "covers": [
+              "00:19–01:14 — hiperparâmetros como configurações escolhidas pelo cientista (slide 81)",
+              "01:32–02:58 — número de estimadores (árvores) ajustado por tentativa; grid search e random search (slide 81)",
+              "02:59–04:28 — taxa de aprendizado: velocidade do aprendizado e compromisso entre rápido e lento (slide 81)"
+            ],
+            "notCovered": "Não separa parâmetros (w, b) de hiperparâmetros, não cita as repetições sobre os dados (épocas) e não diz em que etapa do processo se ajustam (slides 80–81).",
+            "profile": [
+              "**Nível:** iniciante em AM, mas pressupõe ter visto código e árvores de decisão.",
+              "**Foco:** escolher hiperparâmetros num exemplo de LightGBM.",
+              "**Qualidade:** média; informal, com exemplo específico de uma biblioteca."
+            ],
+            "verdict": "Aprovar só os trechos indicados, como complemento; só a taxa de aprendizado coincide com o slide."
+          },
+          "optional": true,
+          "note": "Cobertura parcial dos hiperparâmetros do slide 81: só a taxa de aprendizado coincide. O contraste parâmetros × hiperparâmetros fica no texto.",
+          "channel": "Eduardo | Ciência dos Dados"
+        },
+        {
+          "id": "a1-v16",
+          "type": "video",
+          "title": "Generalização: por que o modelo precisa ser genérico (periquitos)",
+          "duration": "10:54",
+          "url": "https://www.youtube.com/watch?v=tzeG-ubgNgQ",
+          "goals": [
+            "Entender o que é generalizar: reconhecer casos novos e diferentes dos exemplos de treino (slide 82).",
+            "Ver que um modelo treinado quase só com o mesmo tipo de exemplo vira um especialista nesses dados (slide 82)."
+          ],
+          "warnings": [
+            "Lapso de fala: em 04:26 as imagens chamadas de 'teste' são de TREINO.",
+            "Overfitting e underfitting (05:48–09:12) NÃO estão nos slides da Aula 1 e o trecho 05:56–06:28 troca treino por teste (99% no teste e 63% no treino, invertido); ficaram fora do trecho.",
+            "O vídeo é desorganizado (começa dizendo que gravou de novo e divaga); só a analogia dos animais é aproveitável.",
+            "Não define 'capacidade de generalização' como no slide 82 (esperado e obtido convergem)."
+          ],
+          "clips": [
+            {
+              "start": 185,
+              "end": 345,
+              "slides": "82",
+              "note": "Modelo genérico (girafa, carro) e o exemplo dos periquitos: o modelo só reconhece o que viu no treino."
+            }
+          ],
+          "transcript": "../transcripts/tzeG-ubgNgQ.json",
+          "review": {
+            "badge": "transcrição lida · trecho aprovado",
+            "covers": [
+              "03:05–04:05 — qualquer pessoa imagina uma girafa ou um carro diferente, mas reconhece: o modelo deve ser genérico (slide 82)",
+              "04:05–05:45 — se as imagens de treino são quase todas iguais, o modelo só reconhece aquele tipo; falta modelo genérico (slide 82)"
+            ],
+            "notCovered": "Não define capacidade de generalização como o slide 82, nem liga explicitamente a generalização aos dados de teste (slides 78, 81).",
+            "profile": [
+              "**Nível:** iniciante; só analogia.",
+              "**Foco:** ideia intuitiva de modelo genérico × especialista nos dados de treino.",
+              "**Qualidade:** fraca a média; desorganizado e com lapsos treino/teste. Aceito apenas este trecho por ser o único que explica o slide 82."
+            ],
+            "verdict": "Aprovar só o trecho 03:05–05:45, como complemento, ciente dos avisos."
+          },
+          "optional": true,
+          "note": "Qualidade só razoável: serve para a intuição do slide 82. Se preferir só vídeos de qualidade alta, descartar e cobrir só com o texto.",
+          "channel": "Zurubabel"
+        },
+        {
+          "id": "a1-md",
+          "type": "markdown",
+          "title": "Leitura: Aula 1 do zero",
+          "path": "aula-1-do-zero.md",
+          "goals": [
+            "Os vídeos acima são curtos e rasos: este texto cobre os slides inteiros, em ordem",
+            "Algoritmo convencional × AM; IA ⊃ AM; Turing; indução × dedução",
+            "Amostra, atributo, alvo; supervisionado × não supervisionado",
+            "Classificação, regressão, agrupamento, associação; semissupervisionado, ativo, reforço",
+            "As 7 etapas do processo; parâmetros × hiperparâmetros; generalização"
+          ]
+        },
+        {
+          "id": "a1-q",
+          "type": "questions",
+          "title": "Questões da Aula 1 (13)",
+          "path": "lesson-1-questions.json"
+        }
+      ]
+    },
+    {
+      "id": "aula-3",
+      "title": "Aula 3 · Pré-processamento",
+      "items": [
+        {
+          "id": "a3-v9",
+          "type": "video",
+          "title": "Mineração de Dados - Preparação e limpeza de dados",
+          "channel": "UNIVESP",
+          "duration": "21 min",
+          "url": "https://www.youtube.com/watch?v=10kmcTfoxiM",
+          "goals": [
+            "Slides 3 e 4: problemas dos dados brutos e integração de bases (inconsistências e redundâncias)",
+            "Slide 6: alternativas para dados faltantes (imputação)",
+            "Slide 29 (parcial): atributo redundante, como data de nascimento × idade"
+          ],
+          "warnings": [
+            "Não diz que a média, a moda ou o modelo usados para preencher devem ser calculados **só com o treino**. Esse princípio (slide 13) aparece no vídeo a3-v1 e na leitura.",
+            "Hot deck e \"valor da última observação\" não estão no slide 6: são técnicas extras. Para a prova vale a lista do slide (eliminar coluna ou linha, manual, heurística, valor que indica ausência, média ou moda, algoritmo de AM).",
+            "Só fala em ignorar o **objeto** (linha); eliminar o **atributo** (coluna), que o slide lista, não é citado.",
+            "\"Objeto\" e \"atributo\" são o vocabulário da professora para linha e coluna; não é \"exemplo/feature\" de outros materiais, mas é a mesma coisa."
+          ],
+          "clips": [
+            {
+              "start": 183,
+              "end": 400,
+              "slides": "3–4, 7",
+              "note": "três tipos de problema nos dados brutos: incompletude, inconsistência, ruído"
+            },
+            {
+              "start": 506,
+              "end": 1052,
+              "slides": "6",
+              "note": "dados faltantes: as alternativas de imputação, uma por uma"
+            },
+            {
+              "start": 1055,
+              "end": 1230,
+              "slides": "4, 29",
+              "note": "integração de bases: redundância, duplicidade e conflitos"
+            }
+          ],
+          "transcript": "../transcripts/10kmcTfoxiM.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:00–03:00 dados brutos (KDD) e definições: objeto = linha, atributo = coluna.",
+              "03:03–06:40 três tipos de problema numa tabela de exemplo: incompletude (objeto sem informação, cartão de crédito ausente), inconsistência (89 kg no campo estado civil: valor fora do domínio; ou bases diferentes com valores diferentes) e ruído (pessoa com doutorado e 10 anos de idade).",
+              "08:26–17:32 dados faltantes (imputação): ignorar o objeto (serve se a base é grande), preencher manualmente (serve se é pequena), constante global definida pelo especialista, hot deck (copiar o valor de um registro parecido em um atributo relacionado, escolhido ao acaso), valor da última observação (ordenar por um atributo relacionado), média ou moda (do atributo todo ou só da classe), modelo preditivo ou agrupamento e aproximação por regressão linear.",
+              "17:32–20:30 integração de bases: redundância (data de nascimento e idade: um basta, o que reduz a dimensionalidade), duplicidade (mesma informação em duas tabelas) e conflitos (quilômetros × milhas, \"feminino\" × \"F\")."
+            ],
+            "notCovered": "eliminar a coluna inteira; quando usar cada alternativa além de \"depende do tamanho da base\"; calcular a imputação só no treino; correlação para detectar redundância (slide 29); a caracterização com estatísticas descritivas (slide 3, 2º parágrafo); outliers, escala, codificação, PCA e balanceamento.",
+            "profile": [
+              "**Nível e foco:** iniciante a intermediário. Aula expositiva de graduação (mineração de dados), com slides e tabelas de exemplo, **sem código**. Ritmo calmo, define os termos antes de usar.",
+              "**Idioma/qualidade:** português do Brasil, boa dicção; a transcrição automática tem poucos erros (\"campo bolo\" = campo nulo)."
+            ],
+            "verdict": "aprovar só os trechos 03:03–06:40, 08:26–17:32 e 17:32–20:30 (pular 06:40–08:26, panorama do processo de KDD). É o único vídeo que lista as alternativas para dados faltantes e que trata da integração de bases. Complementa o a3-v1 (que cobre só excluir ou imputar pela média)."
+          }
+        },
+        {
+          "id": "a3-v1",
+          "type": "video",
+          "title": "Pré-processamento: valores extremos e valores ausentes",
+          "channel": "Análise Macro",
+          "duration": "31 min",
+          "url": "https://www.youtube.com/watch?v=SNd_qoGUEOE",
+          "goals": [
+            "Slides 6 a 8: dados faltantes e o que é outlier",
+            "Slide 13: o que fazer com outliers"
+          ],
+          "warnings": [
+            "Sugere processar o teste \"individualmente\". O correto (slides 13 e 18) é usar **as estatísticas do treino**."
+          ],
+          "clips": [
+            {
+              "start": 40,
+              "end": 495,
+              "slides": "6–8, 13",
+              "note": "ausentes e outliers: ideia geral"
+            }
+          ],
+          "transcript": "../transcripts/SNd_qoGUEOE.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:40–03:00 vazamento de dados (data leakage) explicado com exemplo de série temporal: calcular algo na amostra completa e só depois separar treino/teste \"contamina\" o treino.",
+              "03:00–05:30 valores extremos: remover linha ou coluna, substituir por média/mediana/valor arbitrário/método estatístico ou de AM, ou criar variável dummy indicando o extremo.",
+              "05:30–06:30 recomenda tratar com separação treino/teste.",
+              "06:30–08:15 valores ausentes: excluir linha (ou coluna, conforme a proporção) ou imputar (estatística descritiva, valor de cima, valor de baixo, valor arbitrário).",
+              "10:30–15:00 (R) e 24:30–29:00 (Python) boxplot e regra Q1 − 1,5×IQR / Q3 + 1,5×IQR (cita que \"algumas pessoas usam 3\"), aplicada filtrando linhas.",
+              "15:30–19:30 (R) e 29:00–30:30 (Python): proporção de ausentes (57%) e imputação pela média do treino; mostra que a imputação muda a distribuição (média igual, mediana e quartis mudam)."
+            ],
+            "notCovered": "Z-score; winsorização; IQR × Z-score; manter com algoritmos robustos; escala; ordem outliers → normalização; as alternativas de ausentes \"preencher manualmente\", \"valor que indica ausência\", \"moda\" e \"prever com AM\" (esta última só aparece citada para outliers, em 04:30). Nenhum tema de encoding, PCA, balanceamento.",
+            "profile": [
+              "**Nível e foco:** intermediário. Pressupõe saber o que são amostra de treino/teste, variável preditiva e modelo; vocabulário de econometria (\"variáveis exógenas\", \"dummy\", \"fora da amostra\"). Mistura conceito (00:00–08:30) e código (R 08:30–20:00, Python 20:00–31:00, o mesmo roteiro repetido). A parte conceitual é só 8 min.",
+              "**Idioma/qualidade:** português do Brasil, fala clara; a legenda erra muito, mas dá para acompanhar. Parte do código usa um arquivo de 1 GB do IBGE (não reproduzível sem baixar), irrelevante para a prova."
+            ],
+            "verdict": "aprovar só os trechos 00:40–08:15 (opcional: 15:30–19:30 para ver imputação pela média do treino e o efeito na distribuição). Assistir já avisado da ressalva sobre \"processar cada amostra individualmente\"."
+          }
+        },
+        {
+          "id": "a3-v2",
+          "type": "video",
+          "title": "Detecção e remoção de outliers: univariado e multivariado",
+          "channel": "Máquinas Inteligentes",
+          "duration": "34 min",
+          "url": "https://www.youtube.com/watch?v=CLN-y_4ZySw",
+          "goals": [
+            "Z-score com corte em 3 e IQR com 1,5 × IQR (slides 9 a 12)",
+            "Quando usar cada um"
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 150,
+              "slides": "7"
+            },
+            {
+              "start": 260,
+              "end": 970,
+              "slides": "9–12",
+              "note": "Z-score e IQR"
+            },
+            {
+              "start": 1785,
+              "end": 2025,
+              "slides": "13",
+              "note": "o que fazer com os outliers"
+            }
+          ],
+          "transcript": "../transcripts/CLN-y_4ZySw.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "métodos multivariados (EllipticEnvelope, Isolation Forest) de 16:10 a 29:30. É conteúdo extra; pular."
+            ],
+            "notCovered": "winsorização; algoritmos robustos (árvores etc.) como alternativa; ordem outliers → normalização; dados faltantes; resto da aula.",
+            "profile": [
+              "**Nível e foco:** iniciante a intermediário, bom para engenheiro de software (código simples em numpy). Foco misto conceito + código Python (numpy/sklearn, sem pandas). Fala pausada e didática, ele mesmo avisa que escreve \"da forma mais didática possível\".",
+              "**Idioma/qualidade:** português do Brasil, boa explicação; legenda com muitos erros de nomes."
+            ],
+            "verdict": "aprovar só os trechos 00:00–02:30, 04:20–16:10 e 29:45–33:45. É o melhor vídeo para slides 7–13."
+          }
+        },
+        {
+          "id": "a3-v17",
+          "optional": true,
+          "type": "video",
+          "title": "Boxplot Explicado: Quartis, Percentis e Outliers na Análise de Dados",
+          "channel": "Asimov Dados e Asimov Academy",
+          "duration": "12 min",
+          "url": "https://www.youtube.com/watch?v=Y_4dWhMmaGg",
+          "goals": [
+            "Slides 8, 10 e 11: o que são quartis, como se lê o boxplot e a regra de 1,5 × IQR"
+          ],
+          "warnings": [
+            "Descreve as hastes (whiskers) como o limite do aceitável. Na prática elas vão até o último dado dentro do limite Q1 − 1,5×IQR / Q3 + 1,5×IQR, e os pontos além dele são os outliers (conhecimento externo; o limite é o que o slide 11 pede).",
+            "O trecho de pandas (04:05–07:55) foi cortado: `quantile` e `describe` não são cobrados.",
+            "Não compara IQR com Z-score nem diz o que fazer com os outliers."
+          ],
+          "clips": [
+            {
+              "start": 50,
+              "end": 245,
+              "slides": "10",
+              "note": "o que são quartis (Q1, Q2 = mediana, Q3) em um gráfico de densidade"
+            },
+            {
+              "start": 476,
+              "end": 668,
+              "slides": "8, 10–11",
+              "note": "como ler o boxplot, o IQR e a regra 1,5 × IQR"
+            }
+          ],
+          "transcript": "../transcripts/Y_4dWhMmaGg.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:50–04:05 medidas separatrizes: percentis (100 partes) e quartis (4 partes de 25%); Q1, Q2 (a mediana) e Q3 lidos numa curva de densidade de alturas (Q1 ≈ 1,65, Q2 ≈ 1,70, Q3 ≈ 1,75).",
+              "07:56–09:30 leitura do boxplot: a caixa vai de Q1 a Q3 e concentra 50% dos dados; a linha do meio é a mediana.",
+              "09:30–11:08 o intervalo Q3 − Q1 é o IQR; limites: acima de Q3 + 1,5×IQR ou abaixo de Q1 − 1,5×IQR é outlier; caixa estreita = dados concentrados, caixa larga = dados espalhados."
+            ],
+            "notCovered": "Z-score; IQR × Z-score (por que o IQR é robusto); remoção, winsorização e manutenção; tratar só no treino.",
+            "profile": [
+              "**Nível e foco:** iniciante. Parte de zero (o que é um quartil) com gráficos interativos; é o jeito mais claro de entender o IQR. Conceito 65%, código 35% (o trecho de código é cortado).",
+              "**Idioma/qualidade:** português do Brasil, descontraído, fala clara; transcrição com poucos erros (\"altlier\" = outlier)."
+            ],
+            "verdict": "aprovar só os trechos 00:50–04:05 e 07:56–11:08, como complemento opcional do a3-v2: ver antes dele para quem não domina quartis. O a3-v2 continua sendo o vídeo principal por incluir o Z-score e o efeito dos outliers na regressão."
+          }
+        },
+        {
+          "id": "a3-v19",
+          "optional": true,
+          "type": "video",
+          "title": "Outliers utilizando Z-Scores",
+          "channel": "Aplicadas Descomplicadas",
+          "duration": "6 min",
+          "url": "https://www.youtube.com/watch?v=dcXwhVkpYNI",
+          "goals": [
+            "Slide 9: Z-score (distância à média em desvios padrão) e a regra |Z| > 3"
+          ],
+          "warnings": [
+            "Não cita a regra 68-95-99,7 nem a distribuição normal, que o slide 9 usa para justificar o limite 3 (isso está no a3-v2).",
+            "Os exemplos têm conta com média e desvio padrão calculados na tela; na prova não há cálculo. Servem para ver a regra funcionando. No exemplo 1, 125 tem Z = 2,46 e **não** é outlier pela regra, embora seja bem maior que os outros 7 valores.",
+            "A transcrição termina no segundo exemplo, depois de anunciar \"12 exercícios\": confira se o vídeo continua além de 6:11."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 193,
+              "slides": "9",
+              "note": "o que é outlier, fórmula do Z-score, sinal e limite de ±3"
+            },
+            {
+              "start": 193,
+              "end": 371,
+              "slides": "9",
+              "note": "dois exemplos aplicando a regra |Z| > 3"
+            }
+          ],
+          "transcript": "../transcripts/dcXwhVkpYNI.json",
+          "review": {
+            "badge": "transcrição lida · vídeo inteiro",
+            "covers": [
+              "00:00–01:00 outlier = valor muito distante dos demais; pode ser grande variabilidade natural (salários, preço de móveis) ou erro de medida.",
+              "01:00–03:05 Z = (x − média) / desvio padrão: Z > 0 está acima da média, Z < 0 abaixo, Z = 0 é a média; quanto maior o módulo de Z, mais distante. É outlier se Z > 3 ou Z < −3.",
+              "03:13–05:10 exemplo 1: o valor 125 num conjunto de 8 valores tem Z = 2,46, logo não é outlier; exemplo 2: nota 786 num teste com média 512 e desvio 85 tem Z = 3,25, logo é outlier."
+            ],
+            "notCovered": "68-95-99,7 e distribuição normal; sensibilidade do Z-score a outliers extremos; IQR × Z-score; o que fazer com os outliers.",
+            "profile": [
+              "**Nível e foco:** iniciante. Só conceito e conta no quadro; sem código.",
+              "**Idioma/qualidade:** português do Brasil, fala pausada; transcrição boa."
+            ],
+            "verdict": "aprovar o vídeo inteiro (00:00–06:11) como complemento opcional do a3-v2 (trecho de Z-score). Explica melhor o sinal de Z e dá dois exemplos de aplicação; o a3-v2 tem a regra 68-95-99,7 e as limitações."
+          }
+        },
+        {
+          "id": "a3-v18",
+          "optional": true,
+          "type": "video",
+          "title": "Excluir Outliers? Usar média ou mediana?",
+          "channel": "Prof. Fernanda Maciel",
+          "duration": "4 min",
+          "url": "https://www.youtube.com/watch?v=o3uTAZyROI8",
+          "goals": [
+            "Slide 12: a média é arrastada por valores extremos e a mediana não",
+            "Slide 13: manter o outlier quando ele é um valor real; remover quando é erro"
+          ],
+          "warnings": [
+            "É um recorte de uma aula maior: começa em \"Agora, uma outra coisa...\" e se refere a uma tabela de salários mostrada antes. Dá para acompanhar, mas o exemplo vem sem apresentação.",
+            "Recomenda **mediana** quando há outliers representativos. O slide 13 vai além: ou winsoriza, ou mantém e usa algoritmos robustos (árvores, random forest, boosting). O vídeo não fala em algoritmo robusto.",
+            "Não fala em treino e teste."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 211,
+              "slides": "12–13",
+              "note": "manter × remover o outlier e média × mediana, com exemplo de salários"
+            }
+          ],
+          "transcript": "../transcripts/o3uTAZyROI8.json",
+          "review": {
+            "badge": "transcrição lida · vídeo inteiro",
+            "covers": [
+              "00:00–02:00 outlier = valor extremo; pode ser real (salário de 10 mil numa cidade onde a maioria ganha até 2 mil) ou erro de digitação (idade 300 em vez de 30, salário de 500 mil onde o maior é 35 mil).",
+              "02:00–03:31 regra: se for erro, remove; se for valor representativo, **não remove**. Com outliers a média é distorcida e se usa a mediana (exemplo: média 7.444 puxada pelo salário do presidente, mediana 4.500)."
+            ],
+            "notCovered": "winsorização; algoritmos robustos; IQR e Z-score; trabalhar só no treino.",
+            "profile": [
+              "**Nível e foco:** iniciante. Só conceito, com uma planilha de exemplo; sem código. Vídeo curto (3:31).",
+              "**Idioma/qualidade:** português do Brasil, fala clara; transcrição boa."
+            ],
+            "verdict": "aprovar o vídeo inteiro (00:00–03:31) como complemento opcional do a3-v2. Explica de forma simples por que manter o outlier real (slide 13) e por que a mediana é mais robusta que a média (slide 12), pontos que o a3-v2 só toca de leve."
+          }
+        },
+        {
+          "id": "a3-v11",
+          "type": "video",
+          "title": "Use \"fit_transform\" on training data, but \"transform\" (only) on testing/new data",
+          "channel": "Data School",
+          "duration": "4 min",
+          "url": "https://www.youtube.com/watch?v=6as06vtXNL8",
+          "goals": [
+            "Slide 13 (e 18): calcular as transformações só com o treino e apenas aplicá-las ao teste",
+            "Vazamento de dados (data leakage) em imputação e codificação"
+          ],
+          "warnings": [
+            "Em **inglês** (a única explicação direta do \"fit só no treino\" entre os candidatos; o vídeo é curto e fala devagar).",
+            "Os exemplos são imputação pela média (SimpleImputer) e one-hot. A regra vale igual para o scaler (min-max, padronização), para os limites de outliers e para o PCA (os slides 13, 16 e 35), mas o vídeo não mostra esses casos.",
+            "Pressupõe que você já sabe o que são `fit` e `transform` do scikit-learn: `fit` aprende (média, categorias), `transform` aplica."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 258,
+              "slides": "13, 18",
+              "note": "em inglês; fit_transform no treino, só transform no teste, e por que isso evita vazamento"
+            }
+          ],
+          "transcript": "../transcripts/6as06vtXNL8.json",
+          "review": {
+            "badge": "transcrição lida · vídeo inteiro",
+            "covers": [
+              "00:00–01:00 regra: no treino use `fit_transform`; no teste ou em dado novo use só `transform`. `fit_transform` é fit seguido de transform numa chamada só.",
+              "01:00–02:30 por quê: as mesmas transformações precisam valer nos dois conjuntos. O one-hot aprende as colunas C, Q e S no treino e cria as três colunas no teste, mesmo que o teste só tenha Q.",
+              "02:30–03:15 o imputador aprende a média (31,2) no treino e preenche o teste com esse valor, não com a média do teste.",
+              "03:15–04:15 usar a média do teste é vazamento de dados (data leakage): o teste deve simular dados novos e, se o modelo aprende algo dele, a estimativa de desempenho fica errada."
+            ],
+            "notCovered": "scaler, limites de outliers (IQR, Z-score) e PCA como exemplos; balanceamento só no treino (está no a3-v8); código completo ou `Pipeline`.",
+            "profile": [
+              "**Nível e foco:** iniciante a intermediário. Conceito curto com exemplos concretos; sem tela de código.",
+              "**Idioma/qualidade:** inglês claro e pausado; a transcrição tem poucos erros (\"impuder\" = imputer)."
+            ],
+            "verdict": "aprovar o vídeo inteiro (00:00–04:15). Preenche a lacuna \"aplicar só no treino\", que nenhum vídeo em português explicava; o a3-v1 e o a3-v8 mostram o princípio, mas só para imputação e balanceamento."
+          }
+        },
+        {
+          "id": "a3-v16",
+          "type": "video",
+          "title": "Tratamento de Outlier (Winsorização) - R na Pesquisa Contábil",
+          "channel": "PPGC UFSC",
+          "duration": "16 min",
+          "url": "https://www.youtube.com/watch?v=w08ja_6lXe8",
+          "goals": [
+            "Slide 13: winsorização (substituir os extremos por um limite em vez de remover)"
+          ],
+          "warnings": [
+            "O limite da winsorização aqui vem dos **percentis** 1% e 99% (ou 5% e 95%). O slide 13 usa como limite o do **IQR** (exemplo de 5.000). A ideia é a mesma: o valor extremo é trocado pelo limite, não apagado.",
+            "O vídeo é feito em R (RStudio, pacote `psych`) com dados contábeis. O código não interessa para a prova; os trechos recomendados mostram só a ideia e os valores substituídos.",
+            "Chama de \"insorizar\" (grafia da transcrição; o termo correto é winsorizar). Não diz que os limites devem ser calculados só com o treino (slide 13)."
+          ],
+          "clips": [
+            {
+              "start": 159,
+              "end": 292,
+              "slides": "13",
+              "note": "o que é winsorizar: troca o extremo pelo limite (percentil), não remove a linha"
+            },
+            {
+              "start": 745,
+              "end": 920,
+              "slides": "13",
+              "note": "ver os valores trocados: o −249 virou −89 (1%) ou −10 (5%)"
+            }
+          ],
+          "transcript": "../transcripts/w08ja_6lXe8.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:00–02:39 estatísticas descritivas, histograma e boxplot mostram outliers que arrastam a média (média −3,96 contra mediana 0,58) numa variável contábil. Vale como ilustração do slide 12.",
+              "02:39–04:42 como funciona: valores abaixo do percentil 1% (−89) são trocados por −89 em vez de removidos; acima do percentil 99% (8,85) viram 8,85. O mesmo com 5% e 95%. Vantagem: não remove observações.",
+              "04:42–12:25 código em R (pacote `psych`) e comparação de resumo, histograma e boxplot sem winsorização, a 1% e a 5%: a 5% melhora mais; a 1% ainda deixa média e mediana distantes.",
+              "12:25–15:20 lista dos maiores e menores valores antes e depois: o −249 virou −89 (1%) e −10 (5%); \"winsorização não é remoção, é substituição\"."
+            ],
+            "notCovered": "o limite pelo IQR (exemplo do slide 13); escolha do corte (1% ou 5%) além de \"os artigos usam 1% a 5%\"; quando preferir remover ou manter; fazer só no treino; Python.",
+            "profile": [
+              "**Nível e foco:** intermediário. Pressupõe saber o que é percentil, média e mediana. Conceito em 2 min e o resto é tutorial de R.",
+              "**Idioma/qualidade:** português do Brasil, fala clara e didática; a transcrição erra muito os termos (\"insorizar\", \"otilai\" = outlier)."
+            ],
+            "verdict": "aprovar só os trechos 02:39–04:52 e 12:25–15:20. É o único vídeo sobre winsorização, mas de qualidade média: contexto de pesquisa contábil e limite por percentil. A leitura deve mostrar o exemplo do slide (limite 5.000 pelo IQR)."
+          }
+        },
+        {
+          "id": "a3-v3",
+          "type": "video",
+          "title": "Normalização e padronização de dados: o guia completo",
+          "channel": "Nerd dos Dados",
+          "duration": "43 min",
+          "url": "https://www.youtube.com/watch?v=NEY0TrvHRoU",
+          "goals": [
+            "Min-max × padronização (slides 14 a 16)"
+          ],
+          "warnings": [
+            "Ajusta o scaler no dataset inteiro **antes** de dividir treino e teste. Isso é vazamento de dados: o certo é `fit` só no treino.",
+            "Diz que a padronização produz uma \"distribuição normal\". Ela só dá média 0 e desvio padrão 1; a forma da distribuição não muda.",
+            "Atribui a falta de escala a \"overfitting\". O slide 14 explica de outro jeito: atributos de escala maior dominam o resultado."
+          ],
+          "clips": [
+            {
+              "start": 30,
+              "end": 210,
+              "slides": "14",
+              "note": "por que mudar a escala"
+            },
+            {
+              "start": 570,
+              "end": 1200,
+              "slides": "15–16",
+              "note": "min-max e padronização"
+            },
+            {
+              "start": 1230,
+              "end": 1335,
+              "slides": "16–17"
+            }
+          ],
+          "transcript": "../transcripts/NEY0TrvHRoU.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:30–03:30 por que escalas diferentes atrapalham; só alguns algoritmos são sensíveis (KNN, SVM; árvores e random forest quase não são, mas o tempo de processamento muda).",
+              "04:00–09:30 exemplo numérico à mão com KNN: distância euclidiana com dados originais classifica o ponto B como \"forte\".",
+              "09:30–13:30 fórmula do min-max (x − min)/(max − min) e resultado sempre entre 0 e 1; \"não muda o valor da variável, muda a escala\".",
+              "13:30–16:30 o mesmo cálculo com dados normalizados muda a classificação (vira \"médio\"), mostrando que a escala altera o resultado do algoritmo de distância.",
+              "16:30–21:30 padronização (x − média)/desvio, resultando em média 0 e desvio 1, sem limite fixo (20:00); mesmo efeito na classificação.",
+              "21:53 em diante: \"qual escolher?\" Resposta: testar os dois (38:30–39:30, 41:00–41:30). Demo com StandardScaler e MinMaxScaler (22:17–31:30), KNN: acurácia de 67% (original) para 91% (escalado) (34:00–36:30); SVM: 90% para 92% (39:30–40:30); redes neurais também são sensíveis (38:30)."
+            ],
+            "notCovered": "sensibilidade a outliers e ordem outliers → escala (slide 18); algoritmos \"baseados em gradiente\" do slide 17 (só cita redes neurais e SVM); regra de quando usar uma ou outra, além de \"teste os dois\".",
+            "profile": [
+              "**Nível e foco:** iniciante; ótimo para quem não conhece a área porque faz a conta passo a passo e depois usa scikit-learn. Mais ou menos meio a meio conceito/código; o código (22:17–41:00) é tutorial de sklearn (pandas, StandardScaler, MinMaxScaler, train_test_split, KNN, SVM).",
+              "**Idioma/qualidade:** português do Brasil, explicação clara e lenta, com bastante repetição; há propaganda no fim."
+            ],
+            "verdict": "aprovar só os trechos 00:30–03:30 e 09:30–22:15 , com as ressalvas acima (e opcional 34:00–36:30 para ver o efeito na acurácia, sabendo que o código vaza)."
+          }
+        },
+        {
+          "id": "a3-v15",
+          "optional": true,
+          "type": "video",
+          "title": "O que é normalização e para que serve (machine learning)",
+          "channel": "Didática Tech",
+          "duration": "11 min",
+          "url": "https://www.youtube.com/watch?v=xD9-t4JmJm0",
+          "goals": [
+            "Slide 14: atributos em escalas diferentes fazem o algoritmo decidir quase só pelo atributo de maior escala"
+          ],
+          "warnings": [
+            "A normalização que ele ensina é **dividir cada valor pela média do atributo**. Não é o min-max (slide 15) nem a padronização (slide 16). Serve só para mostrar a ideia de pôr todos na mesma ordem de grandeza; **não use como fórmula de prova**.",
+            "O \"algoritmo\" do exemplo é uma regra inventada (somar altura e peso). Num algoritmo real o efeito é o mesmo na distância euclidiana do KNN; o a3-v3 mostra isso com a conta.",
+            "Chama a divisão pela média de a forma \"mais comum\" de normalizar. Não é: as mais comuns são min-max e padronização."
+          ],
+          "clips": [
+            {
+              "start": 40,
+              "end": 392,
+              "slides": "14",
+              "note": "exemplo de altura (m) e peso (kg): sem normalizar, o peso decide tudo"
+            },
+            {
+              "start": 392,
+              "end": 625,
+              "slides": "14",
+              "note": "atenção: a fórmula usada (dividir pela média) não é a do slide; vale a ideia"
+            }
+          ],
+          "transcript": "../transcripts/xD9-t4JmJm0.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:40–04:45 exemplo: três homens com altura (m) e peso (kg), dois já classificados como porte pequeno e grande. A regra \"altura + peso\" põe o terceiro (1,88 m, 80 kg) no grupo pequeno, contra a intuição.",
+              "04:45–06:30 diagnóstico: a altura varia ~0,5 e o peso varia dezenas; o atributo de maior escala domina e a altura praticamente não conta. É o argumento do slide 14.",
+              "06:30–08:00 solução com a fórmula \"valor / média do atributo\" (média da altura 1,79; do peso 81,67).",
+              "08:00–10:25 depois da conta a terceira pessoa fica perto do grupo grande, como a intuição pedia; conclusão: trazer os atributos à mesma ordem de grandeza para que nenhum pese mais só pela unidade."
+            ],
+            "notCovered": "min-max; padronização (média 0, desvio 1); quais algoritmos são sensíveis à escala (slide 17); outliers e a ordem outliers → normalização (slide 18); distância euclidiana e KNN pelo nome.",
+            "profile": [
+              "**Nível e foco:** iniciante. Só conceito, com uma tabela de três linhas e contas simples; sem código. Fala lenta e com repetição.",
+              "**Idioma/qualidade:** português do Brasil; a transcrição tem erros pequenos (\"bevidos\", \"rostro\")."
+            ],
+            "verdict": "aprovar só os trechos 00:40–10:25, como complemento opcional do a3-v3, com o aviso de que a fórmula não é a do slide. A vantagem é o exemplo concreto do slide 14 (por que a escala atrapalha); o a3-v3 continua sendo o vídeo principal para min-max e padronização."
+          }
+        },
+        {
+          "id": "a3-v4",
+          "type": "video",
+          "title": "Entendendo de vez a diferença entre normalização e padronização",
+          "channel": "Eduardo (Ciência dos Dados)",
+          "duration": "33 min",
+          "url": "https://www.youtube.com/watch?v=-L8MacYRWGM",
+          "goals": [
+            "Quais algoritmos exigem escala (slide 17)"
+          ],
+          "warnings": [
+            "Entre 18:30 e 20:30 diz que a padronização **não** é afetada por outliers. O slide 18 diz que **as duas** técnicas são muito sensíveis a valores extremos.",
+            "Escala o X inteiro antes da validação cruzada (vazamento)."
+          ],
+          "optional": true,
+          "clips": [
+            {
+              "start": 1090,
+              "end": 1125,
+              "slides": "17"
+            },
+            {
+              "start": 1325,
+              "end": 1410,
+              "slides": "17"
+            },
+            {
+              "start": 1470,
+              "end": 1530,
+              "slides": "17",
+              "note": "quais modelos exigem escala"
+            }
+          ],
+          "transcript": "../transcripts/-L8MacYRWGM.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "redimensionar não muda os dados, só a escala (02:30–03:30); KNN com atributos de escalas diferentes e a distância euclidiana (04:00–08:30); fórmula min-max (18:30–19:30) e padronização (10:00–10:30), cálculo no Excel (11:00–17:30); \"quando usar\" (18:10–19:00): normalização quando os dados não são gaussianos (KNN, redes neurais), padronização quando são gaussianos, mas \"não precisa ser necessariamente verdade\"; \"depende do algoritmo, teste e escolha o melhor\" (22:07–23:30); gradiente descendente, regressão, redes neurais e distâncias se beneficiam da escala (24:30–25:30); demo em sklearn com KNN (28:00–31:30): sem escala 71%, padronizado 73,9%, min-max 73,8%."
+            ],
+            "notCovered": "ordem outliers → escala; Z-score; quais algoritmos de árvore não precisam (cita árvores em 03:30, de passagem).",
+            "profile": [
+              "**Nível e foco:** iniciante, formato de diálogo (\"Eduardo, me explica\"), longo e cheio de enchimento; Excel e depois sklearn. Conceito 60% / código 40%.",
+              "**Idioma/qualidade:** português do Brasil; muito informal; legenda ruim em vários trechos."
+            ],
+            "verdict": "aprovar só os trechos 18:10–18:45, 22:05–23:30 e 24:30–25:30 como complemento do NEY0 (regra de escolha e algoritmos). O resto do vídeo é redundante com NEY0 e tem o trecho confuso de outliers."
+          }
+        },
+        {
+          "id": "a3-v5",
+          "type": "video",
+          "title": "Aprenda quando usar LabelEncoder ou One-Hot Encoder",
+          "channel": "Eduardo (Ciência dos Dados)",
+          "duration": "32 min",
+          "url": "https://www.youtube.com/watch?v=RWaMw02_MQQ",
+          "goals": [
+            "Ordinal × nominal e por que inteiros arbitrários enganam o modelo (slides 19 e 20)",
+            "One-hot encoding"
+          ],
+          "warnings": [
+            "Recomenda `LabelEncoder` para variáveis ordinais, mas ele numera em **ordem alfabética**, como o próprio vídeo mostra. Para ordinais, a ordem tem de ser definida por você."
+          ],
+          "clips": [
+            {
+              "start": 470,
+              "end": 615,
+              "slides": "19",
+              "note": "ordinal × nominal"
+            },
+            {
+              "start": 990,
+              "end": 1380,
+              "slides": "20",
+              "note": "one-hot"
+            },
+            {
+              "start": 1790,
+              "end": 1860,
+              "slides": "19–20",
+              "note": "resumo"
+            }
+          ],
+          "transcript": "../transcripts/RWaMw02_MQQ.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "por que o computador precisa de números (03:30–07:30); tipos de variável: numérica, categórica, nominal (professor, médico, advogado: sem ordem) × ordinal (júnior, pleno, sênior) (07:50–10:15); LabelEncoder = numeração em ordem alfabética (10:30–11:30, demonstrado em 14:00–16:30); problema: a ordem alfabética cria uma ordem falsa em categorias nominais (16:30–17:50); One-hot cria uma coluna 0/1 por categoria e cada linha tem exatamente um 1 (17:50–23:00); \"dummy variable trap\"/multicolinearidade e VIF com statsmodels (23:30–29:00); resumo de quando usar (29:50–31:00): one-hot para nominal com poucas categorias; LabelEncoder quando há ordem; com centenas de categorias, one-hot explode as colunas."
+            ],
+            "notCovered": "discretização (numérico→simbólico); ordem correta de ordinais definida pelo analista (OrdinalEncoder); train/test (aplica na tabela inteira); resto da aula.",
+            "profile": [
+              "**Nível e foco:** iniciante, muito conversado; metade do vídeo é introdução/enchimento (00:00–07:30) e propaganda; código com pandas e sklearn.",
+              "**Idioma/qualidade:** português do Brasil; legenda ruim, mas o conteúdo é compreensível."
+            ],
+            "verdict": "aprovar só os trechos 07:50–10:15, 16:30–23:00 e 29:50–31:00 , ignorando a recomendação de LabelEncoder para ordinais."
+          }
+        },
+        {
+          "id": "a3-v12",
+          "type": "video",
+          "title": "Partitioning in Data Mining | Equal Width | Equal Frequency | Clustering Partitioning",
+          "channel": "Mahesh Huddar",
+          "duration": "8 min",
+          "url": "https://www.youtube.com/watch?v=RF6sg0ozloE",
+          "goals": [
+            "Slide 21: converter numérico em simbólico (discretização) por larguras iguais"
+          ],
+          "warnings": [
+            "Em **inglês**, com sotaque indiano; é o único candidato que explica a discretização (a lacuna do slide 21 não tinha vídeo).",
+            "Chama de \"partitioning\" o que o slide chama de discretização (em outros materiais: binning). Mostra também \"mesma frequência\" (equal frequency), que o slide só sugere com \"Estratégias:\" e cita só larguras iguais.",
+            "Não fala dos **rótulos** dos intervalos (baixo, médio, alto), que o slide 21 pede: ele só mostra em qual grupo cada valor cai.",
+            "O trecho de K-means (03:08–07:40) foi deixado de fora: agrupamento não está nos slides."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 188,
+              "slides": "21",
+              "note": "em inglês; larguras iguais (e mesma frequência) com um exemplo numérico"
+            }
+          ],
+          "transcript": "../transcripts/RF6sg0ozloE.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:00–00:37 partitioning = converter dado numérico em categórico, sem usar o rótulo; três técnicas (mesma frequência, mesma largura, por agrupamento).",
+              "00:37–01:43 mesma frequência: ordenar os dados e formar grupos de igual quantidade (profundidade 4 gera 3 grupos com 12 valores).",
+              "01:43–03:08 larguras iguais: largura = (máx − mín) / n. Exemplo: mín 5, máx 215, n = 3 dá largura 70; intervalos ≈ 5 a 75, 75 a 145 e 145 a 215, e cada valor vai para o intervalo em que cai."
+            ],
+            "notCovered": "rótulos dos intervalos; quando discretizar e qual perda de informação isso traz; escolha do número de intervalos; a conversão inversa (simbólico para numérico, que está no a3-v5).",
+            "profile": [
+              "**Nível e foco:** iniciante. Cálculo à mão com uma lista pequena de números na tela; sem código.",
+              "**Idioma/qualidade:** inglês com sotaque marcado; a transcrição tem erros nos números do fim do exemplo (\"255\" onde seria 215). Os números aparecem escritos na tela."
+            ],
+            "verdict": "aprovar só o trecho 00:00–03:08, com o aviso de que está em inglês e usa o nome \"partitioning\". Preenche a lacuna da discretização, mas continua sendo um vídeo mediano; a leitura ainda precisa mostrar o rótulo dos intervalos."
+          }
+        },
+        {
+          "id": "a3-v6",
+          "type": "video",
+          "title": "Entendendo de vez o que é PCA",
+          "channel": "Eduardo (Ciência dos Dados)",
+          "duration": "29 min",
+          "url": "https://www.youtube.com/watch?v=p4bvCFygfW0",
+          "goals": [
+            "Redução de dimensionalidade e PCA em linguagem simples (slides 22 a 36)"
+          ],
+          "clips": [
+            {
+              "start": 150,
+              "end": 900,
+              "slides": "22–36",
+              "note": "maldição, redução e PCA"
+            },
+            {
+              "start": 1290,
+              "end": 1410,
+              "slides": "45–46"
+            }
+          ],
+          "transcript": "../transcripts/p4bvCFygfW0.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "02:30–06:00 definição: reduzir dimensionalidade (de 3 variáveis para 2 componentes; imagens de 400 pixels).",
+              "06:00–08:00 variabilidade explicada por componente (70%, 20%, 7%, 3%).",
+              "08:00–11:30 por que reduzir: dimensões grandes são difíceis de treinar e exigem mais processamento e tempo; visualização impossível acima de 3 dimensões; limitação de memória; remove redundância/multicolinearidade; \"minimiza perda de informação\".",
+              "09:16–10:30 requisitos: variáveis numéricas e dados padronizados (exemplo galões × km × anos-luz).",
+              "11:30–14:00 definição como combinação linear; primeiro componente explica a variação máxima, o segundo explica a restante e não é correlacionado com o primeiro.",
+              "14:15–14:45 componentes perpendiculares (90°).",
+              "15:28–16:30 aparece \"autovalor e autovetor\" (álgebra linear), sem aprofundar.",
+              "17:00–23:30 demo com Iris em sklearn (PCA(n_components=2), fit, explained_variance_ratio_: 92% e 5%).",
+              "25:00–27:00 resumo (componentes não correlacionados, escala importa, entrada numérica)."
+            ],
+            "notCovered": "geometria dos slides 37–47 (centrar na origem, projetar, maximizar a soma dos quadrados das distâncias, autovalor = essa soma, escolher os maiores autovalores); só menciona autovalor/autovetor de passagem (15:28–16:30); perda de interpretabilidade e preferência por seleção em finanças/medicina (slide 31); seleção × agregação; maldição da dimensionalidade como nome.",
+            "profile": [
+              "**Observação importante:** o texto dos slides 35–36 (\"Requisitos prévios\", \"Necessidade de redução de dimensionalidade\", \"um componente principal é uma combinação linear...\") é quase a fala deste vídeo (09:16–15:00). Ou seja, este vídeo explica o que a professora escreveu.",
+              "**Nível e foco:** iniciante, quase sem matemática; foco conceito (70%) + pequeno trecho de código sklearn. Pressupõe pouco.",
+              "**Idioma/qualidade:** português do Brasil, formato de diálogo e enchimento no início (00:00–02:30) e no fim (28:00 em diante)."
+            ],
+            "verdict": "aprovar só os trechos 02:30–15:00 e 21:30–23:30. Melhor apresentação conceitual do PCA entre os candidatos."
+          }
+        },
+        {
+          "id": "a3-v13",
+          "type": "video",
+          "title": "The Curse of Dimensionality",
+          "channel": "DataMListic",
+          "duration": "8 min",
+          "url": "https://www.youtube.com/watch?v=9Tf-_mJhOkU",
+          "goals": [
+            "Slides 22 e 23: maldição da dimensionalidade (mais atributos exigem muito mais amostras)"
+          ],
+          "warnings": [
+            "Em **inglês**. A transcrição local saiu misturada (partes traduzidas para o português, partes em inglês) e com erros (\"curto\" = curse, \"hypersphere\"). Conferir se o YouTube oferece legenda em português.",
+            "O argumento do vídeo é o do slide 23 (dados precisam crescer de forma exponencial). O argumento do slide 22 (o **tempo computacional** cresce) está no a3-v14.",
+            "Os trechos de geometria (01:05–03:55 e 04:50–05:55: distância ao canto do cubo, volume da hiperesfera, vetores quase perpendiculares) são matemática fora dos slides e foram cortados.",
+            "Em 07:00 diz que em alguns casos a alta dimensão ajuda (os dados ficam separáveis linearmente, ideia dos kernels). Vai além do slide; não confundir com o que a professora cobra."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 68,
+              "slides": "22–23",
+              "note": "em inglês; 9 pontos cobrem bem uma reta, deixam lacunas no quadrado e ficam soltos no cubo"
+            },
+            {
+              "start": 239,
+              "end": 287,
+              "slides": "23",
+              "note": "em inglês; para cobrir o espaço, os dados crescem exponencialmente com as dimensões (5, depois 25)"
+            },
+            {
+              "start": 357,
+              "end": 432,
+              "slides": "22, 24",
+              "note": "em inglês; como lidar: reduzir dimensões, selecionar atributos, regularização e mais dados"
+            }
+          ],
+          "transcript": "../transcripts/9Tf-_mJhOkU.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:00–01:05 intuição: nove pontos cobrem bem uma reta, deixam lacunas num quadrado e quase não preenchem um cubo; com mais dimensões o espaço fica cada vez mais vazio (esparso) e o algoritmo não tem dados suficientes.",
+              "03:59–04:47 por que importa em AM: para cobrir o espaço de entrada com a mesma densidade, os dados necessários crescem exponencialmente (5 pontos em 1 dimensão, 5² = 25 em 2).",
+              "05:57–07:12 como lidar: redução de dimensionalidade (PCA, UMAP), seleção de atributos, algoritmos próprios para alta dimensão, regularização contra sobreajuste e mais dados; e a ressalva de que em alguns casos a alta dimensão ajuda."
+            ],
+            "notCovered": "a ligação direta com o **tempo computacional** do slide 22 (está no a3-v14); atributos ruidosos, irrelevantes e redundantes (slides 22, 28 e 29); seleção × agregação; vantagens e desvantagens (slide 25).",
+            "profile": [
+              "**Nível e foco:** iniciante nos trechos recomendados; o resto (01:05–03:55) tem raiz quadrada, volume e produto escalar, que não são necessários para a prova. Só conceito, com animações.",
+              "**Idioma/qualidade:** inglês claro e pausado; transcrição mista e com erros, mas dá para acompanhar pelo que aparece na tela."
+            ],
+            "verdict": "aprovar só os trechos 00:00–01:08, 03:59–04:47 e 05:57–07:12, com o aviso de que está em inglês. É o único vídeo que mostra o crescimento exponencial dos dados necessários (slide 23); no a3-v14 a maldição só é citada por alto."
+          }
+        },
+        {
+          "id": "a3-v14",
+          "type": "video",
+          "title": "10 - Fundamentos do Aprendizado de Máquina - Redução de Dimensionalidade",
+          "channel": "Data Review",
+          "duration": "15 min",
+          "url": "https://www.youtube.com/watch?v=x68CrD6AZhY",
+          "goals": [
+            "Slides 22, 24 e 25: por que reduzir a dimensionalidade, vantagens e desvantagens (perda de informação)",
+            "Slide 35: visualização não é possível acima de 3 dimensões",
+            "Slide 31 (parcial): depois do PCA os atributos deixam de ser os originais"
+          ],
+          "warnings": [
+            "Diz que reduzir a dimensionalidade dá \"ganho de interpretabilidade\", mas se refere à interpretação **visual** (gráfico em 2 ou 3 eixos). Ele mesmo avisa (14:00) que os atributos novos são latentes, não os originais. O slide 31 destaca a perda dos valores originais, e em finanças e medicina se prefere **seleção** de atributos.",
+            "Afirma que algoritmos baseados em instância (KNN) podem **ganhar** desempenho com a redução, por causa da maldição da dimensionalidade. Isso não está nos slides e depende da base; o resultado geral que ele mostra é de **perda** de desempenho.",
+            "A maldição da dimensionalidade é só citada (02:40–03:15); a explicação está no a3-v13.",
+            "Na demonstração, os erros aparecem na transcrição como \"0,37\", \"42\", \"43\" e \"45\" (provavelmente 0,37 → 0,42 → 0,43 → 0,45): o ponto é que o erro **sobe** conforme as dimensões diminuem.",
+            "Não trata de seleção × agregação (slide 26)."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 198,
+              "slides": "22, 24–25",
+              "note": "motivação, ganho (custo e visualização) e perda de informação; a maldição só citada"
+            },
+            {
+              "start": 638,
+              "end": 915,
+              "slides": "25, 35",
+              "note": "base real: 10 dimensões não dá para ver; reduzir a 3, 2 e 1 aumenta o erro (trade-off)"
+            }
+          ],
+          "transcript": "../transcripts/x68CrD6AZhY.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:00–01:00 dados de alta dimensão são difíceis de entender e caros de processar; a redução procura \"fatores latentes\": poucos parâmetros que expliquem a base.",
+              "01:00–02:00 ganhos (visualização, menor custo computacional) e custo (perde-se informação, mesmo que pequena em cada atributo).",
+              "02:00–03:15 a maioria dos algoritmos piora com dimensionalidade reduzida, com exceção dos baseados em instância (KNN), por causa da maldição da dimensionalidade (dados esparsos, distância mais difícil de definir).",
+              "03:15–10:30 PCA com álgebra linear (padronizar, covariância, autovalores e autovetores, escolher os maiores, projetar) e demonstração em 2D que vira 1D. Cortado: ver os vídeos de PCA a3-v6 e a3-v7.",
+              "10:38–12:45 base real de diabetes: 10 dimensões não podem ser desenhadas; com PCA a 3, 2 e 1 dimensões, os gráficos aparecem.",
+              "12:45–15:10 comparação com regressão linear: o erro cresce conforme se reduz de 10 para 3, 2 e 1 dimensões. Conclusão: trade-off entre interpretação visual e custo menor × perda de desempenho."
+            ],
+            "notCovered": "seleção × agregação; atributos irrelevantes e redundantes (slides 27–29); a explicação da maldição da dimensionalidade (a3-v13); perda de interpretabilidade dos atributos originais como argumento (slide 31).",
+            "profile": [
+              "**Nível e foco:** iniciante a intermediário nos trechos recomendados (conceito + demonstração com gráficos); o trecho cortado exige álgebra linear. Meio a meio conceito e código, mas o código aparece só na demonstração.",
+              "**Idioma/qualidade:** português do Brasil, fala clara; a transcrição tem erros em termos de álgebra (\"alto-vetor\" = autovetor, \"alto-valor\" = autovalor)."
+            ],
+            "verdict": "aprovar só os trechos 00:00–03:18 e 10:38–15:15. É o melhor candidato para a motivação e para vantagens × desvantagens (slides 22, 24 e 25), com a perda de desempenho mostrada em números. Complementa o a3-v6 (PCA)."
+          }
+        },
+        {
+          "id": "a3-v7",
+          "type": "video",
+          "title": "Aula 09 — Redução de Dimensionalidade",
+          "channel": "Data ICMC (USP)",
+          "duration": "49 min",
+          "url": "https://www.youtube.com/watch?v=ZqEhn1l_PlQ",
+          "goals": [
+            "Visão mais matemática do PCA (slides 43 a 47). Se faltar base de álgebra linear, veja antes 09:30–13:30."
+          ],
+          "optional": true,
+          "clips": [
+            {
+              "start": 810,
+              "end": 1140,
+              "slides": "43–47"
+            },
+            {
+              "start": 1980,
+              "end": 2100,
+              "slides": "43–47"
+            },
+            {
+              "start": 2430,
+              "end": 2700,
+              "slides": "43–47"
+            }
+          ],
+          "transcript": "../transcripts/ZqEhn1l_PlQ.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:00–10:30 motivação: cada atributo é um eixo, só conseguimos visualizar até 3D; cortar features sem critério perde informação; objetivo é perder o mínimo.",
+              "04:30–13:30 álgebra linear: vetor, combinação linear, span, matriz como transformação linear.",
+              "14:00–19:00 autovetor (vetor que mantém a direção sob a transformação) e autovalor (quanto ele escala).",
+              "16:30–17:30 e 33:00–34:00 matriz simétrica tem autovetores ortogonais entre si.",
+              "20:30–24:30 decomposição em autovetores/autovalores.",
+              "31:00–34:30 matriz de covariância; seus autovetores apontam as direções de maior variância (isso alinha com os slides 32 e 44).",
+              "34:30–36:30 centrar média e escalar.",
+              "40:30–44:30 demo 2D com sklearn: mudar de base, descartar o eixo de pouca variância.",
+              "44:30–46:00 Iris com PCA, scree plot e variância explicada (cerca de 80% e 10%).",
+              "39:30–41:00 cita t-SNE e UMAP como técnicas mais novas."
+            ],
+            "notCovered": "padronização como pré-requisito explícito; seleção × agregação; maldição da dimensionalidade; interpretabilidade; a explicação geométrica específica dos slides 37–43 (reta que minimiza distâncias / maximiza a soma dos quadrados) — ele chega ao mesmo resultado pela covariância.",
+            "profile": [
+              "**Nível e foco:** intermediário a avançado em matemática; é uma aula de graduação (supõe geometria analítica/álgebra linear básica, mas ensina). Foco 90% conceito; poucas linhas de código.",
+              "**Idioma/qualidade:** português do Brasil, bom professor, ritmo de aula; legenda com muitos erros (\"alto valor\", \"al vetor\")."
+            ],
+            "verdict": "aprovar só os trechos 13:30–19:00, 33:00–35:00 e 40:30–45:00 como complemento ao p4bv (cobre os slides 43–44 e 47, que o p4bv só cita). Por ser de nível mais alto, é opcional se o tempo estiver curto; para a prova o p4bv basta. ## 3. Sequência recomendada para assistir (ordem dos slides) Tempo estimado do conjunto: **cerca de 1h35** (94:55). Vídeos ficam em ordem de assunto, não de ID. | # | Slides | Vídeo | Trechos (início–fim) | Tempo | Por quê / o que ignorar | | :-: | :-- | :-- | :-- | :-: | :-- | | 1 | 6–8, 13 | SNd_qoGUEOE | 00:40–08:15 | 7:35 | Vazamento (intuição), opções para extremos e para ausentes. Atenção à ressalva de \"processar cada amostra individualmente\". | | 2 | 7–13 | CLN-y_4ZySw | 00:00–02:30 · 04:20–16:10 · 29:45–33:45 | 18:20 | O que é outlier, manter × remover, IQR, Z-score, impacto em regressão com remoção só no treino. Pular 02:30–04:20 e 16:10–29:30. | | 3 | 14–16 | NEY0TrvHRoU | 00:30–03:30 · 09:30–20:00 · 20:30–22:15 | 15:15 | Por que escalar, min-max, padronização, exemplo de distância. Ignorar a frase \"distribuição normal\" (20:00–20:30). O código do vídeo vaza dados. | | 4 | 17 | -L8MacYRWGM | 18:10–18:45 · 22:05–23:30 · 24:30–25:30 | 3:00 | Quando usar cada uma e quais algoritmos se beneficiam. Não assistir 18:45–20:30 (outliers confusos). | | 5 | 19–20 | RWaMw02_MQQ | 07:50–10:15 · 16:30–23:00 · 29:50–31:00 | 10:05 | Nominal × ordinal, por que numerar nominais engana, one-hot. Ignorar \"LabelEncoder para ordinal\". | | 6 | 22–36 | p4bvCFygfW0 | 02:30–15:00 · 21:30–23:30 | 14:30 | Ideia do PCA, pré-requisitos, componente = combinação linear, ortogonalidade, variância explicada. | | 7 | 43–47 | ZqEhn1l_PlQ | 13:30–19:00 · 33:00–35:00 · 40:30–45:00 | 12:00 | Autovetor/autovalor, ortogonalidade, direção de maior variância. Opcional para quem tem pouca base de álgebra: antes, 09:30–13:30. | | 8 | 48–51 | PwlKbdsVsiY | 05:50–12:30 · 13:30–21:00 | 14:10 | Desbalanceamento, métrica enganosa, over/under, e balancear só no treino. | | | | **Total** | | **94:55** | | Vídeos fora da sequência: **1hMt-X2VYBk** (descartar; redundante com CLN) e **CS9gMcVIAWU** (descartar; SMOTE aplicado no conjunto inteiro, LabelEncoder chamado de one-hot). Se faltar tempo (versão mínima, ~48 min): itens 1, 2 (só 04:20–16:10), 3 (só 09:30–22:15), 5, 6 e 8. ## 4. Lacunas: tópicos que nenhum vídeo cobre bem (o material escrito precisa cobrir) 1. **Slides 3–4: caracterização dos dados e integração de bases** (inconsistências e redundâncias ao juntar tabelas). Nenhum vídeo; só aparecem estatísticas descritivas de passagem (1hMt 03:00–04:00; NEY0 24:30–26:30). 2. **Dados faltantes (slide 6):** nenhum vídeo lista as 7 alternativas. Faltam: preencher manualmente, heurística, valor que indica ausência, moda e prever o valor com um algoritmo de AM. 3. **Winsorização e \"manter + algoritmos robustos\" (slide 13):** não aparece em nenhum vídeo; só há remoção e substituição por média/mediana (SNd 04:00–05:30) e a decisão manter × remover (CLN). 4. **IQR × Z-score (slide 12):** a razão de ser robusto (mediana e quartis não são arrastados por um extremo, a média sim) não é dita; CLN só diz que o Z-score supõe normalidade e é sensível. 5. **Ordem outliers → normalização (slide 18):** nenhum vídeo; o único que toca no assunto (-L8, 18:30–20:30) diz o contrário do slide. 6. **Ajustar só no treino na prática (scaler, imputer, PCA):** nenhum vídeo mostra o fit só no treino e transform no teste. NEY0 e -L8 vazam; CS9g vaza no SMOTE; só Pwl faz certo, e apenas para balanceamento; SNd e CLN mostram o princípio para imputação/remoção de outliers. Este é um tópico para o texto escrito (com um trecho de código curto, como na prova). 7. **Quais algoritmos precisam de escala (slide 17, \"baseados em gradiente / distância\"):** cobertura só parcial (NEY0 02:30–03:30, -L8 24:30–25:30); falta a lista completa do slide e a distinção por tipo de algoritmo. 8. **Discretização / conversão numérico→simbólico (slide 21):** nenhum vídeo (larguras iguais, intervalos com rótulo). 9. **Maldição da dimensionalidade (slides 22–23):** nenhum vídeo explica que mais atributos exigem mais amostras; só \"dimensões grandes são difíceis de treinar\" (p4bv 08:00–11:30) e \"perde informação\" (Zq 04:30). 10. **Seleção de atributos × agregação (slides 26–30):** atributos irrelevantes (id, nome), atributos/objetos redundantes (data de nascimento × idade), correlação para detectar redundância, e a preferência por seleção em finanças/medicina por causa da interpretabilidade (slide 31). Nenhum vídeo. 11. **PCA: parte geométrica dos slides 37–43 e 45–46** (centrar na origem, reta que maximiza a soma dos quadrados das projeções, autovalor = essa soma, PC2 perpendicular, rotacionar o sistema). Os vídeos chegam ao mesmo resultado por outro caminho (covariância); o encadeamento do slide precisa de texto próprio. Também não aparece \"combinação linear ou não linear\" (slide 31). 12. **Sobreajuste por duplicação e perda de informação por undersampling (slide 49):** nenhum vídeo; ninguém explica o undersampling além da definição. Falta também descrever SMOTE corretamente (sintético por interpolação, diferente de duplicar). 13. **Como o slide 17 e os slides de gráficos/imagens podem ser cobrados** (slides 8, 9, 10, 12 etc. têm figuras): os vídeos não reproduzem as figuras da professora; vale o material escrito descrever o que cada gráfico mostra."
+          }
+        },
+        {
+          "id": "a3-v8",
+          "type": "video",
+          "title": "Classes desbalanceadas: você está fazendo errado!",
+          "channel": "Let's Data",
+          "duration": "47 min",
+          "url": "https://www.youtube.com/watch?v=PwlKbdsVsiY",
+          "goals": [
+            "Balanceamento da base e por que só se aplica ao treino (slides 48 a 51)"
+          ],
+          "clips": [
+            {
+              "start": 350,
+              "end": 750,
+              "slides": "48–51",
+              "note": "por que o desbalanceamento atrapalha"
+            },
+            {
+              "start": 810,
+              "end": 1260,
+              "slides": "48–51",
+              "note": "over e undersampling; só no treino"
+            }
+          ],
+          "transcript": "../transcripts/PwlKbdsVsiY.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "05:50–08:00 o que é classe desbalanceada (fraude bancária, diabetes) e por que a acurácia engana (um modelo que chuta \"não fraude\" acerta mais de 90%).",
+              "08:10–09:30 formas de tratar: mudar a métrica, usar pesos por classe (class weight).",
+              "09:30–10:30 oversampling (aumentar a minoritária copiando) e undersampling (reduzir a majoritária); o vídeo diz que o foco será oversampling, mas \"a ideia funciona igual para o under\".",
+              "10:30–12:10 SMOTE.",
+              "12:10–21:00 o ponto central do vídeo: o balanceamento só pode ser feito no treino, nunca na validação/teste, porque a validação simula o mundo real, que é desbalanceado. Fazer SMOTE antes da validação cruzada contamina os folds de validação e infla a acurácia. Explica folds (18:00–19:30) e que cross_val_score do sklearn não faz isso sozinho (19:56–21:00).",
+              "21:00–43:30 código completo: validação cruzada \"na mão\" com KFold e SMOTE só no split de treino, comparado ao jeito errado (resultado do jeito errado ~80% × ~74% do certo; 40:00–42:30). Usa dataset de diabetes (65%/35%), XGBoost."
+            ],
+            "notCovered": "as ressalvas do slide 49: duplicar registros pode causar sobreajuste (overfitting) e remover registros pode perder informação/causar underfitting. Não menciona \"sobreajuste\" em nenhum momento; undersampling é só definido (45:00 \"reduzir artificialmente\").",
+            "profile": [
+              "**Nível e foco:** intermediário; supõe saber o que é validação cruzada, treino/teste e métricas. O conceito vale a pena para qualquer um; o código usa sklearn, imblearn, pandas e XGBoost. Conceito ~45%, código ~55%.",
+              "**Idioma/qualidade:** português do Brasil, bem humorado, mas prolixo; legenda fraca (por exemplo \"esmalte\" = SMOTE)."
+            ],
+            "verdict": "aprovar só os trechos 05:50–12:30 e 13:30–21:00. É o único que ensina corretamente \"balancear só no treino\", a versão de balanceamento do princípio de ajustar só no treino."
+          }
+        },
+        {
+          "id": "a3-v10",
+          "type": "video",
+          "title": "Tratamento de dados desbalanceados em Machine Learning",
+          "channel": "IA Expert Academy",
+          "duration": "6 min",
+          "url": "https://www.youtube.com/watch?v=4hUNTJIEP5g",
+          "goals": [
+            "Slides 49 a 51: subamostragem (undersampling) e sobreamostragem (oversampling)",
+            "SMOTE: criar exemplos sintéticos em vez de duplicar"
+          ],
+          "warnings": [
+            "Deslize no exemplo numérico (01:00): com 100 registros laranja e 5 mil azuis, fala em manter 500 azuis para \"ficar do mesmo tamanho\". Para igualar seriam 100.",
+            "Em 04:40 diz que o SMOTE \"faz a cópia\" dos registros, mas logo depois (05:00) explica certo: ele **cria exemplos sintéticos** a partir da distância entre vizinhos da classe minoritária. Vale a segunda explicação.",
+            "Não diz que o balanceamento deve ser feito só no treino (isso está no a3-v8) e não cita o sobreajuste causado por duplicar registros (slide 49); o risco que ele cita é a perda de informação na subamostragem."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 165,
+              "slides": "49–51",
+              "note": "subamostragem e sobreamostragem com exemplo de 100 × 5.000 registros"
+            },
+            {
+              "start": 275,
+              "end": 355,
+              "slides": "50",
+              "note": "SMOTE: gera registros sintéticos usando distâncias"
+            }
+          ],
+          "transcript": "../transcripts/4hUNTJIEP5g.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:00–01:50 undersampling: retira registros da classe majoritária (5 mil azuis, 100 laranja) até igualar; o risco é perder informação importante para a classificação (01:00–01:40).",
+              "01:50–02:45 oversampling: aumenta a classe minoritária; não precisa ser cópia exata, pode gerar amostras sintéticas parecidas (exemplo: pessoa de 45 anos gera registros de 46 e 47).",
+              "02:45–04:20 Tomek links (undersampling que apaga os registros da maioria que ficam colados na minoria; fora dos slides).",
+              "04:35–05:55 SMOTE: calcula distâncias entre registros próximos da classe minoritária e cria exemplos sintéticos para preencher os espaços vazios."
+            ],
+            "notCovered": "por que o desbalanceamento prejudica o modelo (slide 48: tende a favorecer a classe majoritária); sobreajuste por duplicação (slide 49); balancear só no treino; métrica adequada.",
+            "profile": [
+              "**Nível e foco:** iniciante. Só conceito, com figuras de pontos azuis e laranja; sem código.",
+              "**Idioma/qualidade:** português do Brasil, fala clara, vídeo curto (6 min). A figura mostra o que o texto não diz, então vale assistir em vez de só ler a transcrição."
+            ],
+            "verdict": "aprovar só os trechos 00:00–02:45 e 04:35–05:55 (Tomek links 02:45–04:20 é opcional, não está nos slides). Complementa o a3-v8: assistir antes dele (o a3-v8 mostra o problema e o balanceamento só no treino; este mostra o que são over e undersampling e o que o SMOTE faz)."
+          }
+        },
+        {
+          "id": "a3-md",
+          "type": "markdown",
+          "title": "Leitura: Aula 3 do zero",
+          "path": "aula-3-do-zero.md",
+          "goals": [
+            "Os vídeos não cobrem: caracterização e integração de dados (slides 3–4), as 7 alternativas para dados faltantes, winsorização, IQR × Z-score, **a ordem outliers → normalização**, discretização, maldição da dimensionalidade, seleção de atributos e as figuras dos slides",
+            "Segue os slides na ordem e explica cada conceito do zero"
+          ]
+        },
+        {
+          "id": "a3-q",
+          "type": "questions",
+          "title": "Questões da Aula 3 (16)",
+          "path": "lesson-3-questions.json"
+        }
+      ]
+    },
+    {
+      "id": "aula-4",
+      "title": "Aula 4 · Amostragem e validação",
+      "items": [
+        {
+          "id": "a4-v8",
+          "type": "video",
+          "title": "Princípios de separação de dados em treino, validação, teste e reamostragens",
+          "channel": "Carvalho Ribeiro",
+          "duration": "15 min",
+          "url": "https://www.youtube.com/watch?v=R5c8S61balo",
+          "optional": true,
+          "goals": [
+            "Amostra representativa: por que uma amostra bem escolhida generaliza (slide 5)",
+            "Conjunto de validação separado quando a validação cruzada é cara (slides 21 e 33)"
+          ],
+          "warnings": [
+            "O trecho sobre amostra representativa fala de um estudo descritivo de uma população (peso e altura de um país, colher de sopa), não de treinar um modelo. Serve como analogia da ideia do slide 5; o vídeo não usa o nome \"viés de amostragem\" nem dá um exemplo de amostragem falha (o do slide 6, desnutrição rural, fica por conta do texto).",
+            "Usa \"conjunto de validação\" como uma terceira partição separada do treino. O slide 34 o define como subconjunto do treino; na prática é a mesma ideia de reservar dados para ajustar o modelo antes do teste final.",
+            "Não assista ao resto: parâmetros × hiperparâmetros com a analogia da máquina de sorvete, custo de treinar modelos gigantes (números citados sem fonte) e reamostragens de séries temporais estão fora dos slides."
+          ],
+          "clips": [
+            {
+              "start": 24,
+              "end": 125,
+              "slides": "5",
+              "note": "analogia da sopa: amostra aleatória e representativa"
+            },
+            {
+              "start": 715,
+              "end": 788,
+              "slides": "21, 33",
+              "note": "validação cruzada só quando é barata; com muitos dados, usar um conjunto de validação separado"
+            }
+          ],
+          "transcript": "../transcripts/R5c8S61balo.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:24–02:05 por que usar uma amostra em vez da população inteira; a amostra precisa ser representativa e aleatória (analogia: provar uma colherada de sopa depois de mexer a panela).",
+              "03:55–05:00 treino e teste pela analogia da tabuada e da prova guardada na gaveta (opcional, repete o que o aluno já viu).",
+              "11:55–13:10 validação cruzada serve quando os dados são limitados e treinar é barato; com volume enorme (deep learning) é caro e se usa um conjunto de validação separado, com o teste só no fim."
+            ],
+            "notCovered": "viés de amostragem pelo nome e exemplo de falha de amostragem (slides 5 e 6); poucos dados; qualidade dos dados; overfitting e underfitting; hold-out e suas proporções; k-fold passo a passo; desvio padrão; leakage; bias e variância; parada antecipada.",
+            "profile": [
+              "**Nível e foco:** iniciante em estatística; conceito com desenhos e analogias, sem código. O vídeo todo é mais amplo (parâmetros, hiperparâmetros, tipos de análise) do que o foco do slide.",
+              "**Idioma/qualidade:** português do Brasil, informal e com muitas digressões; os dois trechos indicados são curtos e claros."
+            ],
+            "verdict": "aprovar só os trechos 00:24–02:05 e 11:55–13:10, como complemento opcional (o vídeo é fraco como cobertura do slide 5: só dá a analogia da representatividade)."
+          }
+        },
+        {
+          "id": "a4-v17",
+          "type": "video",
+          "title": "11 Types of Biases that Occur During Sampling",
+          "channel": "Machine Learning from Scratch",
+          "duration": "5 min",
+          "url": "https://www.youtube.com/watch?v=s_zA8xo2h58",
+          "optional": true,
+          "goals": [
+            "Viés de amostragem: tipos e exemplos (slides 5 e 6, amostra não representativa)"
+          ],
+          "warnings": [
+            "Em INGLÊS (sem versão em português achada). O vídeo é só uma lista de 11 tipos de viés, com um exemplo cada; use para fixar a ideia de 'amostra que não representa a população'.",
+            "Os minutos são aproximados (±30 s) porque a transcrição vem em blocos."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 300,
+              "slides": "5–6",
+              "note": "tipos de viés de amostragem"
+            }
+          ],
+          "transcript": "../transcripts/s_zA8xo2h58.json",
+          "review": {
+            "badge": "transcrição lida · vídeo inteiro",
+            "covers": [
+              "00:00–00:30 definição: viés de amostragem é quando a amostra não representa a população e leva a conclusões enganosas.",
+              "00:30–03:30 exemplos: seleção (pesquisa só por telefone fixo), não resposta, sub-cobertura (pesquisa em horário comercial exclui quem trabalha à noite), voluntários, viés de resposta, sobrevivência (estudar só empresas que deram certo).",
+              "03:00–04:30 lista de endereços desatualizada, viés temporal (pesquisa de compras de fim de ano feita em janeiro), geográfico, de confirmação do pesquisador, de instrumento (termômetro com defeito)."
+            ],
+            "notCovered": "Como corrigir o viés na prática; relação com treino e teste.",
+            "profile": [
+              "**Nível:** iniciante; lista rápida com exemplos."
+            ],
+            "verdict": "Opcional, em inglês: o único vídeo sobre viés de amostragem. Aprovado pelo agente principal em 11/10 (transcrição estava sem avaliação)."
+          }
+        },
+        {
+          "id": "a4-v1",
+          "type": "video",
+          "title": "Aula IA 04 · Generalização, treino/validação/teste, sobreajuste",
+          "channel": "Hemerson Pistori",
+          "duration": "11 min",
+          "url": "https://www.youtube.com/watch?v=_XJTjJ0ZFFE",
+          "goals": [
+            "Overfitting × underfitting e generalização (slides 8 a 14)"
+          ],
+          "warnings": [
+            "Define overfitting e underfitting pelas épocas de treino. O slide 11 define pela **complexidade do modelo**; as duas ideias valem, mas responda como o slide."
+          ],
+          "clips": [
+            {
+              "start": 40,
+              "end": 650,
+              "slides": "8–14, 17–19",
+              "note": "overfitting, underfitting, treino/validação/teste"
+            }
+          ],
+          "transcript": "../transcripts/_XJTjJ0ZFFE.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "00:40–01:40: o que é uma época (epoch) e como a perda (loss) cai no treino.",
+              "01:40–02:40: o problema central é generalizar, não ficar bom só no treino.",
+              "02:40–05:30: conjunto de validação separado; a perda de validação começa a piorar na época 60 enquanto a de treino continua caindo. Compara guardar os pesos da época 60 (perda de validação 8) com os da época 80 (treino ótimo, validação 9).",
+              "05:00–05:40: definição de overfitting (\"decora o conjunto de treino\").",
+              "05:40–06:50: o conjunto de validação já foi \"usado para decidir\" (época de parada), então perde valor como medida honesta; por isso um terceiro conjunto de teste, intocado até o fim.",
+              "06:50–08:40: amostragem aleatória para montar os três conjuntos; exemplo de contar bois em imagens de drone (as primeiras imagens de uma só fazenda não representam o problema); coletar dados variados.",
+              "08:20–10:00: um conjunto de teste pode ser \"fácil\" por sorte; embaralhar e repetir, citando validação cruzada ou reamostragem; algoritmos estocásticos dão resultados diferentes.",
+              "10:00–10:50: underfitting como parar o treino cedo demais (treino e validação longe do ideal)."
+            ],
+            "notCovered": "poucos dados, qualidade dos dados/atributos, causas de overfitting além do excesso de treino, soluções de underfitting, proporções do hold-out, média e desvio padrão, k-fold (só cita), bias/variância, leakage. Não nomeia \"viés de amostragem\", apenas descreve a ideia.",
+            "profile": [
+              "**Pressupõe conhecimento prévio:** sim, a aula anterior (rede neural, perda, pesos, função de perda). O recap de 00:00–00:40 é de rede neural; a partir de 00:40 dá para acompanhar sem ter visto.",
+              "**Foco:** conceito (com um gráfico de perda por época, que a fala descreve). Sem código.",
+              "**Qualidade:** didático e curto, bom para iniciante em engenharia de software (usa o exemplo do drone/bois); informal; um tanto centrado em redes neurais."
+            ],
+            "verdict": "aprovar (como visão geral inicial; é o único que cobre bem validação/parada antecipada)."
+          }
+        },
+        {
+          "id": "a4-v9",
+          "type": "video",
+          "title": "O que é Overfitting e Underfitting? (Introdução a Machine Learning, Aula 4)",
+          "channel": "Didática Tech",
+          "duration": "12 min",
+          "url": "https://www.youtube.com/watch?v=IHAb3NHDahU",
+          "goals": [
+            "Overfitting e underfitting explicados com três curvas: reta, curva suave e curva que passa por todos os pontos (slides 9 a 11)",
+            "Por que olhar o erro só no treino engana e é preciso testar em dados novos (slides 13 e 14)"
+          ],
+          "warnings": [
+            "A legenda automática escreve \"overfiten\" para os dois termos (inclusive onde a fala é \"underfitting\"); o vídeo diz corretamente: underfitting = a reta, que erra no treino e no teste; overfitting = a curva ondulada, perfeita no treino e ruim no teste.",
+            "Define os dois pela complexidade do modelo, e não pelo número de iterações do slide 8/9; é a mesma ideia do slide 10/11. O vídeo não lista as causas nem as soluções do slide 11 (modelo mais poderoso, melhores atributos, hiperparâmetros): use o texto.",
+            "Chama a curva boa de \"meio do caminho\" e diz que a meta é o desempenho no teste; combina com os slides 29 e 30."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 742,
+              "slides": "9–11, 13–14",
+              "note": "assistir inteiro; o desenho das três curvas é o ponto central"
+            }
+          ],
+          "transcript": "../transcripts/IHAb3NHDahU.json",
+          "review": {
+            "badge": "transcrição lida · vídeo inteiro",
+            "covers": [
+              "00:00–02:00 dados com dois eixos, a ideia de ajustar uma curva para prever um dado futuro e separar parte para treino (pontos verdes) e parte para teste (pontos vermelhos).",
+              "02:00–05:00 três curvas ajustadas só no treino: a reta erra muito, a curva suave passa pelo meio dos pontos, a curva ondulada passa por todos os pontos (erro zero no treino).",
+              "05:00–08:00 as mesmas curvas colocadas nos dados de teste: a reta continua ruim, a ondulada erra muito e a suave é a melhor; não se avalia o modelo só pelo treino.",
+              "08:00–09:00 underfitting = a reta, ruim no treino e no teste (\"abaixo do desejado\").",
+              "09:00–10:55 overfitting = a ondulada, ótima no treino e fraca no teste; o modelo \"se viciou\" no treino e só explica o que já viu; o objetivo é um modelo generalizável no meio do caminho.",
+              "10:55–12:20 o trabalho do profissional é lutar contra o overfitting, que é fácil de ter em modelos poderosos com muitas iterações."
+            ],
+            "notCovered": "causas do overfitting além de \"modelo ajustado demais\" (base pequena, ruído, vazamento); causas e soluções do underfitting (slide 11); parada antecipada e conjunto de validação (slides 33 e 34); viés e variância.",
+            "profile": [
+              "**Nível e foco:** iniciante total, conceito com desenho (os gráficos são descritos pela fala); sem código; assume só que o aluno já ouviu falar de treino e teste.",
+              "**Idioma/qualidade:** português do Brasil, calmo e didático, algo repetitivo. É a explicação mais clara do conjunto sobre por que a curva perfeita no treino é ruim."
+            ],
+            "verdict": "aprovar (vídeo inteiro). Complementa a4-v1 (Pistori): este explica o que é overfitting e underfitting com o desenho das curvas; a4-v1 continua necessário para validação e parada antecipada."
+          }
+        },
+        {
+          "id": "a4-v16",
+          "type": "video",
+          "title": "Machine Learning: Underfitting e Overfitting",
+          "channel": "IA Expert Academy",
+          "duration": "16 min",
+          "url": "https://www.youtube.com/watch?v=MwZbuMRVxtk",
+          "optional": true,
+          "goals": [
+            "Overfitting e underfitting com analogias e definições (slides 10 e 11)"
+          ],
+          "warnings": [
+            "Usa o Weka (programa de interface gráfica) nas demonstrações; o que importa é a explicação até 10:00.",
+            "Não lista causas e soluções de forma organizada como o slide 11."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 600,
+              "slides": "10–11",
+              "note": "intuição e definições de underfitting e overfitting"
+            }
+          ],
+          "transcript": "../transcripts/MwZbuMRVxtk.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:00–03:00 dois modelos: o que passa por todos os pontos nem sempre é o melhor; capacidade de generalização.",
+              "03:00–06:00 underfitting: problema complexo com modelo simples (tiranossauro com raquete; reta para dados curvos); overfitting: modelo complexo demais (bazuca para um mosquito; curva que passa por cada ponto).",
+              "06:00–08:30 underfitting dá resultado ruim já na própria base de treino (demonstração com o algoritmo 1R, 17% de acerto).",
+              "08:30–10:00 overfitting dá bom resultado no treino e ruim no teste: o modelo memoriza, como o aluno que decora a prova."
+            ],
+            "notCovered": "Causas e soluções organizadas (slide 11); a parte final do vídeo (após 10:00, Weka com a base diabetes) não foi lida.",
+            "profile": [
+              "**Nível:** iniciante; linguagem simples com analogias."
+            ],
+            "verdict": "Opcional: complementa o vídeo principal da seção com analogias fáceis de lembrar. Aprovado pelo agente principal em 11/10 (transcrição estava sem avaliação)."
+          }
+        },
+        {
+          "id": "a4-v2",
+          "type": "video",
+          "title": "Avaliação de modelos preditivos: validação cruzada Holdout",
+          "channel": "Fernando dos Santos",
+          "duration": "15 min",
+          "url": "https://www.youtube.com/watch?v=VZSZGCmKj-o",
+          "goals": [
+            "Hold-out: dividir o conjunto em treino e teste; regra geral 80% / 20% (slide 16)",
+            "O teste só vale com dados que o modelo não viu no treino (slides 13 e 14)",
+            "Estratificar: manter a mesma proporção de classes no treino e no teste (complemento ao slide)",
+            "Por que a forma de separar importa: se a divisão cair sobre a ordem do arquivo, o teste pode ficar sem uma das classes"
+          ],
+          "warnings": [
+            "A crítica que o vídeo faz ao hold-out é sobre **como separar** (a ordem do arquivo e as classes). A crítica do **slide 17** é outra: uma única divisão não mostra o quanto o desempenho **varia** conforme a amostra de teste (o teste pode ter sido \"mais fácil\"). Na prova, responda com a do slide.",
+            "No exemplo das flores (10 exemplos), a estratificação é só aproximada: o treino fica com 3 + 5 e o teste com 1 + 1, porque com tão poucos exemplos é preciso arredondar (o próprio vídeo diz isso).",
+            "Usa uma rede neural (MLP) no exemplo. Para a prova, o que importa é a divisão em treino e teste; o detalhe dos pesos pode ser ignorado."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 530,
+              "slides": "13–16",
+              "note": "conceito, 80/20, estratificação e exemplo com 10 flores"
+            },
+            {
+              "start": 704,
+              "end": 907,
+              "slides": "16–17",
+              "note": "o problema de separar pela ordem dos dados"
+            }
+          ],
+          "transcript": "../transcripts/VZSZGCmKj-o.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:00–00:39 — todos os métodos de validação dividem o conjunto em grupos, treinam com alguns e testam com outros, para o modelo não **decorar** o conjunto (slides 13 e 14).",
+              "00:39–01:35 — hold-out: dois subconjuntos, um para treinar e outro para testar; regra geral **80% treino e 20% teste** (slide 16).",
+              "01:35–02:51 — como separar: pegar os primeiros 80% e os últimos 20%, ou, melhor, **estratificar** (mesma proporção de classes no treino e no teste).",
+              "02:51–03:59 — passo a passo: treinar só com o treino; testar com o teste que **não foi usado** no treinamento; montar a matriz de confusão e as métricas (acurácia, precisão, recall).",
+              "03:59–08:50 — exemplo com 10 flores (4 de uma espécie e 6 de outra): 8 para treino e 2 para teste, com a estratificação aproximada.",
+              "08:50–11:44 — treino da rede com o subconjunto de treino e avaliação com o de teste; resumo do 80/20.",
+              "11:44–15:00 — a deficiência: três formas de dividir pela ordem (primeiros 80%, últimos 80%, 40% + 40% com o meio para teste); se o teste ficar com uma só classe, não há como medir a outra e o modelo pode ficar sem ver uma classe no treino."
+            ],
+            "notCovered": "a proporção ⅔–⅓ do slide 16; a regra \"erro de treino baixo e erro de teste alto = overfitting\" (slide 16); a crítica do slide 17 (variação do desempenho entre amostras de teste); amostragem aleatória repetida com média e desvio padrão (slides 18 e 19); validação cruzada (slide 20, que é o assunto do vídeo seguinte); vazamento de dados.",
+            "profile": [
+              "**Nível:** bom para iniciante no conceito; pressupõe saber o que é matriz de confusão e métricas (cita \"a aula passada\").",
+              "**Foco:** conceito com um exemplo numérico pequeno e desenhos; sem código.",
+              "**Qualidade:** claro e passo a passo; a legenda erra nomes (\"cetosa\", \"cépala\"), mas dá para acompanhar.",
+              "**Transcrição:** colada por você a partir do YouTube e termina em 15:00; os últimos 7 segundos do vídeo não estão nela."
+            ],
+            "verdict": "aprovar só os trechos 00:00–08:50 e 11:44–15:07. Cobre bem o hold-out e a estratificação (slide 16) e mostra por que a forma de dividir importa; para a crítica do slide 17 e para o desvio padrão, use a leitura da Aula 4 e o vídeo de validação cruzada."
+          }
+        },
+        {
+          "id": "a4-v10",
+          "type": "video",
+          "title": "AM 03.6 Experimentação, Holdout, Cross Validation, Validação Cruzada, Estratificado",
+          "channel": "Prof. Tiago Buarque",
+          "duration": "18 min",
+          "url": "https://www.youtube.com/watch?v=PnjkGDeynJo",
+          "goals": [
+            "Por que treinar e testar na mesma base dá resultado otimista (slide 13)",
+            "Hold-out repetido de forma aleatória, com a média dos resultados (slide 18)",
+            "Amostragem estratificada × completamente aleatória (extra; ajuda a entender o k-fold estratificado)"
+          ],
+          "warnings": [
+            "Só fala em **média** das repetições. O **desvio padrão** do slide 18 não aparece; o aviso de que desvio alto significa instabilidade do modelo fica por conta do texto.",
+            "Cita 60/40, 50/50 e 90/10 e diz que \"tanto faz\"; os slides citam 2/3 e 1/3 ou 80/20 (slide 16).",
+            "Não cobre a crítica do slide 19 (os conjuntos de teste sorteados podem ser parecidos entre si).",
+            "Fora dos slides, não assista: intervalo de confiança e \"30 repetições\" (05:00–05:45), bootstrap e leave-one-out (14:00–16:10) e o final sobre classes desbalanceadas com bilhões de exemplos. A estratificação é extra: use para entender, não como conteúdo cobrado.",
+            "Pressupõe saber o que são matriz de confusão e taxa de acerto de aulas anteriores."
+          ],
+          "clips": [
+            {
+              "start": 59,
+              "end": 215,
+              "slides": "13–14",
+              "note": "treino = teste (resubstituição) dá estimativa otimista; usar dados passados"
+            },
+            {
+              "start": 242,
+              "end": 304,
+              "slides": "16, 18",
+              "note": "hold-out e repetição aleatória"
+            },
+            {
+              "start": 330,
+              "end": 632,
+              "slides": "18",
+              "note": "usar a média; amostragem completamente aleatória × estratificada com exemplo de proporções"
+            }
+          ],
+          "transcript": "../transcripts/PnjkGDeynJo.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:59–03:35 treino e teste não podem ter interseção; usar a mesma base para treinar e testar (resubstituição) deixa o modelo \"decorar\" e dá estimativa muito otimista; testar com dados futuros serve para monitorar degradação, então se usam dados passados.",
+              "04:02–05:05 hold-out: separa um pedaço (ex.: 40%) para teste e o resto para treino; pode ser aleatório e repetido várias vezes, medindo taxa de acerto, erro, precisão em cada repetição.",
+              "05:30–06:05 qual dos resultados repetidos é o correto? Na prática usa-se a média, que mesmo assim pode não coincidir com o desempenho real.",
+              "06:05–07:00 amostragem completamente aleatória: cada exemplo tem a mesma chance de cair no teste.",
+              "07:00–10:20 amostragem estratificada: mantém a proporção das classes (ex.: 44%/20%/36%); com teste pequeno a amostragem aleatória pode distorcer as proporções (exemplo numérico dos percentuais por classe).",
+              "Não indicados nos clips: 11:00–13:00 k-fold com 3 partições, 10-fold comum, média ou matriz de confusão da base inteira; 13:00–14:00 estratificação no k-fold."
+            ],
+            "notCovered": "desvio padrão e o significado de desvio alto (slide 18); crítica do slide 19; k-fold com média e desvio padrão (slide 20, só a média); quando não usar k-fold (slide 21); proporções 80/20; overfitting e underfitting; leakage.",
+            "profile": [
+              "**Nível e foco:** aula de pós-graduação para alunos que já viram matriz de confusão; conceito com slides e exemplo de percentuais, sem código.",
+              "**Idioma/qualidade:** português, tom de aula expositiva com digressões; a fala do trecho de resubstituição e a da estratificação são claras. A legenda automática tem erros (\"re-substituição\" aparece como \"resto substituição\", etc.)."
+            ],
+            "verdict": "aprovar só os trechos 00:59–03:35, 04:02–05:05 e 05:30–10:30. É o único em português que fala em hold-out repetido com média (slide 18) e em estratificação. Complementa a4-v2 e a4-v3 (hold-out) e a4-v5 (k-fold)."
+          }
+        },
+        {
+          "id": "a4-v3",
+          "type": "video",
+          "title": "Estimativa de desempenho: Holdout × validação cruzada",
+          "channel": "Bruno Nogueira",
+          "duration": "47 min",
+          "url": "https://www.youtube.com/watch?v=8qTkdC_ccdY",
+          "goals": [
+            "Hold-out (slide 16) e quando a validação cruzada é cara (slide 21)"
+          ],
+          "warnings": [
+            "Entre 41:51 e 42:17 diz que o hold-out é mais indicado para **poucos** dados. O slide 21 diz o contrário: com base grande o hold-out basta; a validação cruzada é para bases pequenas.",
+            "Soma as matrizes de confusão dos folds. O slide 20 pede média e desvio padrão das métricas."
+          ],
+          "optional": true,
+          "clips": [
+            {
+              "start": 350,
+              "end": 540,
+              "slides": "16",
+              "note": "hold-out"
+            },
+            {
+              "start": 2400,
+              "end": 2510,
+              "slides": "21",
+              "note": "base grande"
+            },
+            {
+              "start": 2537,
+              "end": 2625,
+              "slides": "21",
+              "note": "base grande"
+            }
+          ],
+          "transcript": "../transcripts/8qTkdC_ccdY.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:30–05:30: medir o desempenho em dados não vistos; analogia da prova com consulta (04:30); notação f(x), h(x), classe predita × real.",
+              "05:50–09:00: hold-out: separar aleatoriamente uma porção para teste (3/4–1/4; \"o mais comum na literatura\" 2/3–1/3).",
+              "09:00–16:00: k-fold: dividir em k partes disjuntas, repetir k vezes com um fold de teste; k-fold estratificado mantendo 60/40 das classes; mesmo algoritmo com os mesmos parâmetros em cada rodada.",
+              "16:00–40:00: exemplo numérico com 10 pacientes: hold-out e k=3, matrizes de confusão, acurácia, precisão e revocação (cálculo manual).",
+              "40:00–41:50: validação cruzada em geral é preferível ao hold-out (estimativa estatisticamente menos enviesada, vários cenários); a variância entre folds pode ser alta (exemplo 20% em um fold e 100% em outro); a média dá segurança.",
+              "42:17–43:45: o hold-out é suficiente em base muito grande (1 milhão de exemplos, 10% = 100 mil de teste já capturam a variabilidade).",
+              "45:30–47:26: fecho: a estimativa serve para prometer ao cliente o desempenho esperado."
+            ],
+            "notCovered": "overfitting/underfitting (só cita rapidamente em 18:00 que avaliar no treino \"favorece o sobreajuste\"), amostragem aleatória repetida, desvio padrão, leakage, bias/variância, desafios dos dados.",
+            "profile": [
+              "**Pressupõe conhecimento prévio:** sim, o vídeo anterior sobre métricas (matriz de confusão, acurácia, precisão, revocação); notação de h(x) e f(x).",
+              "**Foco:** conceito, com exemplo numérico à mão (sem código).",
+              "**Qualidade:** aula expositiva clara e bem estruturada; usa desenho (quadro) e exemplo; o trecho 16:00–40:00 é longo e gira em torno de matriz de confusão, que o usuário disse não ser foco."
+            ],
+            "verdict": "aprovar só os trechos 05:50–09:00, 40:00–41:50 e 42:17–43:45. O restante é redundante ou fora do foco."
+          }
+        },
+        {
+          "id": "a4-v4",
+          "type": "video",
+          "title": "Validação cruzada (Cross Validation)",
+          "channel": "Apoena Stack",
+          "duration": "27 min",
+          "url": "https://www.youtube.com/watch?v=CWxaXyXZ-1A",
+          "goals": [
+            "Crítica à divisão única (slide 17) e o k-fold (slide 20)"
+          ],
+          "warnings": [
+            "Diz que o k-fold \"considera todas as combinações possíveis\". Não é isso: são k divisões em pedaços, cada um usado uma vez como teste.",
+            "Fala só da média; o slide 20 pede **média e desvio padrão**."
+          ],
+          "clips": [
+            {
+              "start": 120,
+              "end": 240,
+              "slides": "17",
+              "note": "crítica ao hold-out"
+            },
+            {
+              "start": 510,
+              "end": 635,
+              "slides": "20",
+              "note": "k-fold"
+            }
+          ],
+          "transcript": "../transcripts/CWxaXyXZ-1A.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:30–02:00: divisão 75% treino / 25% teste, analogia estudo (apostila) × prova.",
+              "02:00–04:00: crítica ao hold-out: com um único bloco de 25% o teste pode favorecer um modelo por acaso, gerando viés na escolha; não dá para usar todo o dataset para treino e teste.",
+              "04:00–08:30: k-fold com 4 blocos de 25%, treinar e testar 4 vezes variando o bloco de teste, média das acurácias; pseudocódigo em \"Portugol\"; o modelo é refeito do zero em cada rodada.",
+              "08:30–10:35: o k é livre (5, 10...), 10-fold é o mais comum; a média reduz o efeito de um bloco \"sortudo\" (exemplo 90% em um fold contra 60% nos outros).",
+              "10:35–12:00: usos da validação cruzada: escolher modelo, escolher atributos, escolher hiperparâmetros.",
+              "12:00–27:00: código scikit-learn num notebook (aluguel de imóveis; KFold, cross_val_score, regressão linear, Lasso, KNN com k de 1 a 20)."
+            ],
+            "notCovered": "desvio padrão (só fala em média), quando não usar (base grande), amostragem aleatória repetida, estratificação, nem leakage. Do hold-out, só 75/25 (sem 2/3–1/3 nem 80/20).",
+            "profile": [
+              "**Pressupõe conhecimento prévio:** a parte teórica (até ~12:00) quase nada; a prática (12:00 em diante) assume Python/pandas, regressão linear e conceitos de vídeos anteriores da série.",
+              "**Foco:** conceito até 12:00; código depois.",
+              "**Qualidade:** analogias boas (estudo × prova, exemplo numérico do fold sortudo); informal e redundante; ritmo lento no código. Para iniciante, a parte teórica é boa."
+            ],
+            "verdict": "aprovar só os trechos 02:00–04:00 e 08:30–10:35 (a parte conceitual 04:00–08:30 repete o que FS explica melhor e mais curto)."
+          }
+        },
+        {
+          "id": "a4-v11",
+          "type": "video",
+          "title": "9.5 Resampling and Repeated Holdout (L09 Model Eval 2)",
+          "channel": "Sebastian Raschka",
+          "duration": "19 min",
+          "url": "https://www.youtube.com/watch?v=1whfIOoPTlk",
+          "optional": true,
+          "goals": [
+            "Uma só divisão treino/teste varia muito, principalmente com teste pequeno (slide 17)",
+            "Repetir o hold-out várias vezes e tirar a média; a dispersão mostra a instabilidade (slide 18)"
+          ],
+          "warnings": [
+            "Vídeo em **inglês** (aula de graduação/pós; sem legenda em português garantida). Escolhido porque é o único que mostra, com simulação, o quanto o resultado varia entre repartições.",
+            "Mostra a dispersão por barras (mínimo e máximo: de 88% a 100% com 50/50; de 80% a 100% com 90/10) e diz \"média\", mas **não fala em desvio padrão**. Leia o desvio padrão do slide 18 como uma medida dessa dispersão.",
+            "Chama o hold-out repetido de Monte Carlo cross-validation (nome fora dos slides).",
+            "Traz ideias que o slide não tem: viés pessimista (teste grande tira dados do treino), comparação com bagging (11:30–12:00) e código da simulação (17:00–19:00). Ignore essas partes.",
+            "Pede o conceito de variância/viés (alvo) da aula anterior; no trecho a palavra \"variância\" é usada para a variação da estimativa de desempenho."
+          ],
+          "clips": [
+            {
+              "start": 500,
+              "end": 1030,
+              "slides": "17–18",
+              "note": "teste pequeno gera estimativa instável; hold-out repetido com média e simulação com Iris"
+            }
+          ],
+          "transcript": "../transcripts/1whfIOoPTlk.json",
+          "review": {
+            "badge": "transcrição lida · só o trecho indicado · inglês",
+            "covers": [
+              "08:20–09:00 se o conjunto de teste for pequeno para sobrar dados para o treino, o resultado fica menos confiável (trade-off entre tamanho do treino e do teste).",
+              "09:00–11:40 com 100 pontos sorteados de uma distribuição e três divisões 70/30, o teste muda bastante de forma; a estimativa de um único teste pequeno varia muito (variância da estimativa).",
+              "11:40–13:30 repetir o hold-out k vezes e tirar a média das acurácias reduz o efeito da divisão sorteada e mostra o quanto o modelo é sensível à divisão.",
+              "13:30–17:00 simulação com Iris e KNN: 50 repetições com 50/50 e com 90/10; as acurácias variam de 88% a 100% e de 80% a 100%; a média é de cerca de 95%; teste menor, mais variação.",
+              "Fora do clip: 00:55–04:15 curvas de aprendizado (com poucos dados o modelo decora; mais dados melhora o teste), que ilustram \"base muito pequena\" do slide 10, mas em nível avançado."
+            ],
+            "notCovered": "desvio padrão (só \"média\" e dispersão); crítica do slide 19 (conjuntos de teste podem repetir exemplos); k-fold; estratificação; leakage.",
+            "profile": [
+              "**Nível e foco:** intermediário; conceito com gráficos e uma simulação, com pouco código no final; assume que o aluno já conhece hold-out, acurácia e a ideia de variância.",
+              "**Idioma/qualidade:** inglês claro e pausado, aula universitária; transcrição por Whisper com pequenos erros."
+            ],
+            "verdict": "aprovar só o trecho 08:20–17:10, como complemento opcional em inglês de a4-v10. Substitui a falta de vídeo sobre a variabilidade do hold-out (slides 17–18); não cobre o desvio padrão pelo nome."
+          }
+        },
+        {
+          "id": "a4-v5",
+          "type": "video",
+          "title": "Avaliação de modelos preditivos: validação cruzada K-fold",
+          "channel": "Fernando dos Santos",
+          "duration": "10 min",
+          "url": "https://www.youtube.com/watch?v=E1VAYcKnLxg",
+          "goals": [
+            "Como o k-fold funciona, passo a passo (slide 20)"
+          ],
+          "warnings": [
+            "Fala só da média; lembre do **desvio padrão** (slide 20)."
+          ],
+          "clips": [
+            {
+              "start": 0,
+              "end": 572,
+              "slides": "20",
+              "note": "k-fold passo a passo"
+            }
+          ],
+          "transcript": "../transcripts/E1VAYcKnLxg.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "00:00–00:40: o k-fold resolve a deficiência do hold-out.",
+              "00:20–04:20: k = número de subconjuntos (folds); exemplo de 90 exemplos com k = 3 (30 por fold); divisão estratificada (mantém a proporção das classes); k treinos/testes alternando o fold de teste; k matrizes de confusão; média das métricas (acurácia, precisão, revocação); o modelo é reiniciado do zero a cada rodada (04:20).",
+              "04:40–07:20: exemplo com 9 exemplos (Iris: setosa/versicolor) mostrando como montar folds A, B, C com proporção 33%/66%.",
+              "07:20–09:32: as três rodadas (A+B treino e C teste, etc.) e média final; fecho: \"diminuir o risco de deixar alguém de fora do treino ou do teste\" do hold-out."
+            ],
+            "notCovered": "desvio padrão, quando não usar (base grande), custo computacional, amostragem aleatória repetida.",
+            "profile": [
+              "**Pressupõe conhecimento prévio:** começa com \"essas outras validações...\" (continuação de um vídeo anterior, provavelmente o de hold-out de FS-HO); assume saber matriz de confusão e métricas de classificação.",
+              "**Foco:** conceito, com exemplo numérico simples.",
+              "**Qualidade:** curto, passo a passo, bom para iniciante; sem enrolação."
+            ],
+            "verdict": "aprovar."
+          }
+        },
+        {
+          "id": "a4-v6",
+          "type": "video",
+          "title": "Data Leakage: uma verdadeira armadilha para o cientista de dados",
+          "channel": "Neoway Labs Tech",
+          "duration": "27 min",
+          "url": "https://www.youtube.com/watch?v=cauYnbfiayU",
+          "goals": [
+            "O que é vazamento de dados e como identificar (slides 22 a 24)"
+          ],
+          "warnings": [
+            "Usa \"conjunto de validação\" com sentido diferente do slide 34.",
+            "Cobre só a imputação; o vazamento por normalizar com estatísticas globais e o temporal ficam por conta do texto."
+          ],
+          "clips": [
+            {
+              "start": 150,
+              "end": 220,
+              "slides": "22"
+            },
+            {
+              "start": 676,
+              "end": 1030,
+              "slides": "22–24"
+            },
+            {
+              "start": 1160,
+              "end": 1250,
+              "slides": "23"
+            },
+            {
+              "start": 1260,
+              "end": 1370,
+              "slides": "23–24"
+            }
+          ],
+          "transcript": "../transcripts/cauYnbfiayU.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "02:30–03:40: definição: usar na modelagem informação que não estará disponível na hora da predição; métricas de teste excelentes, desempenho ruim em produção.",
+              "07:00–11:16: dividir em treino e teste; analogia professor/lista de exercícios/prova (a prova não repete as perguntas).",
+              "11:16–14:30: leakage no pré-processamento: preencher valores faltantes no dataset inteiro antes de dividir leva informação para o teste (comparado a pôr questão da lista na prova).",
+              "14:30–15:50: leakage de atributo: colocar a própria variável resposta como atributo.",
+              "15:50–17:10: leakage de atributos \"do futuro\" (exemplo: cirurgia relacionada à doença que se quer prever, não disponível na hora de usar o modelo).",
+              "17:30–19:20: relato de experimento: imputar com KNN antes de separar treino e teste faz as métricas enganarem.",
+              "19:20–20:50: duplicados (exemplo: CNPJ repetido caindo em treino e teste; pego com teste unitário).",
+              "21:00–23:00: dicas: separar treino e teste sem interseção; dividir antes de qualquer manipulação (imputação); análise exploratória para achar atributos muito correlacionados ao alvo; atenção ao que existe no mundo real.",
+              "25:00–26:30: usar pipelines (PyCaret, scikit-learn)."
+            ],
+            "notCovered": "leakage temporal / Time Series Split (só diz em 23:00–24:00 \"se a aplicação depende do tempo, não use atributos coletados após o evento\", sem falar em divisão temporal); normalização com estatísticas globais (cita só imputação); exemplo de pneumonia do slide.",
+            "profile": [
+              "**Pressupõe conhecimento prévio:** pouco; linguagem de dia a dia de ciência de dados; vários termos (\"pipeline\", \"features\", \"imputação\") são usados sem definir.",
+              "**Foco:** conceito, com exemplos práticos (sem código).",
+              "**Qualidade:** formato de mesa-redonda com três cientistas de dados; informal, repete o ponto algumas vezes (apresentações e conversa nos 7 minutos iniciais são dispensáveis). Fortes: exemplos de duplicação e de imputação, ligação com testes unitários (familiar a um engenheiro de software)."
+            ],
+            "verdict": "aprovar só os trechos listados (é o melhor disponível em português para slides 22–24, mas incompleto no temporal)."
+          }
+        },
+        {
+          "id": "a4-v12",
+          "type": "video",
+          "title": "Cross-Validation for Time Series Forecasting | Python Tutorial",
+          "channel": "Egor Howell",
+          "duration": "11 min",
+          "url": "https://www.youtube.com/watch?v=1rZpbvSI26c",
+          "goals": [
+            "Vazamento temporal: por que o teste de uma série temporal precisa vir depois do treino (slide 23)",
+            "Time Series Split: treino sempre no passado e teste sempre no futuro (slide 23)"
+          ],
+          "warnings": [
+            "Vídeo em **inglês** (a legenda automática erra termos: \"hop-ramps\" é \"hiperparâmetros\"). É o único candidato que explica a divisão temporal do slide 23 com gráfico; use só os trechos indicados.",
+            "Chama de \"rolling\" o esquema em que o treino cresce a cada divisão (a janela cresce). O `TimeSeriesSplit` do scikit-learn funciona assim por padrão; a regra que importa para a prova é a mesma: treino no passado, teste no futuro.",
+            "Mostra uma validação cruzada comum aplicada a série temporal (teste antes do treino no tempo) como erro, porque o modelo veria o futuro; chama isso de \"back casting\" e de vazamento de informação.",
+            "Pressupõe que o aluno já conhece validação cruzada (slide 20). O código com suavização exponencial e Holt-Winters (06:10–09:15) está fora do foco."
+          ],
+          "clips": [
+            {
+              "start": 118,
+              "end": 367,
+              "slides": "23",
+              "note": "validação cruzada comum vaza o futuro em série temporal; o teste deve estar à frente do treino"
+            },
+            {
+              "start": 568,
+              "end": 625,
+              "slides": "23",
+              "note": "resumo: usar TimeSeriesSplit do scikit-learn"
+            }
+          ],
+          "transcript": "../transcripts/1rZpbvSI26c.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados · inglês",
+            "covers": [
+              "00:00–02:00 o que é validação cruzada: dividir várias vezes mudando o que é treino e o que é teste.",
+              "02:00–03:50 visualização das divisões da validação cruzada em dados em sequência.",
+              "03:50–05:00 em série temporal isso é um problema: treinar com dados posteriores e testar em anteriores usa o futuro para prever o passado; há informação vazando do teste para o treino.",
+              "05:00–06:10 solução: o teste sempre vem depois do treino; o treino cresce a cada divisão e o teste avança; \"o ponto principal é o teste estar sempre à frente do treino no tempo\".",
+              "06:10–09:15 exemplo de ajuste de hiperparâmetro de um modelo de suavização exponencial com `TimeSeriesSplit` (código, opcional e fora do foco).",
+              "09:28–10:25 resumo: validação cruzada comum vaza dados em séries temporais; usar `TimeSeriesSplit` do scikit-learn."
+            ],
+            "notCovered": "exemplos de vazamento por duplicação ou de atributos (slide 23); pré-processamento com estatísticas globais (slide 24); média e desvio padrão da validação cruzada.",
+            "profile": [
+              "**Nível e foco:** intermediário; conceito com gráficos nos primeiros 6 minutos e depois código em notebook.",
+              "**Idioma/qualidade:** inglês claro; informal e repetitivo. O vídeo de Hyndman sobre o mesmo tema (OGpENuxjRWM) foi descartado por transcrição inutilizável."
+            ],
+            "verdict": "aprovar só os trechos 01:58–06:07 e 09:28–10:25 (inglês). É o único vídeo que cobre o Time Series Split do slide 23."
+          }
+        },
+        {
+          "id": "a4-v13",
+          "type": "video",
+          "title": "Porque você nunca deve fazer scaling antes do split de validação em Machine Learning",
+          "channel": "Mario Filho",
+          "duration": "8 min",
+          "url": "https://www.youtube.com/watch?v=JlhcxlO18xg",
+          "goals": [
+            "Vazamento no pré-processamento: calcular média e desvio padrão do dataset inteiro antes de dividir (slide 24)",
+            "Em série temporal, dividir entre passado e futuro (slide 23)"
+          ],
+          "warnings": [
+            "Usa \"validação\" para o conjunto reservado para avaliar (o que o slide chama de teste); não é o conjunto de validação do slide 34.",
+            "Vai além do slide ao dizer que nem num split aleatório simples se pode confiar que os dados futuros terão a mesma distribuição; a regra segura que ele dá (\"tudo o que estima um parâmetro com os dados deve ser feito depois do split\") é exatamente a do slide 24.",
+            "Ignore a introdução com a conversa de WhatsApp e a história da fábrica com a árvore que crescia (05:28–06:45, mudança de distribuição, fora dos slides).",
+            "Pressupõe que o aluno sabe o que é padronização; ele a define de passagem (subtrair a média e dividir pelo desvio padrão)."
+          ],
+          "clips": [
+            {
+              "start": 71,
+              "end": 320,
+              "slides": "23–24",
+              "note": "por que a padronização deve ser feita depois do split; exemplo em série temporal"
+            },
+            {
+              "start": 405,
+              "end": 450,
+              "slides": "24",
+              "note": "regra final: dividir antes de qualquer transformação"
+            }
+          ],
+          "transcript": "../transcripts/JlhcxlO18xg.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "01:11–03:10 split por tempo: dados de luminosidade (x) e gasto de energia (y), treino no passado e validação no futuro; o conjunto reservado deve simular dados que o modelo nunca viu, nem o x nem o y.",
+              "03:10–04:10 se a padronização (subtrair a média e dividir pelo desvio padrão) usar todos os dados, a informação do futuro (a variação da luminosidade) vaza para o treino.",
+              "04:10–05:20 em produção não se sabe como serão os dados futuros; regra: tudo o que estima um parâmetro com os dados deve ser feito depois do split; se está começando, divida primeiro e transforme depois.",
+              "06:45–07:30 na vida real o x e o y da validação e do teste nunca foram vistos; não dá para calcular a média dos próximos 10 exemplos que chegam em tempo real."
+            ],
+            "notCovered": "vazamento por duplicação e por atributos (slide 23); imputação (slide 24, só a normalização); o nome \"Time Series Split\" (só \"split por tempo\"); estratificação; pipelines do scikit-learn.",
+            "profile": [
+              "**Nível e foco:** iniciante a intermediário; conceito com desenho no tablet, sem código.",
+              "**Idioma/qualidade:** português do Brasil, direto, curto; tom informal e um pouco enfático."
+            ],
+            "verdict": "aprovar só os trechos 01:11–05:20 e 06:45–07:30. É o único vídeo em português que mostra a normalização com a média e o desvio padrão do dataset inteiro como vazamento (slide 24). Complementa a4-v6 (Neoway), que cobre só a imputação, e cobre parcialmente o split por tempo do slide 23."
+          }
+        },
+        {
+          "id": "a4-v7",
+          "type": "video",
+          "title": "Viés e variância (Machine Learning: Fundamentos, parte 6)",
+          "channel": "Apoena Stack",
+          "duration": "15 min",
+          "url": "https://www.youtube.com/watch?v=--NWR_1uIW0",
+          "goals": [
+            "Viés × variância (slides 25 a 32)"
+          ],
+          "warnings": [
+            "Define variância como consistência entre bases. O slide 27 define como a **amplitude dos erros**."
+          ],
+          "clips": [
+            {
+              "start": 20,
+              "end": 840,
+              "slides": "25–32",
+              "note": "viés e variância"
+            }
+          ],
+          "transcript": "../transcripts/--NWR_1uIW0.json",
+          "review": {
+            "badge": "transcrição lida · aprovado",
+            "covers": [
+              "00:20–03:30: três modelos (H1 ajuste razoável, H2 reta muito simples, H3 passa por todos os pontos) sobre os dados de treino; erro de treino de H3 quase nulo.",
+              "02:30–04:00: bias (viés) como incapacidade do modelo de capturar a relação real; H2 alto, H1 médio, H3 baixo (sempre olhando o treino).",
+              "04:00–06:00: base de teste diferente; H3 passa a errar muito.",
+              "06:00–07:00: variância como consistência quando se troca o conjunto de dados.",
+              "07:00–09:00: H3 = overfitting (baixo bias no treino, alta variância); H2 = underfitting (alto bias, baixa variância).",
+              "09:00–12:30: gráfico erro de predição × complexidade, curvas de treino e teste; extremo de alta complexidade (treino baixo, teste alto); ponto médio ideal.",
+              "12:30–14:00: analogia do alvo (dartboard), as quatro combinações de bias/variância; o ideal é baixo bias e baixa variância.",
+              "14:00–14:30: cita três técnicas para reduzir (regularização e, pela legenda confusa, bagging e boosting), sem explicar."
+            ],
+            "notCovered": "tudo que não é bias/variância e overfitting/underfitting (amostragem, hold-out, validação cruzada, leakage). Causas de overfitting só aparecem como \"complexidade excessiva\"; sem lista de soluções do slide 11.",
+            "profile": [
+              "**Pressupõe conhecimento prévio:** pouco; assume saber o que são base de treino e de teste, regressão polinomial/linear só como nome.",
+              "**Foco:** conceito (usa desenhos: curvas H1/H2/H3, gráfico erro × complexidade, alvo).",
+              "**Qualidade:** a melhor explicação de bias/variância do conjunto; para iniciantes; ritmo calmo, algo repetitivo."
+            ],
+            "verdict": "aprovar."
+          }
+        },
+        {
+          "id": "a4-v14",
+          "type": "video",
+          "title": "Machine Learning Fundamentals: Bias and Variance",
+          "channel": "StatQuest with Josh Starmer",
+          "duration": "7 min",
+          "url": "https://www.youtube.com/watch?v=EuBBz3bI-aA",
+          "optional": true,
+          "goals": [
+            "Viés e variância com treino e teste: a reta e a curva ondulada (slides 25 a 28)",
+            "Ponto ideal entre modelo simples e complexo (slides 29 a 31)"
+          ],
+          "warnings": [
+            "Vídeo em **inglês** (sem legenda em português garantida). O canal é excelente, mas este vídeo não é claramente superior ao a4-v7 (Apoena Stack, português); serve como segunda explicação curta de 6 minutos.",
+            "Define viés como a **incapacidade do método de capturar a relação verdadeira** (a reta nunca curva) e variância como a **diferença de ajuste entre conjuntos de dados** (soma dos quadrados parecida ou muito diferente). O slide 27 diz que o viés é o erro sobre os dados de treino e que a variância é a amplitude dos erros; as ideias são compatíveis, as palavras mudam.",
+            "Não mostra o alvo (dartboard) nem as quatro combinações de viés e variância do slide 31, nem o gráfico de erro × complexidade do slide 29.",
+            "Cita regularização, boosting e bagging como formas de achar o ponto ideal (11 s no final, sem explicar), fora dos slides.",
+            "Ignore os primeiros 28 s (piada do furacão) e a abertura/encerramento promocional."
+          ],
+          "clips": [
+            {
+              "start": 28,
+              "end": 368,
+              "slides": "25–31",
+              "note": "viés, variância, overfitting e ponto ideal com o exemplo dos camundongos"
+            }
+          ],
+          "transcript": "../transcripts/EuBBz3bI-aA.json",
+          "review": {
+            "badge": "transcrição lida · só o trecho indicado · inglês",
+            "covers": [
+              "00:28–01:05 exemplo: prever a altura de camundongos pelo peso; a relação real é uma curva.",
+              "01:05–02:00 divide em treino e teste; a regressão linear ajusta uma reta no treino.",
+              "02:00–03:00 viés = a reta não consegue capturar a curva verdadeira, por mais bem ajustada que seja (viés alto); a curva ondulada flexível tem viés baixo.",
+              "03:00–04:00 soma dos quadrados dos erros: a curva ondulada vence no treino (erro zero) e perde no teste.",
+              "04:00–05:00 variância = diferença de ajuste entre conjuntos; a ondulada tem variância alta (imprevisível com dados novos), a reta tem variância baixa (previsões sempre \"boas, não ótimas\").",
+              "05:00–05:50 a ondulada está em overfitting; o algoritmo ideal tem viés baixo e variância baixa, achando o ponto entre modelo simples e complexo."
+            ],
+            "notCovered": "alvo com as quatro combinações e relação viés alto = underfitting (slides 28 e 31); gráfico erro de treino e teste × complexidade (slides 29 e 30); desvio padrão; ruído nos dados (slide 30).",
+            "profile": [
+              "**Nível e foco:** iniciante; conceito com gráficos e animação, sem fórmula nem código (só soma dos quadrados explicada como distância elevada ao quadrado).",
+              "**Idioma/qualidade:** inglês claro, vídeo curto, bem-humorado; precisa de atenção por ser em inglês."
+            ],
+            "verdict": "aprovar só o trecho 00:28–06:08, como complemento opcional (em inglês) de a4-v7. Mais curto que a4-v7, porém cobre menos do slide."
+          }
+        },
+        {
+          "id": "a4-v15",
+          "type": "video",
+          "title": "O trade-off de viés e variância (bias-variance tradeoff) - Perguntas de Entrevista",
+          "channel": "Data Hackers",
+          "duration": "6 min",
+          "url": "https://www.youtube.com/watch?v=F0mLg9WQUJo",
+          "optional": true,
+          "goals": [
+            "Alto viés e baixa variância = underfitting; baixo viés e alta variância = overfitting (slides 28 e 31)",
+            "Quais modelos tendem a cada um e como achar o equilíbrio (causas e soluções, slides 10 e 11)"
+          ],
+          "warnings": [
+            "Define viés como a limitação do modelo (rígido demais para captar o sinal real) e variância como a sensibilidade ao conjunto de treino. O slide 27 define viés como erro sobre o treino e variância como amplitude dos erros; as ideias são compatíveis, as palavras mudam.",
+            "Em 05:15 a fala diz \"simples demais para ele overfitar\", mas o certo é \"underfitar\" (lapso de fala).",
+            "Os exemplos de modelos (regressão linear e logística = viés alto; árvores de decisão e KNN = variância alta) são tendências gerais; dependem dos hiperparâmetros (K do KNN, profundidade da árvore).",
+            "Cita erro de Bayes (erro irredutível) e regularização/poda/hiperparâmetros como remédios; não estão nos slides desta aula. Pule 01:03–01:44 (erro de Bayes) e a abertura pedindo curtida.",
+            "O vídeo é rápido e informal (preparação de entrevistas); não usa desenho na fala, só descreve o conceito."
+          ],
+          "clips": [
+            {
+              "start": 40,
+              "end": 63,
+              "slides": "14",
+              "note": "erro de generalização: o modelo deve ir bem em dados que não viu"
+            },
+            {
+              "start": 104,
+              "end": 335,
+              "slides": "28, 31",
+              "note": "viés alto/variância baixa (underfitting) × variância alta/viés baixo (overfitting), modelos típicos e remédios"
+            }
+          ],
+          "transcript": "../transcripts/F0mLg9WQUJo.json",
+          "review": {
+            "badge": "transcrição lida · só os trechos indicados",
+            "covers": [
+              "00:40–01:03 erro de generalização: como o modelo se sai em dados que não viu; deve ser o menor possível.",
+              "01:44–02:00 erro de viés = o modelo tem limitação e não é flexível o bastante para achar o sinal real dos dados de treino; variância = quão sensível o algoritmo é ao conjunto de treino.",
+              "02:00–03:00 modelos simples (regressão linear e logística): viés alto, variância baixa; modelos complexos: variância alta, viés baixo, modelam o ruído e memorizam.",
+              "03:00–04:00 variância alta e viés baixo = overfitting (bom no treino, ruim no teste); árvores de decisão são exemplo comum.",
+              "04:00–05:00 viés alto e variância baixa = underfitting (ex.: modelo linear em dados sem relação linear).",
+              "05:00–05:35 achar o equilíbrio: regularização, poda e profundidade da árvore, hiperparâmetros, ou trocar por um algoritmo menos simples."
+            ],
+            "notCovered": "alvo com as quatro combinações (slides 25 e 31, só as duas principais); gráfico de erro de treino e teste × complexidade (slides 29 e 30); outras causas do underfitting do slide 11 (atributos insuficientes, pré-processamento, pouco tempo de treino); hold-out, validação cruzada e leakage.",
+            "profile": [
+              "**Nível e foco:** iniciante a intermediário; só conceito e exemplos, sem desenho nem código.",
+              "**Idioma/qualidade:** português do Brasil, informal, estilo entrevista; a legenda automática tem erros (\"chinl\", \"IP parâmetros\")."
+            ],
+            "verdict": "aprovar só os trechos 00:40–01:03 e 01:44–05:35, como complemento opcional de a4-v7. Acrescenta quais modelos tendem a cada caso e os remédios; parcial para as causas de overfitting e underfitting do slide."
+          }
+        },
+        {
+          "id": "a4-md",
+          "type": "markdown",
+          "title": "Leitura: Aula 4 do zero",
+          "path": "aula-4-do-zero.md",
+          "goals": [
+            "Os vídeos não cobrem: slides 3 a 7 (poucos dados, dados ruins, **viés de amostragem**), as causas completas de underfitting, amostragem aleatória repetida com média e desvio, o desvio no k-fold, vazamento temporal e por normalização global",
+            "Segue os slides na ordem; registra onde os slides divergem da literatura"
+          ]
+        },
+        {
+          "id": "a4-q",
+          "type": "questions",
+          "title": "Questões da Aula 4 (16)",
+          "path": "lesson-4-questions.json"
+        }
+      ]
+    },
+    {
+      "id": "fecho",
+      "title": "Fechamento · Código e ordem das ações",
+      "items": [
+        {
+          "id": "cod-md",
+          "type": "markdown",
+          "title": "Leitura: como ler um trecho de código de AM, do zero",
+          "path": "guia-ler-codigo.md",
+          "goals": [
+            "O que fazem `train_test_split`, `fit`, `transform`, `Pipeline` e `cross_val_score`",
+            "A ordem canônica de um pipeline e os 12 erros de lógica mais comuns"
+          ]
+        },
+        {
+          "id": "cod-q",
+          "type": "questions",
+          "title": "Questões de código e ordem das ações (20)",
+          "path": "code-questions.json"
+        }
+      ]
+    }
+  ]
+}

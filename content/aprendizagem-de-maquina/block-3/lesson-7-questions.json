@@ -1,0 +1,833 @@
+{
+  "schema": "questions/v2",
+  "id": "lesson-7-questions",
+  "title": "Questões · Aula 7: Métricas de Avaliação para Classificadores",
+  "description": "Questões conceituais, de interpretação de tabelas e de tomada de decisão sobre Matriz de Confusão, Acurácia, Precisão, Revocação (Recall), F1-Score, Especificidade, Curva ROC e AUC.",
+  "questions": [
+    {
+      "id": "l7-q01",
+      "type": "single",
+      "prompt": "Em um sistema de classificação binária para prever cancelamento de reservas em um hotel (onde 'Positivo' significa que a reserva será cancelada e 'Negativo' significa que a reserva será mantida), um cliente teve sua reserva cancelada na realidade, mas o modelo havia previsto que ela seria mantida. Como esse erro é classificado na matriz de confusão?",
+      "options": [
+        {
+          "text": "Verdadeiro Negativo (VN).",
+          "explanation": "Incorreto. Verdadeiro Negativo é quando o modelo prevê negativo e o evento de fato não ocorre. Aqui o cliente cancelou, então houve um erro de previsão.",
+          "id": "a",
+          "correct": false
+        },
+        {
+          "text": "Falso Positivo (FP).",
+          "explanation": "Incorreto. Falso Positivo ocorreria se o modelo previsse que a reserva seria cancelada (previsão positiva), mas o cliente comparecesse normalmente.",
+          "id": "b",
+          "correct": false
+        },
+        {
+          "text": "Falso Negativo (FN).",
+          "explanation": "Correto! O modelo previu a classe Negativa (não haveria cancelamento), mas a realidade era Positiva (a reserva foi cancelada). É um erro de omissão (Falso Negativo).",
+          "id": "c",
+          "correct": true
+        },
+        {
+          "text": "Verdadeiro Positivo (VP).",
+          "explanation": "Incorreto. Verdadeiro Positivo ocorre quando o modelo prevê positivo (cancelamento) e o cancelamento de fato acontece, o que não é o caso aqui.",
+          "id": "d",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "A mnemônica é direta: a segunda palavra (Negativo) é o que o modelo previu; a primeira palavra (Falso) indica que o modelo errou. Se o modelo previu que não cancelaria, ele previu Negativo; como na realidade cancelou, o modelo errou: portanto, Falso Negativo (FN). Analogia de engenharia: é um teste automatizado que deu 'verde' (previsão negativa para 'há bug') quando o bug existia.",
+      "label": "l7-q01"
+    },
+    {
+      "id": "l7-q02",
+      "type": "single",
+      "prompt": "Um cientista de dados treinou um classificador para detectar fraudes em transações de cartão de crédito. Na base de teste de 1.000.000 de transações, 998.000 são legítimas e 2.000 são fraudulentas. Um modelo ingênuo simplesmente previu que 100% das transações eram legítimas. Qual é a acurácia desse modelo e qual a principal conclusão sobre sua utilidade prática?",
+      "options": [
+        {
+          "text": "Acurácia de 50%, pois o modelo acertou uma classe e errou a outra; ele equivale a jogar uma moeda.",
+          "explanation": "Incorreto. O modelo acertou 998.000 de 1.000.000 de transações, então a acurácia numérica é de 99,8%. O 50% só valeria se as duas classes tivessem o mesmo tamanho, o que não ocorre aqui.",
+          "id": "a",
+          "correct": false
+        },
+        {
+          "text": "Acurácia de 99,8%, mas o recall de fraude é zero: o modelo não detecta nenhuma fraude e é inútil na prática.",
+          "explanation": "Correto! Ele acertou as 998.000 legítimas (VN), o que dá 99,8% de acurácia. Porém não detectou nenhuma fraude (VP = 0, recall = 0%). Em bases desbalanceadas a acurácia esconde falhas graves.",
+          "id": "b",
+          "correct": true
+        },
+        {
+          "text": "Acurácia de 99,8%, o que comprova que o modelo tem excelente capacidade preditiva para fraudes, capaz de detectar fraudes em produção.",
+          "explanation": "Incorreto. A alta acurácia é ilusão do desbalanceamento: quase tudo é legítimo, então chutar 'legítima' sempre acerta. O objetivo de detectar fraudes foi ignorado por completo.",
+          "id": "c",
+          "correct": false
+        },
+        {
+          "text": "Acurácia de 0,2%, o que mostra que a acurácia é sensível à classe minoritária.",
+          "explanation": "Incorreto. 0,2% (2.000 em 1.000.000) é a proporção de fraudes na base, que coincide com a taxa de erro do modelo ingênuo. A acurácia é o complemento: 99,8%.",
+          "id": "d",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "Este é exatamente o exemplo do Slide 14 da professora. Com forte desbalanceamento, a acurácia conta o volume de acertos da classe majoritária e mascara que a classe de interesse (a minoritária) foi totalmente negligenciada. Analogia: um monitor que sempre responde 'sistema saudável' tem 99,8% de acerto se o sistema só cai 0,2% do tempo, mas nunca avisa quando cai.",
+      "label": "l7-q02"
+    },
+    {
+      "id": "l7-q03",
+      "type": "single",
+      "prompt": "Em qual dos seguintes cenários de negócio a métrica PRECISÃO (Precision) deve ser a prioridade na escolha e no ajuste do classificador?",
+      "options": [
+        {
+          "text": "Triagem hospitalar para identificar cedo uma doença infecciosa grave, em que os positivos seguem para exames confirmatórios.",
+          "explanation": "Incorreto. O pior erro é o Falso Negativo (mandar o doente para casa sem tratamento); o Falso Positivo apenas gera um exame extra. O foco é o Recall.",
+          "id": "a",
+          "correct": false
+        },
+        {
+          "text": "Sistema de recomendação de vídeos infantis, em que a classe positiva significa 'conteúdo adequado e seguro para crianças'.",
+          "explanation": "Correto! O Falso Positivo é marcar como 'seguro' um vídeo impróprio e expor crianças: dano altíssimo. O Falso Negativo (deixar de recomendar um bom vídeo) é tolerável. Logo, prioriza-se a Precisão.",
+          "id": "b",
+          "correct": true
+        },
+        {
+          "text": "Detecção de vazamento de gás tóxico em uma fábrica química, em que o positivo é 'há vazamento'.",
+          "explanation": "Incorreto. Deixar de soar o alarme na presença de gás (Falso Negativo) pode matar pessoas, enquanto um alarme falso só gera uma verificação. O foco é o Recall.",
+          "id": "c",
+          "correct": false
+        },
+        {
+          "text": "Inspeção de falhas estruturais em peças de asas de aeronaves, em que o positivo é 'a peça tem fissura'.",
+          "explanation": "Incorreto. Aprovar uma peça com fissura (Falso Negativo) pode causar uma catástrofe, enquanto reprovar uma peça boa só custa dinheiro. O foco é o Recall.",
+          "id": "d",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "Conforme o Slide 19, a Precisão é a métrica indicada quando o Falso Positivo é mais prejudicial que o Falso Negativo (vídeo infantil e recomendação de investimentos). Truque para decidir: pergunte qual erro é pior. Se 'avisar à toa' é o pior, use Precisão; se 'deixar passar' é o pior, use Recall. Analogia: é a diferença entre um linter que acusa erros inexistentes (FP) e um que deixa passar bugs reais (FN).",
+      "label": "l7-q03"
+    },
+    {
+      "id": "l7-q04",
+      "type": "single",
+      "prompt": "Por que o diagnóstico de uma doença grave exige que os especialistas priorizem a REVOCAÇÃO (Recall ou Sensibilidade) em vez da Precisão?",
+      "options": [
+        {
+          "text": "Porque o Recall mede a proporção de previsões positivas que estavam certas, evitando alarmes falsos, o que evita incomodar clientes saudáveis com exames desnecessários.",
+          "explanation": "Incorreto. Quem mede a proporção de previsões positivas que estavam certas é a Precisão. O Recall mede quantos dos positivos reais foram encontrados.",
+          "id": "a",
+          "correct": false
+        },
+        {
+          "text": "Porque o Recall é a única métrica que não depende de definir qual é a classe positiva do problema.",
+          "explanation": "Incorreto. Recall = VP/(VP+FN) só faz sentido depois de definir a classe positiva (aqui, 'tem a doença'). Essa dependência é comum a precisão, recall e F1.",
+          "id": "b",
+          "correct": false
+        },
+        {
+          "text": "Porque o Falso Negativo priva o paciente do tratamento enquanto a doença avança, e o Falso Positivo só gera exames de confirmação.",
+          "explanation": "Correto! O Slide 23 destaca isso: o custo de um Falso Negativo (dizer que não tem a doença quando tem) é potencialmente fatal. O Falso Positivo é menos grave porque é desfeito em exames posteriores.",
+          "id": "c",
+          "correct": true
+        },
+        {
+          "text": "Porque a fórmula do Recall coloca os Falsos Positivos no denominador, o que pune os alarmes falsos.",
+          "explanation": "Incorreto. A fórmula é VP/(VP+FN): o denominador soma os positivos reais, então o Recall pune os Falsos Negativos, não os Falsos Positivos.",
+          "id": "d",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "O Slide 23 diz: em doença grave sugere-se alta revocação para diminuir falsos negativos; o falso negativo priva a pessoa de tratamento; o falso positivo é menos ruim (descobre-se depois). Analogia de engenharia: é como um sistema de alertas de incidente em produção, em que é melhor receber um alerta a mais do que deixar um incidente real passar em silêncio.",
+      "label": "l7-q04"
+    },
+    {
+      "id": "l7-q05",
+      "type": "single",
+      "prompt": "Por que o F1-Score é calculado com a média HARMÔNICA entre Precisão e Revocação, em vez de uma média aritmética convencional?",
+      "options": [
+        {
+          "text": "Porque ela é sempre maior que a média aritmética, o que deixa a nota do modelo mais alta e mais fácil de comparar.",
+          "explanation": "Incorreto. A média harmônica é menor ou igual à média aritmética, nunca maior. Por isso ela é mais exigente: não infla o resultado.",
+          "id": "a",
+          "correct": false
+        },
+        {
+          "text": "Porque ela dá peso maior ao Recall, já que o Recall é sempre mais importante que a Precisão em qualquer problema.",
+          "explanation": "Incorreto. O F1 trata Precisão e Recall com o mesmo peso. Qual das duas importa mais depende do custo de cada erro no cenário, como mostra o Slide 37.",
+          "id": "b",
+          "correct": false
+        },
+        {
+          "text": "Porque ela cai muito quando uma das duas, Precisão ou Recall, é baixa, e só fica alta se as duas forem altas.",
+          "explanation": "Correto! Com Precisão 1,0 e Recall 0,02, a média aritmética daria cerca de 0,51 (falsa impressão de razoabilidade), mas a harmônica dá cerca de 0,039, denunciando que o modelo quase não encontra os casos reais.",
+          "id": "c",
+          "correct": true
+        },
+        {
+          "text": "Porque ela permite calcular a métrica sem definir qual é a classe positiva do problema.",
+          "explanation": "Incorreto. Precisão e Revocação dependem da classe positiva, e portanto o F1 também. Mudar a média não elimina essa definição.",
+          "id": "d",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "Conforme os Slides 26 e 27, o F1 representa o equilíbrio entre precisão e revocação e, por ser média harmônica, fica baixo se qualquer uma das duas for baixa. Analogia: é como a velocidade média de uma viagem de ida e volta; o trecho lento domina o resultado, e não dá para compensá-lo com o trecho rápido.",
+      "label": "l7-q05"
+    },
+    {
+      "id": "l7-q06",
+      "type": "single",
+      "prompt": "Considere um modelo com a seguinte Matriz de Confusão em um conjunto de validação:\n\n| | Previsto positivo | Previsto negativo |\n| :-- | :-- | :-- |\n| **Real positivo** | VP = 40 | FN = 10 |\n| **Real negativo** | FP = 10 | VN = 40 |\n\nQual é a interpretação correta das métricas deste modelo?",
+      "options": [
+        {
+          "text": "Precisão, Recall e Acurácia valem 80% cada: o modelo erra em proporção igual nos dois tipos de erro.",
+          "explanation": "Correto! Precisão = VP/(VP+FP) = 40/50 = 0,80. Recall = VP/(VP+FN) = 40/50 = 0,80. Acurácia = (VP+VN)/total = 80/100 = 0,80. Como FP = FN = 10, o modelo é equilibrado.",
+          "id": "a",
+          "correct": true
+        },
+        {
+          "text": "A Precisão é 50%, pois o modelo previu 50 casos como positivos entre os 100 avaliados, e só metade acertou.",
+          "explanation": "Incorreto. Os 50 previstos positivos (VP 40 + FP 10) são o denominador da precisão, não o resultado. A precisão é a fração desses 50 que acertou: 40 de 50 = 80%.",
+          "id": "b",
+          "correct": false
+        },
+        {
+          "text": "O Recall é 40%, pois o modelo acertou 40 casos positivos.",
+          "explanation": "Incorreto. Os 40 acertos são o numerador. O Recall divide esse valor pelo total de positivos reais (40 + 10 = 50), o que dá 80%.",
+          "id": "c",
+          "correct": false
+        },
+        {
+          "text": "A Especificidade é 50%, pois há 50 casos negativos na base.",
+          "explanation": "Incorreto. Os 50 negativos reais (VN 40 + FP 10) são o denominador da especificidade. Ela é VN/(VN+FP) = 40/50 = 80%, a fração dos negativos que foi reconhecida.",
+          "id": "d",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "Neste caso simétrico (VP = VN = 40 e FP = FN = 10), todas as principais taxas convergem para 0,80. Dica para a prova: nas questões de matriz, o número que aparece como 'total' (50) quase sempre é o denominador, e a resposta é a fração dos acertos sobre ele. Analogia: taxa de aprovação de um code review é aprovados dividido por submetidos, não o número de submetidos.",
+      "label": "l7-q06"
+    },
+    {
+      "id": "l7-q07",
+      "type": "single",
+      "prompt": "A ESPECIFICIDADE (True Negative Rate) mede a taxa de acerto entre as amostras que pertencem à classe negativa. Qual é a relação entre a Especificidade e a Taxa de Falsos Positivos (FPR) usada no eixo horizontal da Curva ROC?",
+      "options": [
+        {
+          "text": "FPR = Especificidade × Sensibilidade, pois o eixo combina as duas taxas.",
+          "explanation": "Incorreto. A FPR não é o produto dessas duas taxas. A Sensibilidade (TPR) vai no eixo vertical e a FPR no eixo horizontal; são grandezas separadas.",
+          "id": "a",
+          "correct": false
+        },
+        {
+          "text": "FPR = 1 − Especificidade, pois as duas taxas somam 1 sobre os negativos reais.",
+          "explanation": "Correto! Especificidade = VN/(VN+FP) e FPR = FP/(VN+FP); somadas dão 1. O Slide 33 diz para plotar a sensibilidade (TPR) e (1 − especificidade), ou seja, a FPR.",
+          "id": "b",
+          "correct": true
+        },
+        {
+          "text": "FPR = 1 / Especificidade, pois quanto maior a especificidade, menor a FPR.",
+          "explanation": "Incorreto. A relação é complementar (subtração de 1), não inversa multiplicativa. Com especificidade de 0,5, 1/0,5 daria 2, que não é uma taxa possível.",
+          "id": "c",
+          "correct": false
+        },
+        {
+          "text": "FPR e Especificidade são a mesma grandeza com nomes diferentes.",
+          "explanation": "Incorreto. A Especificidade mede os acertos entre os negativos reais, VN/(VN+FP). A FPR mede os alarmes falsos entre os negativos reais, FP/(VN+FP).",
+          "id": "d",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "Conforme o Slide 33, o eixo X da curva ROC é 1 − Especificidade, que corresponde à taxa de falsos positivos. Analogia: se 95% dos builds bons passam sem alarme (especificidade), 5% disparam alarme falso (FPR); uma taxa é sempre o complemento da outra.",
+      "label": "l7-q07"
+    },
+    {
+      "id": "l7-q08",
+      "type": "single",
+      "prompt": "Sobre a Curva ROC (Receiver Operating Characteristic) e a métrica AUC (Area Under the Curve), assinale a afirmação correta:",
+      "options": [
+        {
+          "text": "Quanto mais a curva se aproxima da diagonal, maior é a AUC e melhor é o classificador.",
+          "explanation": "Incorreto. É o contrário: a diagonal representa o acaso, então quanto mais a curva se afasta dela rumo ao canto superior esquerdo, maior a AUC e melhor o modelo (Slide 34).",
+          "id": "a",
+          "correct": false
+        },
+        {
+          "text": "A curva ROC é traçada com o limiar de decisão (threshold) fixo em 0,5, e por isso é um único ponto, e a AUC mede apenas esse ponto.",
+          "explanation": "Incorreto na versão da literatura: a curva ROC é construída variando o limiar e marcando um ponto (FPR, TPR) para cada valor. O 0,5 é só o valor usual de um ponto de operação. Veja a nota geral.",
+          "id": "b",
+          "correct": false
+        },
+        {
+          "text": "Uma curva ROC sobre a diagonal de 45° tem AUC = 0,5 e equivale a um classificador de decisões aleatórias.",
+          "explanation": "Correto! A diagonal representa o acaso (AUC = 0,5). Quanto mais a curva sobe e se afasta dela, mais perto de 1,0 fica a AUC e melhor é o classificador (Slide 34).",
+          "id": "c",
+          "correct": true
+        },
+        {
+          "text": "Um modelo com AUC = 0,1 deve ser descartado, por ser totalmente inútil em qualquer hipótese.",
+          "explanation": "Incorreto (ponto além do slide). AUC = 0,1 indica forte poder discriminativo com as classes invertidas; trocando as previsões, a AUC passa a 0,90. Não é um modelo inútil, é um modelo com sinal trocado.",
+          "id": "d",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "Divergência slide × literatura: o Slide 33 diz que o parâmetro limiar (threshold, T) 'geralmente é escolhido com valor 0,5'. A literatura diz que a curva ROC varre todos os limiares de 0 a 1 (um ponto por limiar); 0,5 é só o padrão de um ponto de operação, como o usado na matriz de confusão. Na prova: se a afirmação disser 'a ROC é traçada variando o limiar', responda verdadeiro; se disser 'o limiar geralmente é 0,5', também é verdadeiro pelo slide; se disser 'a ROC fixa o limiar em 0,5', responda falso. Analogia: o limiar é o 'nível de log' que você escolhe; a ROC mostra o comportamento em todos os níveis.",
+      "label": "l7-q08"
+    },
+    {
+      "id": "l7-q09",
+      "type": "single",
+      "prompt": "Ao diminuir o limiar de decisão (threshold) de um classificador probabilístico de 0,50 para 0,20 (modelo mais permissivo para apontar a classe positiva), o que acontece tipicamente com o Recall e com a Precisão?",
+      "options": [
+        {
+          "text": "O Recall diminui e a Precisão aumenta, pois o modelo fica mais seletivo.",
+          "explanation": "Incorreto. Baixar o limiar faz o modelo marcar mais amostras como positivas, o que resgata mais positivos reais (Recall sobe). Quem fica mais seletivo é o modelo com limiar mais alto.",
+          "id": "a",
+          "correct": false
+        },
+        {
+          "text": "O Recall aumenta e a Precisão diminui, pois passam a entrar mais positivos reais e mais alarmes falsos.",
+          "explanation": "Correto! Com limiar 0,20, qualquer probabilidade acima disso vira positiva: menos Falsos Negativos (mais Recall), mas mais Falsos Positivos, o que derruba a Precisão.",
+          "id": "b",
+          "correct": true
+        },
+        {
+          "text": "O Recall e a Precisão aumentam juntos, pois o modelo fica mais confiante nas previsões.",
+          "explanation": "Incorreto. O limiar não aumenta a confiança do modelo, só muda onde se corta a probabilidade. Existe um trade-off: ganhar sensibilidade costuma custar precisão.",
+          "id": "c",
+          "correct": false
+        },
+        {
+          "text": "Nenhuma das duas muda; o limiar só altera a acurácia, porque reescala as probabilidades.",
+          "explanation": "Incorreto. O limiar converte probabilidades em classes, então muda a matriz de confusão e, com ela, Precisão, Recall e as demais métricas.",
+          "id": "d",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "Baixar o limiar (por exemplo, de 0,5 para 0,2) torna o modelo agressivo na busca da classe positiva: captura mais positivos reais (Recall sobe), mas atrai mais falsos positivos (Precisão cai). Analogia: é a sensibilidade de um alerta de monitoramento; quanto mais sensível, menos incidentes escapam, porém mais alarmes falsos acordam o time.",
+      "label": "l7-q09"
+    },
+    {
+      "id": "l7-q10",
+      "type": "multiple",
+      "prompt": "Quais das seguintes afirmativas sobre as métricas de avaliação de classificadores da Aula 7 são VERDADEIRAS? (Selecione todas as corretas)",
+      "options": [
+        {
+          "text": "Acurácia, Precisão, Recall, F1, Especificidade e AUC variam todas no intervalo de 0 a 1.",
+          "explanation": "Correto! O Slide 37 conclui: todas essas métricas variam entre 0 e 1 e, quanto mais próximas de 1, melhor.",
+          "id": "a",
+          "correct": true
+        },
+        {
+          "text": "Recall de 95% com Precisão de 30% pode servir de primeiro filtro quando deixar passar uma fraude custa muito mais que checar um alarme falso.",
+          "explanation": "Correto! Se o custo do Falso Negativo é muito maior, o Recall alto é o que importa; a Precisão modesta só significa mais alarmes a revisar, num segundo passo.",
+          "id": "b",
+          "correct": true
+        },
+        {
+          "text": "A Especificidade foca nos Falsos Negativos, do mesmo modo que o Recall.",
+          "explanation": "Incorreto. O Slide 31 diz que a Especificidade foca nos Falsos Positivos (entre os negativos reais, quantos foram reconhecidos). Quem foca nos Falsos Negativos é o Recall.",
+          "id": "c",
+          "correct": false
+        },
+        {
+          "text": "O 'suporte' (support) do classification_report é o número de amostras reais de cada classe no conjunto de teste.",
+          "explanation": "Correto! O Slide 35 explicita: suporte é o número de amostras de cada classe. É útil para ver o desbalanceamento e para entender a weighted avg.",
+          "id": "d",
+          "correct": true
+        }
+      ],
+      "generalExplanation": "As métricas variam de 0 a 1 (Slide 37); em fraude e doença o recall costuma predominar; 'support' é a quantidade real de ocorrências de cada classe na partição testada (Slide 35); e a Especificidade olha os negativos (Slide 31), nunca os falsos negativos. Em questões 'selecione todas', avalie cada afirmação sozinha, como se fosse um teste unitário independente.",
+      "label": "l7-q10"
+    },
+    {
+      "id": "l7-q11",
+      "type": "single",
+      "prompt": "No `classification_report` do scikit-learn (Slide 35), qual é a diferença entre a média `macro avg` e a média `weighted avg` ao avaliar uma base com classes desbalanceadas?",
+      "options": [
+        {
+          "text": "A macro avg pondera pelo número de amostras de cada classe, e a weighted avg dá peso igual a todas.",
+          "explanation": "Incorreto. Está trocado. É a weighted avg que pondera pelo suporte (número de amostras) de cada classe; a macro avg dá o mesmo peso a todas.",
+          "id": "a",
+          "correct": false
+        },
+        {
+          "text": "As duas só diferem quando há mais de duas classes; em problemas binários, sempre dão o mesmo valor.",
+          "explanation": "Incorreto. Em um problema binário desbalanceado (por exemplo, 99% contra 1%) elas também diferem muito, pois a weighted avg é dominada pela classe grande.",
+          "id": "b",
+          "correct": false
+        },
+        {
+          "text": "A weighted avg ignora a classe majoritária, para que ela não distorça o resultado final do relatório, já que ela tende a dominar a média.",
+          "explanation": "Incorreto. É justamente o contrário: a weighted avg dá mais peso à classe majoritária, por ter mais amostras. Quem não se deixa dominar por ela é a macro avg.",
+          "id": "c",
+          "correct": false
+        },
+        {
+          "text": "A macro avg é a média simples, com peso igual por classe; a weighted avg pesa pelo suporte e é dominada pela classe majoritária.",
+          "explanation": "Correto! Se o modelo for péssimo na classe rara, o macro F1 despenca, enquanto o weighted avg pode continuar alto por causa do peso da classe abundante. Por isso a macro avg revela falhas na minoritária.",
+          "id": "d",
+          "correct": true
+        }
+      ],
+      "generalExplanation": "Para análise de modelos em produção: 'macro avg' trata cada classe como cidadã de primeira classe com o mesmo peso; 'weighted avg' dá peso proporcional ao volume (suporte) e pode mascarar um desempenho ruim em classes raras. Analogia: é a média simples das notas de cada módulo contra a média ponderada pelo número de linhas de código de cada módulo.",
+      "label": "l7-q11"
+    },
+    {
+      "id": "l7-q12",
+      "type": "single",
+      "prompt": "Um analista gerou uma matriz de confusão para um modelo de triagem de segurança e observou Especificidade de 0,95 (95%) e Sensibilidade (Recall) de apenas 0,40 (40%). O que isso indica sobre o comportamento do classificador?",
+      "options": [
+        {
+          "text": "O modelo reconhece bem as amostras normais (VN alto), mas deixa escapar 60% dos casos positivos de perigo (FN alto).",
+          "explanation": "Correto! Especificidade de 95% significa que 95% dos negativos foram reconhecidos. Recall de 40% significa que, de cada 100 positivos reais, só 40 foram detectados e 60 viraram Falsos Negativos.",
+          "id": "a",
+          "correct": true
+        },
+        {
+          "text": "O modelo comete 95% de falsos positivos, pois alerta quase sempre que vê uma amostra normal e quase nunca deixa passar um perigo real.",
+          "explanation": "Incorreto. Se a especificidade é 95%, a taxa de falsos positivos é de apenas 5% (1 − 0,95). O modelo raramente dispara alarme falso.",
+          "id": "b",
+          "correct": false
+        },
+        {
+          "text": "A acurácia do modelo é necessariamente inferior a 40%, pois o Recall é baixo.",
+          "explanation": "Incorreto. Se a classe negativa for a grande maioria, a acurácia pode passar de 90%, já que o modelo acerta quase todos os negativos. O Recall baixo não limita a acurácia.",
+          "id": "c",
+          "correct": false
+        },
+        {
+          "text": "As taxas estão invertidas: o modelo acha 95% dos positivos e só 40% dos negativos.",
+          "explanation": "Incorreto. Sensibilidade é a taxa de acerto nos positivos (40%) e especificidade é a taxa de acerto nos negativos (95%). Não houve inversão nesses valores.",
+          "id": "d",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "Especificidade alta com recall baixo é o retrato de um modelo ultraconservador: quase nunca dá alarme falso em casos normais, mas deixa passar a maioria dos perigos reais. Analogia: um firewall que quase nunca bloqueia tráfego legítimo, mas também deixa entrar boa parte dos ataques.",
+      "label": "l7-q12"
+    },
+    {
+      "id": "l7-q13",
+      "type": "single",
+      "prompt": "No Slide 37, a professora conclui: 'Não existe a melhor métrica, tudo depende do cenário e dos objetivos'. Qual princípio fundamenta essa conclusão?",
+      "options": [
+        {
+          "text": "As métricas têm inconsistências internas que impedem uma medição exata do desempenho.",
+          "explanation": "Incorreto. As métricas são matematicamente exatas; o que muda de um problema para outro é o impacto de cada tipo de erro, e não a exatidão do cálculo.",
+          "id": "a",
+          "correct": false
+        },
+        {
+          "text": "Cada problema tem custos assimétricos: um Falso Positivo e um Falso Negativo têm consequências muito diferentes no mundo real.",
+          "explanation": "Correto! Não há fórmula universal: no spam do Slide 9, perder um e-mail importante (FP) é grave; em doenças, o FN pode matar. A métrica reflete o custo relativo de cada falha.",
+          "id": "b",
+          "correct": true
+        },
+        {
+          "text": "A acurácia deve ser sempre a métrica padrão, por convenção da comunidade, e as outras são complementares, e as demais servem só como complemento.",
+          "explanation": "Incorreto. Em bases desbalanceadas a acurácia engana (Slides 13 e 14). Escolher a métrica por convenção, sem olhar o cenário, contradiz a conclusão da professora.",
+          "id": "c",
+          "correct": false
+        },
+        {
+          "text": "Basta maximizar o F1-Score, pois ele equilibra Precisão e Recall e cobre qualquer cenário de negócio.",
+          "explanation": "Incorreto. O F1 dá peso igual a Precisão e Recall, o que não atende negócios em que um dos erros é muito pior que o outro. Aí é preciso priorizar a métrica do erro mais caro.",
+          "id": "d",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "A escolha da métrica não é puramente estatística: é uma decisão de negócio e engenharia baseada no custo de errar para mais (FP) ou para menos (FN). Analogia: é escolher o SLO certo para cada serviço; disponibilidade, latência ou custo importam de formas diferentes conforme o produto.",
+      "label": "l7-q13"
+    },
+    {
+      "id": "l7-q14",
+      "type": "single",
+      "prompt": "Um classificador do scikit-learn foi avaliado e `confusion_matrix(y_true, y_pred)` devolveu:\n```\n[[90,  10],\n [ 5,  95]]\n```\nO scikit-learn organiza assim: linhas = classe real, colunas = classe prevista, na ordem 0 e 1 (0 = negativa, 1 = positiva):\n\n| | Previsto 0 | Previsto 1 |\n| :-- | :-- | :-- |\n| **Real 0** | 90 | 10 |\n| **Real 1** | 5 | 95 |\n\nQuantos Falsos Positivos (FP) e Falsos Negativos (FN) o modelo cometeu?",
+      "options": [
+        {
+          "text": "10 Falsos Positivos e 5 Falsos Negativos.",
+          "explanation": "Correto! FP é real 0 previsto como 1 (linha 0, coluna 1) = 10. FN é real 1 previsto como 0 (linha 1, coluna 0) = 5. Os acertos (VN = 90 e VP = 95) ficam na diagonal.",
+          "id": "a",
+          "correct": true
+        },
+        {
+          "text": "5 Falsos Positivos e 10 Falsos Negativos.",
+          "explanation": "Incorreto. Inverteu as posições: o erro 'real negativo previsto positivo' está na linha 0, coluna 1 (10), e é o FP. O valor 5 está na linha 1, coluna 0, e é o FN.",
+          "id": "b",
+          "correct": false
+        },
+        {
+          "text": "100 Falsos Positivos e 100 Falsos Negativos, somando cada linha da matriz.",
+          "explanation": "Incorreto. Cada linha soma os casos reais de uma classe (100 negativos e 100 positivos), incluindo os acertos. Os erros são só as células fora da diagonal.",
+          "id": "c",
+          "correct": false
+        },
+        {
+          "text": "15 Falsos Positivos e nenhum Falso Negativo, pois todos os erros somam 15.",
+          "explanation": "Incorreto. Os 15 erros se dividem em dois tipos: 10 FP e 5 FN. Juntar tudo em um só tipo apaga a diferença que as métricas de Precisão e Recall precisam medir.",
+          "id": "d",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "No scikit-learn: linha = real, coluna = previsto. [0,0] = VN = 90, [0,1] = FP = 10, [1,0] = FN = 5, [1,1] = VP = 95. Dica: a diagonal principal é sempre de acertos; fora dela ficam os erros. Analogia: é uma tabela de 'esperado × obtido' dos seus testes automatizados.",
+      "label": "l7-q14"
+    },
+    {
+      "id": "l7-q15",
+      "type": "single",
+      "prompt": "Em um sistema antifraude, em que 99% das transações são legítimas, um modelo atinge Recall = 1,00 (100%) para a classe fraude. Isso garante que ele seja um bom classificador?",
+      "options": [
+        {
+          "text": "Sim, pois Recall de 100% prova que o classificador não comete nenhum tipo de erro.",
+          "explanation": "Incorreto. Recall = 1,00 significa apenas que não há Falsos Negativos; o modelo pode estar cometendo milhares de Falsos Positivos, que o Recall não enxerga.",
+          "id": "a",
+          "correct": false
+        },
+        {
+          "text": "Não, pois marcar todas as transações como 'Fraude' dá Recall de 100%, mas Precisão baixíssima, bloqueando todos os clientes legítimos.",
+          "explanation": "Correto! Para ter Recall 100%, basta marcar tudo como positivo (FN = 0). Isso destrói a operação, pois bloqueia todos os clientes honestos (explosão de Falsos Positivos e Precisão perto de zero).",
+          "id": "b",
+          "correct": true
+        },
+        {
+          "text": "Sim, desde que a acurácia também seja superior a 50%, pois aí os erros ficam equilibrados.",
+          "explanation": "Incorreto. Se 99% das transações são legítimas e o modelo marca tudo como fraude, a acurácia é de apenas 1% e o sistema é inviável. Além disso, 50% de acurácia nem seria um bom nível.",
+          "id": "c",
+          "correct": false
+        },
+        {
+          "text": "Não, pois Recall 100% costuma indicar overfitting, e por isso o modelo precisa ser refeito do zero, com mais dados de treino e novo ajuste de hiperparâmetros.",
+          "explanation": "Incorreto. Recall alto não indica overfitting por si só; overfitting se diagnostica comparando treino e teste. O problema aqui é que o Recall ignora os Falsos Positivos.",
+          "id": "d",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "Qualquer modelo ingênuo atinge 100% de recall prevendo positivo para todas as amostras. Por isso o recall nunca é avaliado isoladamente: monitore a Precisão e o F1 para garantir que os alarmes falsos não inviabilizem a operação. Analogia: um alerta que dispara em todo deploy 'nunca perde um incidente', mas ninguém mais olha para ele.",
+      "label": "l7-q15"
+    },
+    {
+      "id": "l7-q16",
+      "type": "single",
+      "prompt": "Por que a curva ROC e a métrica AUC são consideradas métricas 'independentes de limiar' (threshold-independent)?",
+      "options": [
+        {
+          "text": "Porque usam apenas as classes já decididas pelo modelo (0 ou 1), sem olhar as probabilidades e, por isso, funcionam mesmo sem probabilidades contínuas.",
+          "explanation": "Incorreto. A curva ROC depende justamente das probabilidades (ou escores) contínuas, para poder variar o limiar de decisão. Sem elas, haveria só um ponto.",
+          "id": "a",
+          "correct": false
+        },
+        {
+          "text": "Porque avaliam como o modelo ordena e separa positivos e negativos em todos os limiares possíveis, não em um único corte como 0,5.",
+          "explanation": "Correto! Acurácia e F1 dependem de um limiar fixo. A curva ROC varre os limiares de 0 a 1 e a AUC resume a qualidade global do ranqueamento das probabilidades.",
+          "id": "b",
+          "correct": true
+        },
+        {
+          "text": "Porque o limiar ideal é escolhido automaticamente como o que maximiza a acurácia no conjunto de teste.",
+          "explanation": "Incorreto. A ROC não escolhe um limiar. E escolher limiar olhando o teste seria vazamento. A ROC apenas mostra o desempenho em todos os limiares e quem escolhe o ponto é você.",
+          "id": "c",
+          "correct": false
+        },
+        {
+          "text": "Porque a AUC é o valor de um único ponto da curva, calculado no limiar em que o modelo foi treinado.",
+          "explanation": "Incorreto. A AUC é a área sob toda a curva, e não o valor de um ponto. Modelos não são 'treinados em um limiar'; o limiar é aplicado depois, às probabilidades previstas.",
+          "id": "d",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "A força da curva ROC e da AUC é separar a capacidade de discriminação do modelo da escolha operacional do limiar. Nota sobre o Slide 33: ele cita o limiar T 'geralmente 0,5' como parâmetro; isso descreve um ponto de operação. A ROC completa varia T. Na prova, 'ROC/AUC independem de um limiar único' é verdadeiro. Analogia: é testar o servidor sob todas as cargas, não só sob a carga típica.",
+      "label": "l7-q16"
+    },
+    {
+      "id": "l7-q17",
+      "type": "single",
+      "prompt": "Um classificador de SPAM (Slide 9) tem como classe positiva 'é SPAM'. Em um mês de teste, a matriz de confusão foi:\n\n| | Previsto SPAM | Previsto não SPAM |\n| :-- | :-- | :-- |\n| **Real SPAM** | 45 | 5 |\n| **Real não SPAM** | 20 | 930 |\n\nUsuários reclamam que e-mails importantes estão caindo na caixa de spam. Qual célula explica a reclamação e qual métrica ela prejudica diretamente?",
+      "options": [
+        {
+          "text": "A célula de Falsos Negativos (real SPAM, previsto não SPAM); ela prejudica a Precisão.",
+          "explanation": "Incorreto. Esse erro é spam que chegou à caixa de entrada, que seria outra reclamação. Além disso, os Falsos Negativos entram no denominador do Recall, não da Precisão.",
+          "id": "a",
+          "correct": false
+        },
+        {
+          "text": "A célula de Falsos Positivos (real não SPAM, previsto SPAM); ela prejudica a Precisão.",
+          "explanation": "Correto! Um e-mail legítimo tratado como spam é um Falso Positivo (20 casos). Os FP entram no denominador da Precisão, VP/(VP+FP), então quanto mais FP, menor a Precisão.",
+          "id": "b",
+          "correct": true
+        },
+        {
+          "text": "A célula de Falsos Positivos (real não SPAM, previsto SPAM); ela prejudica o Recall.",
+          "explanation": "Incorreto. A célula está certa, mas o Recall é VP/(VP+FN) e não usa FP. Os Falsos Positivos prejudicam a Precisão (e a Especificidade), nunca o Recall.",
+          "id": "c",
+          "correct": false
+        },
+        {
+          "text": "A célula de Verdadeiros Negativos (real não SPAM, previsto não SPAM); ela prejudica a Especificidade.",
+          "explanation": "Incorreto. Os 930 Verdadeiros Negativos são e-mails legítimos que chegaram à caixa de entrada: acerto, e não motivo de reclamação.",
+          "id": "d",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "No spam, o Falso Positivo (e-mail bom indo para o lixo) costuma ser o erro mais caro, então a Precisão ganha peso. Os Falsos Negativos (spam que passa) incomodam, mas são menos graves. A Especificidade também cai quando os FP crescem (Slide 31). Analogia: é um filtro de pull requests que bloqueia código bom (FP) versus um que deixa passar código ruim (FN).",
+      "label": "l7-q17"
+    },
+    {
+      "id": "l7-q18",
+      "type": "single",
+      "prompt": "Segundo o Slide 15, quais são as vantagens e as desvantagens da Acurácia como métrica de um classificador?",
+      "options": [
+        {
+          "text": "Vantagem: é robusta ao desbalanceamento. Desvantagem: é difícil de explicar a quem não é da área de dados, o que obriga a explicar fórmulas complexas a quem usa o modelo.",
+          "explanation": "Incorreto. Os Slides 13 e 14 mostram o oposto: a acurácia é fortemente enganada pelo desbalanceamento. E ela é justamente a mais simples de explicar.",
+          "id": "a",
+          "correct": false
+        },
+        {
+          "text": "Vantagem: é a melhor métrica para reduzir FN. Desvantagem: exige definir qual é a classe positiva.",
+          "explanation": "Incorreto. A acurácia não é focada em FN (quem faz isso é o Recall) e nem exige classe positiva, pois conta todos os acertos, de qualquer classe, sobre o total.",
+          "id": "b",
+          "correct": false
+        },
+        {
+          "text": "Vantagem: é simples e de fácil entendimento. Desvantagem: não ajuda quando o objetivo é minimizar FP e FN, pois não separa os erros.",
+          "explanation": "Correto! O Slide 15 diz exatamente isso. A acurácia soma todos os acertos e não distingue um FP de um FN, de modo que ela não orienta a reduzir um tipo de erro específico.",
+          "id": "c",
+          "correct": true
+        },
+        {
+          "text": "Vantagem: é simples de entender. Desvantagem: ignora os Verdadeiros Negativos, olhando só os positivos.",
+          "explanation": "Incorreto. A acurácia conta os Verdadeiros Negativos: (VP+VN)/total. Quem ignora os VN é a Precisão, o Recall e o F1. A desvantagem real é não separar os tipos de erro.",
+          "id": "d",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "A acurácia é a métrica mais fácil de explicar (fração de previsões corretas), mas trata FP e FN como se pesassem igual e é enganada por bases desbalanceadas. Analogia: o 'coverage' de testes: um número simples e fácil de comunicar, mas que não diz se o código crítico foi testado.",
+      "label": "l7-q18"
+    },
+    {
+      "id": "l7-q19",
+      "type": "single",
+      "prompt": "Dois classificadores foram avaliados com os mesmos 30 Verdadeiros Positivos, mas com números diferentes de Falsos Positivos:\n\n| Modelo | VP | FP |\n| :-- | :-- | :-- |\n| X | 30 | 10 |\n| Y | 30 | 2 |\n\nQual modelo tem a maior Precisão e por quê (Slide 17)?",
+      "options": [
+        {
+          "text": "O modelo X, pois tem mais previsões positivas e, assim, mais chances de acertar.",
+          "explanation": "Incorreto. Ter mais previsões positivas só aumenta o denominador VP+FP. Com os mesmos 30 acertos, mais previsões positivas significam precisão menor, não maior.",
+          "id": "a",
+          "correct": false
+        },
+        {
+          "text": "Os dois têm a mesma Precisão, pois os dois acertaram os mesmos 30 positivos.",
+          "explanation": "Incorreto. A Precisão depende também do denominador (VP + FP). O numerador é igual, mas os FP diferem, então o valor da fração muda.",
+          "id": "b",
+          "correct": false
+        },
+        {
+          "text": "O modelo Y, pois menos FP aumentam o numerador da fração e, assim, o valor da Precisão.",
+          "explanation": "Incorreto. O resultado (Y maior) está certo, mas o mecanismo está errado: os FP não estão no numerador. O numerador é VP e é o mesmo nos dois.",
+          "id": "c",
+          "correct": false
+        },
+        {
+          "text": "O modelo Y, pois menos FP reduzem o denominador (VP + FP) e a fração cresce.",
+          "explanation": "Correto! É o raciocínio do Slide 17: diminuo FP, diminuo o denominador e a fração aumenta. Para X, 30/40 = 0,75; para Y, 30/32 = 0,93.",
+          "id": "d",
+          "correct": true
+        }
+      ],
+      "generalExplanation": "Diminuir os FP diminui o denominador e aumenta a Precisão. O mesmo vale para o Recall com os FN (Slide 21): diminuo FN, diminuo o denominador VP+FN e o Recall sobe. Memorize: Precisão olha para a coluna 'previsto positivo'; Recall olha para a linha 'real positivo'. Analogia: é como a taxa de acerto de alertas: menos alertas falsos, mais confiáveis os alertas que restam.",
+      "label": "l7-q19"
+    },
+    {
+      "id": "l7-q20",
+      "type": "single",
+      "prompt": "O Slide 27 afirma que um F1-Score alto significa que a acurácia obtida é relevante (sem grandes distorções entre VP, VN, FP e FN) e que o F1 pode ser visto como uma medida de confiabilidade da acurácia. Qual alternativa é coerente com o que o slide diz e registra a ressalva da literatura?",
+      "options": [
+        {
+          "text": "F1 alto garante, em qualquer base, que a acurácia e a Especificidade também são altas.",
+          "explanation": "Incorreto. Nem o slide afirma isso. Na literatura, o F1 usa só VP, FP e FN e não enxerga os VN; logo, não garante nada sobre a Especificidade.",
+          "id": "a",
+          "correct": false
+        },
+        {
+          "text": "F1 baixo indica que a acurácia é necessariamente baixa, pois as duas métricas se movem juntas.",
+          "explanation": "Incorreto. Em base desbalanceada a acurácia pode ser 99% com F1 baixo (como no exemplo das fraudes). O F1 baixo indica Precisão ou Recall baixos (Slide 26).",
+          "id": "b",
+          "correct": false
+        },
+        {
+          "text": "Pelo slide, F1 alto indica que a acurácia é confiável; na literatura, o F1 não usa os VN e só resume Precisão e Recall.",
+          "explanation": "Correto! Pela professora, F1 alto sinaliza uma acurácia relevante. A ressalva: F1 é a média harmônica de Precisão e Recall da classe positiva e não considera os VN, então 'confiabilidade da acurácia' é uma interpretação indireta.",
+          "id": "c",
+          "correct": true
+        },
+        {
+          "text": "F1 alto indica que Precisão e Recall podem ser muito diferentes entre si, pois a média os compensa e que o modelo equilibra bem os dois tipos de erro.",
+          "explanation": "Incorreto. A média harmônica não compensa: se uma das duas for baixa, o F1 cai (Slide 26). F1 alto exige que as duas sejam razoavelmente altas.",
+          "id": "d",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "Divergência slide × literatura: o Slide 27 diz que F1 alto torna a acurácia relevante e o chama de 'confiabilidade da acurácia'. A literatura define o F1 como média harmônica de Precisão e Recall, sem uso dos VN. Na prova: se a questão disser 'segundo a professora', responda que F1 alto indica acurácia confiável; se perguntar a definição técnica, responda média harmônica de Precisão e Recall. Analogia: é como usar o número de falhas de CI como 'saúde do projeto': correlaciona, mas não é o mesmo conceito.",
+      "label": "l7-q20"
+    },
+    {
+      "id": "l7-q21",
+      "type": "single",
+      "prompt": "Um classificador gerou estes pontos da curva ROC ao variar o limiar:\n\n| Limiar | TPR (Recall) | FPR |\n| :-- | :-- | :-- |\n| 0,8 | 0,20 | 0,20 |\n| 0,5 | 0,50 | 0,50 |\n| 0,2 | 0,80 | 0,80 |\n\nO que se conclui sobre a qualidade deste classificador (Slide 34)?",
+      "options": [
+        {
+          "text": "É excelente, pois o TPR chega a 0,80 quando o limiar baixa para 0,2.",
+          "explanation": "Incorreto. O TPR de 0,80 vem acompanhado de FPR de 0,80: o modelo acerta 80% dos positivos, mas dá alarme falso em 80% dos negativos. O ganho em TPR é só o custo de mais alarmes.",
+          "id": "a",
+          "correct": false
+        },
+        {
+          "text": "É pior que o acaso, com AUC próxima de 0, pois o TPR nunca passa de 0,80.",
+          "explanation": "Incorreto. AUC próxima de 0 exigiria uma curva abaixo da diagonal. Aqui TPR = FPR em todos os pontos, o que é a própria diagonal (acaso), e não uma curva abaixo dela.",
+          "id": "b",
+          "correct": false
+        },
+        {
+          "text": "Equivale a um chute: TPR = FPR em todo ponto, a curva cai sobre a diagonal e a AUC é de cerca de 0,5.",
+          "explanation": "Correto! A diagonal representa o acaso (Slide 34): a cada limiar, a taxa de positivos achados é igual à taxa de alarmes falsos. O modelo não separa as classes e a AUC é de cerca de 0,5.",
+          "id": "c",
+          "correct": true
+        },
+        {
+          "text": "É um modelo bem calibrado, pois TPR = FPR indica que as probabilidades são confiáveis.",
+          "explanation": "Incorreto. TPR = FPR não tem relação com calibração das probabilidades. Significa que o modelo não discrimina positivos de negativos, o que é a definição do acaso.",
+          "id": "d",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "Quanto mais a curva fica alta e distante da diagonal, melhor (Slide 34). Sobre a diagonal, TPR = FPR e a AUC é 0,5: o modelo não é melhor que jogar uma moeda. Analogia: é um teste A/B em que as duas variantes têm a mesma conversão; qualquer diferença aparente é ruído.",
+      "label": "l7-q21"
+    },
+    {
+      "id": "l7-q22",
+      "type": "single",
+      "prompt": "Dois classificadores foram treinados para a triagem de uma doença grave, em que os positivos seguem para exames confirmatórios. Resultados no teste:\n\n| Modelo | Precisão | Recall | F1 |\n| :-- | :-- | :-- | :-- |\n| A | 0,95 | 0,40 | 0,56 |\n| B | 0,60 | 0,92 | 0,73 |\n\nQual modelo escolher e por quê?",
+      "options": [
+        {
+          "text": "O modelo A, pois a Precisão de 0,95 mostra que o modelo quase não erra quando diz que há doença, e por isso ele é o mais seguro para a triagem.",
+          "explanation": "Incorreto. A Precisão só avalia os casos que o modelo apontou como doentes. O modelo A tem Recall de 0,40, ou seja, deixa 60% dos doentes sem diagnóstico, o erro mais grave aqui.",
+          "id": "a",
+          "correct": false
+        },
+        {
+          "text": "O modelo B, pois o Recall de 0,92 deixa escapar poucos doentes, e os falsos alarmes são resolvidos nos exames confirmatórios.",
+          "explanation": "Correto! Em doença grave, o Falso Negativo é o erro caro (Slide 23). O modelo B tem Recall alto; sua Precisão menor significa mais exames de confirmação, o que é aceitável.",
+          "id": "b",
+          "correct": true
+        },
+        {
+          "text": "O modelo A, pois quem acerta tudo o que aponta como doente garante que ninguém doente fique sem tratamento.",
+          "explanation": "Incorreto. Acertar tudo o que aponta não garante nada sobre os doentes não apontados. Isso é Precisão alta com Recall baixo: o modelo é preciso, mas encontra poucos doentes.",
+          "id": "c",
+          "correct": false
+        },
+        {
+          "text": "O modelo B, mas só pelo F1 maior; o cenário não influencia a escolha da métrica.",
+          "explanation": "Incorreto. A escolha de B está certa, mas o motivo não: o cenário influencia, sim (Slide 37). O F1 pesa Precisão e Recall igualmente, e aqui o Recall importa mais.",
+          "id": "d",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "O F1 maior de B ajuda, mas a razão principal é o cenário: doença grave pede Recall alto para reduzir falsos negativos (Slide 23). Em outro cenário, como vídeos infantis, a escolha poderia ser o modelo A. Analogia: um scanner de segurança que revista a mais é preferível a um que deixa passar uma ameaça.",
+      "label": "l7-q22"
+    },
+    {
+      "id": "l7-q23",
+      "type": "single",
+      "prompt": "Um hotel usa um modelo para prever cancelamentos (positivo = 'será cancelada', Slide 5). O gerente quer saber, entre as reservas que de fato serão canceladas, quantas o modelo conseguiu avisar com antecedência. Matriz de confusão:\n\n| | Previsto cancelada | Previsto mantida |\n| :-- | :-- | :-- |\n| **Real cancelada** | 60 | 40 |\n| **Real mantida** | 10 | 90 |\n\nQual métrica responde à pergunta e qual célula mais a prejudica?",
+      "options": [
+        {
+          "text": "Revocação (Recall); a célula de Falsos Negativos, reservas canceladas que o modelo previu como mantidas.",
+          "explanation": "Correto! A pergunta é 'dos casos positivos reais, quantos foram encontrados', que é o Recall = VP/(VP+FN). Os 40 Falsos Negativos são as canceladas que o modelo não avisou e são o que o reduz.",
+          "id": "a",
+          "correct": true
+        },
+        {
+          "text": "Precisão; a célula de Falsos Positivos, reservas mantidas que o modelo previu como canceladas do hotel, sobrecarregando a recepção.",
+          "explanation": "Incorreto. A Precisão responde 'das reservas que o modelo apontou como canceladas, quantas realmente foram', e não parte do total de canceladas reais. Os FP a prejudicam, mas ela não responde à pergunta.",
+          "id": "b",
+          "correct": false
+        },
+        {
+          "text": "Especificidade; a célula de Verdadeiros Negativos, reservas mantidas previstas como mantidas.",
+          "explanation": "Incorreto. A Especificidade olha os negativos reais (reservas mantidas), e a pergunta é sobre as canceladas, que são positivas. Além disso, VN são acertos e não 'prejudicam' a métrica.",
+          "id": "c",
+          "correct": false
+        },
+        {
+          "text": "Acurácia; todas as células, pois resume os acertos do modelo em um só número.",
+          "explanation": "Incorreto. A acurácia mistura positivos e negativos em um único número e não responde 'das canceladas, quantas foram avisadas'. Esse recorte exige olhar a linha das reservas realmente canceladas.",
+          "id": "d",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "Truque para ler a matriz: a pergunta 'dos que realmente são positivos, quantos achei' olha a linha 'Real positivo' (Recall); 'dos que apontei como positivos, quantos acertei' olha a coluna 'Previsto positivo' (Precisão). Analogia: é a diferença entre cobertura (quantos bugs reais o teste encontrou) e confiabilidade do alerta (quantos alertas eram bugs de verdade).",
+      "label": "l7-q23"
+    },
+    {
+      "id": "l7-q24",
+      "type": "single",
+      "prompt": "Um modelo para triagem de doença grave gerou a tabela abaixo, com um ponto da curva ROC para cada limiar de decisão. A equipe aceita no máximo 10% de falsos alarmes (FPR ≤ 0,10) e quer encontrar o maior número possível de doentes dentro desse limite.\n\n| Limiar | TPR (Recall) | FPR |\n| :-- | :-- | :-- |\n| 0,9 | 0,40 | 0,02 |\n| 0,7 | 0,70 | 0,05 |\n| 0,5 | 0,85 | 0,10 |\n| 0,3 | 0,95 | 0,40 |\n| 0,1 | 0,99 | 0,80 |\n\nQual limiar deve ser escolhido?",
+      "options": [
+        {
+          "text": "0,1, pois é o que encontra a maior fração de doentes (TPR = 0,99).",
+          "explanation": "Incorreto. Esse limiar tem FPR de 0,80, muito acima do máximo aceito de 0,10. Maximizar só o TPR ignora a restrição de falsos alarmes.",
+          "id": "a",
+          "correct": false
+        },
+        {
+          "text": "0,9, pois é o que tem a menor taxa de falsos alarmes (FPR = 0,02).",
+          "explanation": "Incorreto. Cumpre o limite de FPR, mas encontra só 40% dos doentes. Entre os pontos que respeitam o limite, há outro com muito mais TPR.",
+          "id": "b",
+          "correct": false
+        },
+        {
+          "text": "0,3, pois o TPR de 0,95 é quase o máximo e o aumento do FPR para 0,40 é um custo razoável.",
+          "explanation": "Incorreto. O FPR de 0,40 está quatro vezes acima do limite aceito de 0,10. A equipe definiu a restrição de antemão, e este ponto a viola.",
+          "id": "c",
+          "correct": false
+        },
+        {
+          "text": "0,5, pois entre os pontos com FPR ≤ 0,10 é o de maior TPR (0,85).",
+          "explanation": "Correto! Os limiares 0,9, 0,7 e 0,5 respeitam FPR ≤ 0,10; dentre eles, 0,5 tem o maior TPR (0,85). É o ponto mais alto da curva que ainda respeita a restrição.",
+          "id": "d",
+          "correct": true
+        }
+      ],
+      "generalExplanation": "A curva ROC é a lista desses pontos (FPR, TPR) para todos os limiares. Escolher o limiar é escolher um ponto da curva de acordo com o custo dos erros: fixe a restrição (aqui, FPR ≤ 0,10) e pegue o maior TPR possível. Analogia: é o ajuste de sensibilidade de um alerta, em que você define quantos falsos alarmes o time aguenta por semana e pega a maior cobertura dentro desse orçamento.",
+      "label": "l7-q24"
+    },
+    {
+      "id": "l7-q25",
+      "type": "single",
+      "prompt": "Qual é a ordem correta das ações para avaliar um classificador com uma métrica (matriz de confusão, precisão, recall etc.)?",
+      "options": [
+        {
+          "text": "Dividir em treino e teste, treinar com o treino, prever no teste e comparar as previsões com as classes reais para calcular a métrica.",
+          "explanation": "Correto! O teste fica separado até o fim: treina-se com o treino, o modelo prevê o teste, e só então as previsões são comparadas com as classes reais para calcular as métricas.",
+          "id": "a",
+          "correct": true
+        },
+        {
+          "text": "Treinar com a base inteira, dividir em treino e teste, prever no teste e comparar as previsões com as classes reais e depois calcular a métrica sobre o total.",
+          "explanation": "Incorreto. Treinar antes de dividir expõe o modelo aos dados de teste (vazamento), e o resultado fica otimista. A divisão vem antes do treino.",
+          "id": "b",
+          "correct": false
+        },
+        {
+          "text": "Dividir em treino e teste, treinar com o treino, prever no treino e comparar as previsões com as classes reais.",
+          "explanation": "Incorreto. Avaliar com as previsões do próprio treino mede memorização e não generalização. As previsões usadas na métrica devem ser as do conjunto de teste.",
+          "id": "c",
+          "correct": false
+        },
+        {
+          "text": "Dividir em treino e teste, prever no teste, treinar com o treino e comparar as previsões com as classes reais.",
+          "explanation": "Incorreto. Não se pode prever antes de treinar, pois o modelo ainda não aprendeu nada. O treino (`fit`) precisa vir antes da previsão (`predict`).",
+          "id": "d",
+          "correct": false
+        }
+      ],
+      "generalExplanation": "A sequência é: dividir → treinar (fit) → prever (predict) → comparar com o real → calcular a métrica. Analogia de engenharia: é o pipeline de CI em que você separa a suíte de testes, compila e roda o build e só depois executa os testes, sem nunca deixar o teste influenciar a compilação.",
+      "label": "l7-q25"
+    }
+  ]
+}

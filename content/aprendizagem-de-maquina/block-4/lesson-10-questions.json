@@ -1,0 +1,1971 @@
+{
+  "schema": "questions/v2",
+  "id": "lesson-10-questions",
+  "title": "Questões · Aula 10: Redes Neurais Artificiais (Perceptron e MLP)",
+  "description": "Questões sobre neurônio MCP, Perceptron, MLP, backpropagation, gradiente descendente, hiperparâmetros, regularização, funções de ativação e de custo.",
+  "instructions": "Responda **antes** de ler qualquer explicação. Depois leia a explicação de **todas** as alternativas, inclusive das que você acertou: é nelas que está o conteúdo. Nenhuma questão exige cálculo: são perguntas sobre **ler** redes desenhadas, tabelas e curvas de erro, a **ordem** das ações e **erros de lógica** em trechos curtos de código. O que o slide não diz está marcado como *complemento*.",
+  "questions": [
+    {
+      "id": "l10-q01",
+      "label": "MCP × Perceptron (slides 9 e 10)",
+      "type": "single",
+      "prompt": "Em relação à evolução histórica das redes neurais, qual é a diferença fundamental entre o neurônio MCP (McCulloch e Pitts, 1943) e o Perceptron (Rosenblatt, 1958)?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O MCP usava várias camadas ocultas com Softmax na saída, e o Perceptron simplificou tudo para uma única camada de neurônios.",
+          "correct": false,
+          "explanation": "Inverte a história. O MCP é um único neurônio com função de limiar (slide 9); camadas ocultas e Softmax não fazem parte dele. A única camada é característica do Perceptron simples (slide 10), mas isso não é o que o diferencia."
+        },
+        {
+          "id": "b",
+          "text": "O MCP não tem algoritmo de aprendizado: um humano redefine pesos e limiar à mão. O Perceptron acrescentou aprendizagem supervisionada por correção do erro.",
+          "correct": true,
+          "explanation": "É exatamente o que dizem os slides 9 e 10. O MCP é uma configuração fixa (como um arquivo de configuração editado manualmente); Rosenblatt criou a regra que ajusta os pesos sozinha, a partir do erro entre a saída desejada e a obtida."
+        },
+        {
+          "id": "c",
+          "text": "O MCP era treinado por retropropagação (backpropagation) e o Perceptron, por mínimos quadrados, que é um método mais antigo e mais simples, usado antes da era das redes profundas.",
+          "correct": false,
+          "explanation": "O backpropagation só aparece em 1986 (slide 22), para treinar redes de várias camadas, e o MCP nem tinha treinamento. Misturar as datas é o erro: a ordem histórica é MCP (1943), Perceptron (1958), backpropagation (1986)."
+        },
+        {
+          "id": "d",
+          "text": "O Perceptron foi o primeiro modelo a resolver problemas não lineares, porque Rosenblatt adicionou camadas intermediárias ao MCP.",
+          "correct": false,
+          "explanation": "Errado: o Perceptron simples tem apenas uma camada e só resolve problemas linearmente separáveis (slides 10 e 18). As camadas intermediárias (MLP) vieram depois, e só se tornaram treináveis com o backpropagation."
+        }
+      ],
+      "generalExplanation": "O MCP é como um programa com constantes fixas no código: para mudar o comportamento, alguém edita os valores. O Perceptron é o mesmo programa com um laço de treino que reescreve essas constantes sozinho a partir dos erros. A ideia nova de 1958 não foi a unidade de cálculo, foi a regra de aprendizado."
+    },
+    {
+      "id": "l10-q02",
+      "label": "Teorema da convergência (slide 10)",
+      "type": "single",
+      "prompt": "Rosenblatt demonstrou uma garantia para o Perceptron treinado com a regra de correção de erro (slide 10). Em que condição ela vale?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Quando a taxa de aprendizado é maior que 1, pois passos grandes fazem os pesos chegarem mais rápido à fronteira correta.",
+          "correct": false,
+          "explanation": "Passos grandes não são a condição da garantia; a regra do slide 12 manda usar taxa pequena para não aprender ruído. A garantia depende da forma dos dados, não de um valor especial de taxa."
+        },
+        {
+          "id": "b",
+          "text": "Quando os dados têm exatamente duas classes, porque o neurônio de saída é binário e sempre consegue separar dois grupos.",
+          "correct": false,
+          "explanation": "Ter duas classes não basta: o XOR também tem duas classes e o Perceptron simples nunca o aprende. O que importa é se uma única reta (ou hiperplano) consegue separar as classes."
+        },
+        {
+          "id": "c",
+          "text": "Quando o problema é linearmente separável: então o neurônio treinado com o algoritmo do Perceptron sempre aprende.",
+          "correct": true,
+          "explanation": "É o que diz o slide 10. Se existe uma reta (em 2D) ou hiperplano que separa as classes, a correção de erro acaba encontrando pesos que acertam todas as amostras de treino. Fora dessa condição não há garantia nenhuma."
+        },
+        {
+          "id": "d",
+          "text": "Quando a função de ativação é ReLU, porque ela é não linear e permite curvar a fronteira de decisão.",
+          "correct": false,
+          "explanation": "O Perceptron clássico usa função degrau (slide 46), e a ReLU é uma ativação de camadas ocultas modernas. Além disso, uma única camada, mesmo com ReLU, continua sem resolver problemas não lineares."
+        }
+      ],
+      "generalExplanation": "Pense numa suíte de testes: se existe uma implementação que passa em todos os casos de uma certa família, o algoritmo de correção a encontra em tempo finito. Se a família não admite essa implementação (dados não separáveis por uma reta), o laço de correção nunca para: continua mexendo nos pesos para sempre."
+    },
+    {
+      "id": "l10-q03",
+      "label": "Por que o XOR trava o Perceptron (slide 18; complemento)",
+      "type": "single",
+      "prompt": "Os slides dizem que redes de uma única camada só resolvem problemas com características lineares (slide 18). Por que isso impede o Perceptron simples de aprender a função XOR (ou-exclusivo)? (O XOR em si é um complemento: o slide só fala em problemas lineares.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "O XOR é um problema de duas entradas, mas o Perceptron simples precisa de pelo menos três entradas para calcular uma soma ponderada.",
+          "correct": false,
+          "explanation": "O Perceptron funciona com qualquer número de entradas, inclusive duas (o exemplo dos slides 13 a 17 usa x1 e x2). O limite do XOR não está na quantidade de entradas, está na forma da fronteira de decisão."
+        },
+        {
+          "id": "b",
+          "text": "Os dois pontos em que o XOR vale 1 ficam em diagonal, entre os dois pontos em que vale 0, e nenhuma reta única separa as duas classes.",
+          "correct": true,
+          "explanation": "No plano, XOR vale 1 em (0,1) e (1,0), e vale 0 em (0,0) e (1,1). As classes estão em posição de xadrez: qualquer reta deixa pontos das duas classes do mesmo lado. O Perceptron simples só traça uma reta, então não existe solução."
+        },
+        {
+          "id": "c",
+          "text": "O bias do Perceptron sempre força a reta a passar pela origem (0,0), e por isso ela não consegue se afastar dos pontos do XOR.",
+          "correct": false,
+          "explanation": "O bias existe justamente para deslocar a reta para longe da origem. Sem ele a reta passaria na origem, mas o problema do XOR persistiria mesmo com bias: o defeito é geométrico (classes não separáveis por reta), não de posição."
+        },
+        {
+          "id": "d",
+          "text": "A descida do gradiente não funciona com entradas binárias, e o XOR só tem entradas 0 e 1.",
+          "correct": false,
+          "explanation": "Entradas binárias funcionam bem: AND e OR também são binários e o Perceptron os aprende, por serem linearmente separáveis. A dificuldade do XOR é a disposição dos pontos, não o tipo de valor das entradas."
+        }
+      ],
+      "generalExplanation": "Pense numa regra de roteamento que só aceita uma condição do tipo 'campo A mais campo B maior que um valor'. O XOR pede 'um ou outro, mas não os dois', que exige combinar duas condições. A solução é compor: com uma camada oculta, cada neurônio traça uma reta e a camada seguinte combina as respostas."
+    },
+    {
+      "id": "l10-q04",
+      "label": "Regra de atualização quando acerta (slide 12)",
+      "type": "single",
+      "prompt": "Na regra do slide 12 (e = Yd − Y; novo peso = peso atual + η · e · x), uma amostra é apresentada, a rede responde Y = 1 e a saída desejada era Yd = 1. O que acontece com os pesos nessa amostra?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Os pesos diminuem um pouco, proporcionalmente à taxa η, para a rede não se acostumar a acertar sempre a mesma amostra.",
+          "correct": false,
+          "explanation": "A regra não tem termo de penalização por acerto. Quem encolhe pesos de propósito é a regularização (slides 37 a 40), que é outro mecanismo, aplicado no ajuste geral e não quando a amostra é classificada corretamente."
+        },
+        {
+          "id": "b",
+          "text": "O erro é e = 0, então o termo η · e · x vale zero e os pesos ficam exatamente como estavam para essa amostra.",
+          "correct": true,
+          "explanation": "Yd − Y = 1 − 1 = 0, e qualquer produto com zero é zero. A regra de correção por erro só mexe nos pesos quando há erro; acertou, não se conserta nada. Assim o aprendizado só ocorre nas amostras que a rede ainda erra."
+        },
+        {
+          "id": "c",
+          "text": "Os pesos dobram, para reforçar a conexão que contribuiu para o acerto, como acontece na sinapse reforçada do neurônio biológico.",
+          "correct": false,
+          "explanation": "A analogia biológica do slide 5 fala em reforçar conexões que levam a soluções corretas, mas a regra matemática do slide 12 faz isso só via erro. Com e = 0 nada é multiplicado nem somado, então não há reforço extra."
+        },
+        {
+          "id": "d",
+          "text": "Os pesos mudam em η, porque a taxa de aprendizagem é aplicada em toda amostra, mesmo quando o erro é nulo.",
+          "correct": false,
+          "explanation": "η só controla o tamanho do passo; ele multiplica o erro. Com erro zero, o passo é zero qualquer que seja η. Taxa é a 'marcha' do ajuste, não um deslocamento fixo aplicado em toda amostra."
+        }
+      ],
+      "generalExplanation": "É como um teste que só dispara uma correção quando falha: se passou, o código não é tocado. Por isso, na tabela de iterações dos slides 16 e 17, as linhas com e = 0 não alteram nenhum peso."
+    },
+    {
+      "id": "l10-q05",
+      "label": "Papel das camadas ocultas (slides 18 e 19)",
+      "type": "single",
+      "prompt": "Em um MLP (Perceptron de múltiplas camadas), qual é o papel das camadas intermediárias (ocultas)?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Guardar em memória os dados de entrada de cada época, para que a rede não precise relê-los do conjunto de treino a cada passo.",
+          "correct": false,
+          "explanation": "Camadas ocultas não são cache. São neurônios que calculam: cada um soma entradas ponderadas e aplica a ativação. O conhecimento fica nos pesos (slide 6), não em cópias dos dados."
+        },
+        {
+          "id": "b",
+          "text": "Combinar as decisões simples da camada anterior em decisões mais abstratas, o que, com ativações não lineares, permite aprender problemas não lineares.",
+          "correct": true,
+          "explanation": "É o que dizem os slides 18 e 19: cada camada pondera os resultados da anterior e toma uma decisão mais complexa. Camadas intermediárias mais ativações não lineares dão à rede a capacidade de resolver problemas complexos."
+        },
+        {
+          "id": "c",
+          "text": "Reduzir o número de pesos a serem ajustados, comprimindo as entradas em poucos neurônios para treinar mais rápido.",
+          "correct": false,
+          "explanation": "Acrescentar camadas ocultas aumenta o número de pesos, não reduz. O ganho é de poder de representação, não de velocidade. Redução de dimensão é função de outras técnicas (como o PCA), não do papel da camada oculta."
+        },
+        {
+          "id": "d",
+          "text": "Fazer a rede se comportar como uma regressão linear múltipla, o que deixa o cálculo das derivadas mais simples.",
+          "correct": false,
+          "explanation": "Seria o oposto do objetivo. Sem ativação não linear a rede inteira colapsa numa regressão linear (slide 45), perdendo justamente o que as camadas ocultas trazem. Elas existem para sair da linearidade."
+        }
+      ],
+      "generalExplanation": "Pense numa arquitetura em camadas de software: a primeira camada detecta sinais simples, a segunda combina os sinais, a terceira decide. Uma única regra não consegue expressar a lógica composta; várias camadas empilhadas conseguem, desde que cada uma introduza uma transformação não linear."
+    },
+    {
+      "id": "l10-q06",
+      "label": "Por que precisou do backpropagation (slides 21 e 22)",
+      "type": "single",
+      "prompt": "Por que a regra simples do Perceptron não serve para treinar as camadas ocultas de um MLP, e o que o backpropagation (1986) trouxe?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Porque o Perceptron só aceita pesos inteiros; o backpropagation permitiu pesos decimais, com os quais as camadas ocultas passam a ser ajustadas.",
+          "correct": false,
+          "explanation": "Os pesos do Perceptron já eram números reais (o exemplo usa 0,3). O obstáculo era outro: faltava saber qual erro atribuir aos neurônios internos."
+        },
+        {
+          "id": "b",
+          "text": "Porque a regra do Perceptron usa a derivada da função de custo, e as camadas ocultas não têm derivada; o backpropagation inventou a derivada numérica.",
+          "correct": false,
+          "explanation": "A regra do Perceptron (slide 12) não usa derivada nenhuma; é e = Yd − Y. E o backpropagation usa justamente derivadas parciais pela regra da cadeia (slide 24). A explicação confunde ferramenta com problema."
+        },
+        {
+          "id": "c",
+          "text": "Porque não existe saída desejada para os neurônios intermediários; o backpropagation calcula o erro na saída e o repassa para trás, ajustando proporcionalmente aos pesos das conexões.",
+          "correct": true,
+          "explanation": "Slides 21 e 22: o erro e = Yd − Y só pode ser calculado na camada de saída, e Yd das camadas intermediárias é desconhecido. A solução foi propagar o erro da saída para as camadas anteriores, com ajuste proporcional ao valor das conexões."
+        },
+        {
+          "id": "d",
+          "text": "Porque as camadas ocultas só aprendem se a função de custo for a entropia cruzada; o backpropagation trocou o erro quadrático por ela.",
+          "correct": false,
+          "explanation": "A escolha da função de custo (slides 25 e 52) é independente do problema histórico. O backpropagation pode ser usado com erro quadrático (slide 25) ou com entropia cruzada; o que ele resolve é a distribuição do erro entre as camadas."
+        }
+      ],
+      "generalExplanation": "É um bug sem stack trace: você só vê o resultado final errado, mas não sabe qual módulo interno causou. O backpropagation é o rastreamento reverso: ele calcula quanto cada peso contribuiu para o erro final e corrige cada um na proporção da sua responsabilidade."
+    },
+    {
+      "id": "l10-q07",
+      "label": "As duas fases do backpropagation (slides 23 e 24)",
+      "type": "single",
+      "prompt": "O treinamento de um MLP com backpropagation acontece em duas fases (slides 23 e 24). Qual descrição está correta?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Fase backward: calcula as saídas da rede da camada final para a de entrada. Fase forward: calcula as derivadas e atualiza os pesos.",
+          "correct": false,
+          "explanation": "As duas fases estão com os papéis trocados. Quem calcula a resposta da rede é a fase forward, indo da entrada para a saída; a backward é que volta calculando derivadas."
+        },
+        {
+          "id": "b",
+          "text": "Fase forward: divide os dados em treino e validação e ativa o Dropout. Fase backward: mede a acurácia no teste e escolhe o melhor modelo.",
+          "correct": false,
+          "explanation": "Divisão em treino e validação, Dropout e medição no teste são procedimentos de avaliação e regularização, ao redor do treino. As fases do backpropagation acontecem dentro de cada passo de treino e se ocupam de sinais e gradientes."
+        },
+        {
+          "id": "c",
+          "text": "Forward: os neurônios somam, aplicam a ativação e passam o resultado até a saída, que é comparada com a desejada. Backward: o erro volta pela regra da cadeia e gera os gradientes que ajustam pesos e bias.",
+          "correct": true,
+          "explanation": "Corresponde aos slides 23 e 24: forward gera a resposta e o erro da camada de saída; backward usa regra da cadeia e derivadas parciais para obter o gradiente e mover os pesos um passo na direção do menor erro."
+        },
+        {
+          "id": "d",
+          "text": "Fase forward: ajusta os pesos da camada de saída a partir do erro. Fase backward: ajusta os pesos das camadas ocultas, uma de cada vez, sem usar derivadas nem a regra da cadeia, e repete o processo a cada época.",
+          "correct": false,
+          "explanation": "Ajustar pesos pertence à fase backward, e ela se apoia em derivadas (regra da cadeia). Dividir 'saída primeiro, ocultas depois' lembra a ordem do backward, mas a fase forward nada ajusta: só calcula."
+        }
+      ],
+      "generalExplanation": "Pense em uma requisição que atravessa vários serviços até a resposta (forward) e depois um rastreamento reverso que descobre quanto cada serviço contribuiu para o erro final (backward). O ajuste só começa depois que a resposta existe e o erro foi medido."
+    },
+    {
+      "id": "l10-q08",
+      "label": "Rede profunda sem ativação não linear (slide 45)",
+      "type": "single",
+      "prompt": "Uma rede com 10 camadas ocultas e milhares de neurônios foi configurada de modo que todas as ativações são lineares (f(x) = ax + b). O que isso implica, segundo o slide 45?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A rede equivale a uma regressão linear: empilhar transformações lineares dá uma única transformação linear, e as camadas extras nada acrescentam.",
+          "correct": true,
+          "explanation": "É o que o slide 45 afirma: sem função de ativação, pesos e bias apenas fazem transformação linear; uma rede sem ativação é essencialmente um modelo de regressão linear. A composição de funções lineares continua linear, por mais camadas que existam."
+        },
+        {
+          "id": "b",
+          "text": "A rede ganha capacidade de aproximar qualquer fronteira, porque as 10 camadas permitem combinar milhares de retas e curvar a separação entre as classes com enorme poder de representação.",
+          "correct": false,
+          "explanation": "Combinar retas só gera outra reta quando nenhuma não linearidade é aplicada entre as camadas. O poder de curvar a fronteira vem da ativação não linear entre as camadas, não da profundidade."
+        },
+        {
+          "id": "c",
+          "text": "A rede aprende o XOR com poucas épocas, porque a profundidade compensa a ausência de ativação.",
+          "correct": false,
+          "explanation": "Profundidade sem não linearidade não compensa nada: a rede inteira é linear e, portanto, tem o mesmo limite do Perceptron simples: não resolve o XOR em nenhuma quantidade de épocas."
+        },
+        {
+          "id": "d",
+          "text": "O treino fica impossível, porque derivadas de funções lineares são nulas e o gradiente some em todas as camadas.",
+          "correct": false,
+          "explanation": "A derivada de uma função linear é constante e diferente de zero (slide 47), não nula. O problema da linear é outro: o gradiente é sempre o mesmo e a rede não ganha poder de representação, mas o treino roda sem anomalia numérica."
+        }
+      ],
+      "generalExplanation": "Compor funções lineares é como encadear conversões de unidade: multiplicar por 1,8 e somar 32 e depois multiplicar por 2 e somar 5 ainda resulta numa única conversão 'a·x + b'. Você pode escrever mil conversões encadeadas e o resultado é equivalente a uma só. Para a rede 'ter profundidade de verdade', cada camada precisa de uma não linearidade."
+    },
+    {
+      "id": "l10-q09",
+      "label": "Por que o degrau não treina (slides 43 e 46)",
+      "type": "single",
+      "prompt": "A função degrau (f(x) = 1 se x ≥ 0 e 0 se x < 0) era usada no Perceptron clássico, mas o slide 46 diz que ela só tem fins didáticos e não é usada na prática. Por quê?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O gradiente da função degrau é zero, então no backpropagation ela não leva informação útil para melhorar os pesos.",
+          "correct": true,
+          "explanation": "É a justificativa do slide 46: sem gradiente, não há como o erro orientar o ajuste dos pesos nas camadas anteriores. O slide 43 acrescenta o outro lado do problema: uma pequena mudança de peso pode virar a saída de 0 para 1 de uma vez, desorganizando o resto da rede."
+        },
+        {
+          "id": "b",
+          "text": "Ela produz números reais de 64 bits e por isso ocupa mais memória que as outras ativações.",
+          "correct": false,
+          "explanation": "A degrau só produz 0 ou 1, que é o formato mais simples possível. O motivo da recusa é o comportamento do gradiente, não custo de memória."
+        },
+        {
+          "id": "c",
+          "text": "Ela só aceita entradas positivas, o que impede seu uso depois de camadas com pesos negativos.",
+          "correct": false,
+          "explanation": "A degrau aceita qualquer valor real: ela decide pelo sinal (maior ou igual a 0, ou menor que 0). O defeito está em ser plana nos dois lados do salto, não em restringir entradas."
+        },
+        {
+          "id": "d",
+          "text": "Ela só pode ser executada em placas de vídeo (GPU), que nem sempre estão disponíveis para treinar redes.",
+          "correct": false,
+          "explanation": "Executa em qualquer CPU; é uma simples comparação. Hardware nada tem a ver com o descarte da função: o motivo é matemático (derivada zero)."
+        }
+      ],
+      "generalExplanation": "Imagine um otimizador que muda os parâmetros e olha se o resultado melhorou: com um degrau, para quase todo ajuste a saída não muda (gradiente zero) e, quando muda, salta. Não há um sinal contínuo do tipo 'esquentou' ou 'esfriou' que oriente o próximo passo. Funções suaves resolvem isso."
+    },
+    {
+      "id": "l10-q10",
+      "label": "Por que a ReLU é o padrão nas camadas ocultas (slide 49)",
+      "type": "single",
+      "prompt": "O slide 49 diz que a ReLU, f(x) = max(0, x), é a função de ativação mais usada hoje e o padrão para camadas ocultas. Que justificativa o slide dá?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Ela limita a saída entre 0 e 1, o que permite interpretar cada neurônio oculto como uma probabilidade e usar a mesma função em toda a rede, inclusive na saída.",
+          "correct": false,
+          "explanation": "Quem limita entre 0 e 1 é a sigmoide (slide 48). A ReLU devolve 0 ou o próprio valor, sem limite superior. Interpretar saída como probabilidade é papel de sigmoide e softmax na camada de saída."
+        },
+        {
+          "id": "b",
+          "text": "Ela garante que a rede nunca sofra overfitting, o que dispensa conjunto de validação e regularização.",
+          "correct": false,
+          "explanation": "Nenhuma ativação impede overfitting. Redes profundas têm milhões de pesos e propensão ao sobreajuste (slide 37), com ou sem ReLU; por isso existem regularização e parada antecipada."
+        },
+        {
+          "id": "c",
+          "text": "Ela é não linear e simples de calcular, e por isso os erros podem ser retropropagados com facilidade por várias camadas de neurônios.",
+          "correct": true,
+          "explanation": "Slide 49: a ReLU é não linear, o que permite copiar os erros para trás com facilidade e empilhar várias camadas ativadas por ela. A simplicidade do max(0, x) é complemento. Em dúvida, comece pela ReLU."
+        },
+        {
+          "id": "d",
+          "text": "Ela é uma função linear em todo o domínio, o que mantém o gradiente constante e a rede estável.",
+          "correct": false,
+          "explanation": "A ReLU não é linear em todo o domínio: tem uma quebra em x = 0 (vale 0 para negativos e x para positivos). Essa quebra é a não linearidade que faz as camadas ocultas serem úteis; se fosse linear, a rede colapsaria (slide 45)."
+        }
+      ],
+      "generalExplanation": "A ReLU é um 'if' barato: se x for negativo, devolve 0; senão, devolve x. Mesmo sendo quase trivial, essa quebra em zero é uma não linearidade de verdade, suficiente para a rede deixar de ser uma regressão linear disfarçada. Por isso virou o padrão: barata, funciona, e é o primeiro teste a fazer."
+    },
+    {
+      "id": "l10-q11",
+      "label": "Ativação da saída multiclasse (slides 50 e 52)",
+      "type": "single",
+      "prompt": "Uma rede classifica cada foto em exatamente uma entre quatro espécies (cão, gato, pássaro ou peixe). Qual ativação usar na camada de saída?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Linear, porque cada neurônio de saída precisa devolver um escore livre, sem limite, que depois é comparado com os outros.",
+          "correct": false,
+          "explanation": "A linear na saída é a indicação para regressão (slides 47 e 52). Na classificação multiclasse queremos probabilidades por classe que somem 1, e escores soltos, positivos ou negativos, não têm essa interpretação direta."
+        },
+        {
+          "id": "b",
+          "text": "Sigmoide em cada neurônio, porque cada classe vira uma pergunta independente de sim ou não e a maior probabilidade escolhe a espécie.",
+          "correct": false,
+          "explanation": "Sigmoide por neurônio é a indicação do multilabel (slide 52), onde vários rótulos podem coexistir. Aqui cada foto tem uma única espécie, e a sigmoide por neurônio não garante que as probabilidades somem 1 nem que as classes compitem."
+        },
+        {
+          "id": "c",
+          "text": "Degrau em cada neurônio, porque basta ver qual neurônio dispara e assumir que ele indica a espécie.",
+          "correct": false,
+          "explanation": "Nada impede que dois neurônios disparem juntos ou nenhum dispare. Além disso, o degrau tem gradiente zero (slide 46), o que inviabiliza o treino com backpropagation."
+        },
+        {
+          "id": "d",
+          "text": "Softmax, que converte as saídas em valores entre 0 e 1 e divide pela soma, resultando na probabilidade de a entrada pertencer a cada classe.",
+          "correct": true,
+          "explanation": "Slides 50 e 52: softmax é a ativação recomendada para classificação multiclasse (com entropia cruzada categorizada). Como as saídas somam 1, a classe de maior valor é a escolhida e as espécies competem entre si."
+        }
+      ],
+      "generalExplanation": "Pense numa votação com exatamente um vencedor: os votos viram porcentagens e a soma é 100%. A softmax faz isso com os escores finais da rede. Já a sigmoide por neurônio é como várias enquetes independentes, em que uma notícia pode ser, ao mesmo tempo, economia e política."
+    },
+    {
+      "id": "l10-q12",
+      "label": "Custo e ativação no multilabel (slide 52)",
+      "type": "single",
+      "prompt": "A tabela do slide 52 relaciona o tipo de problema com a função de custo e a ativação de saída. Uma mesma notícia pode receber ao mesmo tempo os rótulos 'Economia', 'Política' e 'Internacional' (multilabel). Qual combinação a tabela recomenda?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Entropia cruzada categorizada com softmax, porque o modelo escolhe a classe mais provável entre todas as possíveis.",
+          "correct": false,
+          "explanation": "Essa é a combinação do multiclasse, em que existe um único rótulo por amostra. A softmax faz as saídas somarem 1; se a notícia tem dois rótulos ao mesmo tempo, as classes não podem competir assim."
+        },
+        {
+          "id": "b",
+          "text": "Erro quadrático médio com ReLU, porque cada saída é um número que pode assumir qualquer valor positivo e a ReLU não impõe teto à resposta.",
+          "correct": false,
+          "explanation": "O erro quadrático é o custo da regressão, e a ReLU é ativação de camada oculta (slide 51). Rótulos de presença ou ausência pedem uma saída entre 0 e 1 por rótulo."
+        },
+        {
+          "id": "c",
+          "text": "Entropia cruzada binária com sigmoide em cada neurônio de saída, de modo que cada rótulo é uma decisão sim ou não independente.",
+          "correct": true,
+          "explanation": "Está na tabela: classificação multilabel usa entropia cruzada binária e sigmoide em cada neurônio de saída. Cada neurônio responde 'tem este rótulo ou não', sem depender dos outros."
+        },
+        {
+          "id": "d",
+          "text": "Erro absoluto médio com degrau, porque o degrau decide diretamente se o rótulo está presente ou ausente.",
+          "correct": false,
+          "explanation": "O erro absoluto médio é indicado para regressão com outliers (slide 52), e o degrau tem gradiente zero (slide 46), o que impede o treinamento. Decidir presença é papel do limiar aplicado depois, não da ativação durante o treino."
+        }
+      ],
+      "generalExplanation": "Multilabel é como um formulário de checkboxes: cada caixa é um sim ou não independente. Multiclasse é como um grupo de botões de rádio: só um pode estar marcado. A escolha de sigmoide ou softmax na saída reproduz exatamente essa diferença de interface."
+    },
+    {
+      "id": "l10-q13",
+      "label": "Regressão com outliers (slide 52)",
+      "type": "single",
+      "prompt": "Uma rede estima o valor de imóveis (regressão). A base tem vários imóveis com preços extremamente discrepantes (outliers, como mansões históricas). Qual combinação de custo e saída a tabela do slide 52 recomenda?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Erro quadrático médio com saída sigmoide, porque a sigmoide mantém a saída em escala controlada e o quadrado do erro pune com mais força os desvios maiores.",
+          "correct": false,
+          "explanation": "A sigmoide limita a saída entre 0 e 1 e não consegue produzir valores como 2 milhões de reais. Além disso o erro quadrático eleva ao quadrado os erros enormes dos outliers, dando a eles peso desproporcional."
+        },
+        {
+          "id": "b",
+          "text": "Entropia cruzada binária com ReLU, porque o preço pode ser visto como acima ou abaixo da média.",
+          "correct": false,
+          "explanation": "Isso transformaria a regressão em classificação e jogaria fora o valor do preço. A entropia cruzada é custo de classificação (slide 52); preço contínuo é regressão."
+        },
+        {
+          "id": "c",
+          "text": "Entropia cruzada categorizada com softmax, porque os preços podem ser agrupados em faixas.",
+          "correct": false,
+          "explanation": "Agrupar em faixas muda o problema para classificação multiclasse e perde a escala contínua do valor. A tabela do slide 52 reserva esse par para multiclasse, não para regressão."
+        },
+        {
+          "id": "d",
+          "text": "Erro absoluto médio com ativação linear (ou nenhuma), porque o erro cresce em proporção ao desvio, e não ao quadrado.",
+          "correct": true,
+          "explanation": "Slide 52: regressão com outliers usa erro absoluto médio e saída linear. O MAE não amplia os erros enormes dos outliers como o MSE (que os eleva ao quadrado), e a saída linear cobre qualquer valor real."
+        }
+      ],
+      "generalExplanation": "Pense em um alerta de monitoramento: com erro quadrático, um único pico gigantesco domina a média e faz o modelo 'correr atrás' dele. Com erro absoluto, o pico conta proporcionalmente, e o modelo continua ajustado ao que é típico."
+    },
+    {
+      "id": "l10-q14",
+      "label": "Mini-batch gradient descent (slide 34)",
+      "type": "single",
+      "prompt": "O slide 34 apresenta o mini-batch gradient descent como a forma mais comum de descida do gradiente em Machine Learning. Como ele funciona?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Passa pela rede uma única amostra por vez, calcula o erro dela e atualiza os pesos logo em seguida.",
+          "correct": false,
+          "explanation": "Isso é o SGD no sentido mais estrito (uma amostra por atualização). O mini-batch agrupa várias amostras antes de atualizar, que é justamente o que o slide 34 descreve."
+        },
+        {
+          "id": "b",
+          "text": "Passa um lote de amostras (por exemplo 128), calcula o erro médio delas e então faz o backpropagation e a atualização dos pesos uma vez para o lote.",
+          "correct": true,
+          "explanation": "Descrito no slide 34. Do ponto de vista da atualização dos pesos, 1 amostra equivale a 128: o lote é tratado como um passo único. É isso que torna o treino mais eficiente em grandes modelos de Deep Learning."
+        },
+        {
+          "id": "c",
+          "text": "Passa todo o conjunto de treino de uma vez, calcula o erro médio e atualiza os pesos uma única vez por época.",
+          "correct": false,
+          "explanation": "Isso é o gradiente descendente em lote completo, a versão mais antiga (slide 36). O mini-batch atualiza várias vezes por época, uma para cada lote, o que o deixa mais rápido."
+        },
+        {
+          "id": "d",
+          "text": "Divide a rede em partes menores e treina cada camada separadamente, uma depois da outra.",
+          "correct": false,
+          "explanation": "O lote se refere aos dados de entrada, e não às camadas. Treinar camada por camada seria outra estratégia e perderia o ajuste conjunto que o backpropagation faz."
+        }
+      ],
+      "generalExplanation": "É o mesmo raciocínio de processamento em lote de um banco de dados: em vez de gravar linha por linha, você acumula um grupo, processa e confirma de uma vez. O erro médio do grupo é uma boa estimativa do erro geral, com muito menos passos do que um por amostra."
+    },
+    {
+      "id": "l10-q15",
+      "label": "SGD e Adam (slide 36)",
+      "type": "single",
+      "prompt": "Segundo o slide 36, qual é a diferença central entre o SGD e o Adam?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O SGD mantém uma taxa de aprendizado única para todas as atualizações, que não muda durante o treino; no Adam, cada peso tem a própria taxa, adaptada ao longo do aprendizado.",
+          "correct": true,
+          "explanation": "É o que o slide 36 afirma. A taxa fixa do SGD funciona como um único botão para a rede toda; o Adam ajusta um botão por peso, conforme o aprendizado evolui. É por isso que costuma ser mais fácil de usar."
+        },
+        {
+          "id": "b",
+          "text": "O Adam não usa gradientes: ele sorteia pesos aleatórios até encontrar um conjunto que reduza o erro.",
+          "correct": false,
+          "explanation": "O Adam é um otimizador baseado em gradiente, evolução do SGD (slide 36). A parte aleatória do SGD está no sorteio de amostras para estimar o gradiente, e não em sortear pesos."
+        },
+        {
+          "id": "c",
+          "text": "O Adam calcula o erro sobre todos os exemplos a cada atualização, enquanto o SGD calcula apenas sobre alguns exemplos, o que torna o SGD mais lento.",
+          "correct": false,
+          "explanation": "O SGD é que é a evolução rápida do gradiente descendente completo, justamente por calcular o erro de apenas alguns exemplos (slide 36). Essa não é a diferença entre SGD e Adam."
+        },
+        {
+          "id": "d",
+          "text": "O SGD adapta a taxa de cada peso individualmente e o Adam usa uma taxa fixa e igual para todos, por isso o Adam é mais simples.",
+          "correct": false,
+          "explanation": "Está invertido: o SGD é o de taxa única e fixa; o Adam é o adaptativo por peso (slide 36). O Adam não é mais simples por isso, e sim mais flexível."
+        }
+      ],
+      "generalExplanation": "O SGD é como uma única velocidade de cruzeiro para todos os motores. O Adam instala um controlador de velocidade em cada motor, que se ajusta conforme o terreno. Em um parâmetro com gradientes pequenos e constantes ele acelera; em outro, instável, ele freia."
+    },
+    {
+      "id": "l10-q16",
+      "label": "Regularização (slides 37 a 40)",
+      "type": "multiple",
+      "prompt": "Sobre as técnicas de regularização dos slides 37 a 40, marque todas as afirmativas verdadeiras.",
+      "options": [
+        {
+          "id": "a",
+          "text": "A parada antecipada separa uma parte do treino para validação e interrompe o treino quando a rede começa a errar na validação enquanto ainda acerta no treino.",
+          "correct": true,
+          "explanation": "Verdadeiro (slide 38). O ponto em que o erro de validação passa a subir, com o de treino ainda caindo, é o sinal de que a rede começou a decorar os dados de treino."
+        },
+        {
+          "id": "b",
+          "text": "A regularização L1 penaliza o valor absoluto dos pesos e pode fazer alguns pesos virarem exatamente zero, funcionando como seleção de atributos.",
+          "correct": true,
+          "explanation": "Verdadeiro (slides 39 e 40). No L1 os pesos diminuem em quantidade constante, tendendo a zero, o que elimina variáveis pouco importantes."
+        },
+        {
+          "id": "c",
+          "text": "A regularização L2 penaliza o quadrado dos pesos: eles diminuem proporcionalmente ao próprio valor, e todos continuam existindo, só que pequenos.",
+          "correct": true,
+          "explanation": "Verdadeiro (slides 39 e 40). No L2 os pesos diminuem em valor proporcional a w; a regra é 'não deixe nenhum parâmetro exagerado'."
+        },
+        {
+          "id": "d",
+          "text": "O Dropout desliga neurônios aleatoriamente durante o treino, o que evita que a rede dependa demais de conexões específicas.",
+          "correct": true,
+          "explanation": "Verdadeiro (slide 40). Desligar neurônios aleatórios força a rede a espalhar o conhecimento por várias conexões."
+        },
+        {
+          "id": "e",
+          "text": "Na regularização L2 os pesos diminuem em quantidade constante até chegarem exatamente a zero, eliminando as variáveis menos importantes.",
+          "correct": false,
+          "explanation": "Falso: a descrição é a do L1. No L2 os pesos diminuem proporcionalmente a w e raramente chegam a zero (slide 39)."
+        },
+        {
+          "id": "f",
+          "text": "A parada antecipada usa o conjunto de teste para decidir quando parar, porque é o único conjunto que não foi usado no treino.",
+          "correct": false,
+          "explanation": "Falso: o slide 38 usa uma parte do conjunto de treino como validação. O teste deve ficar intocado até o fim, senão deixa de medir a generalização."
+        }
+      ],
+      "generalExplanation": "As quatro técnicas são freios contra o overfitting: a parada antecipada para na hora certa; L1 corta conexões inúteis; L2 mantém os pesos moderados; Dropout evita que a rede dependa de um caminho só. É a ideia de teste de carga e redundância: nenhum componente isolado deve segurar o sistema inteiro."
+    },
+    {
+      "id": "l10-q17",
+      "label": "Neurônio biológico → artificial (slides 3 e 4)",
+      "type": "single",
+      "prompt": "O slide 4 compara o neurônio biológico com o artificial. Qual correspondência entre as partes do neurônio e as partes de uma unidade de processamento artificial está correta?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Dendritos são os terminais de entrada, o corpo (soma) processa os sinais recebidos e o axônio é o terminal de saída.",
+          "correct": true,
+          "explanation": "É a leitura do slide 4: os dendritos recebem impulsos de outros neurônios, o corpo faz um processamento simples e gera um novo impulso, e o axônio o repassa se ele for suficientemente alto. No modelo MCP, entradas x e saída y."
+        },
+        {
+          "id": "b",
+          "text": "O axônio recebe os impulsos de outros neurônios, o corpo os conduz sem alterá-los e os dendritos emitem a resposta.",
+          "correct": false,
+          "explanation": "Inverte os papéis. Dendritos recebem; o axônio transmite. O corpo, além disso, não só conduz: ele processa o que recebeu e decide se gera um novo impulso."
+        },
+        {
+          "id": "c",
+          "text": "Os dendritos guardam o conhecimento da rede, o corpo recebe as entradas e o axônio decide se o neurônio dispara.",
+          "correct": false,
+          "explanation": "O conhecimento fica nas conexões entre neurônios, ou seja, nos pesos (slides 6 e 8), e não nos dendritos. Quem decide se há saída é o processamento do corpo, comparando o total com o limiar."
+        },
+        {
+          "id": "d",
+          "text": "O corpo funciona como terminal de entrada e saída ao mesmo tempo, e os dendritos e o axônio apenas conectam um neurônio ao seguinte.",
+          "correct": false,
+          "explanation": "Entrada e saída são terminais distintos: dendritos de um lado, axônio do outro. O corpo é o local do processamento simples, e não o ponto de contato com os outros neurônios."
+        }
+      ],
+      "generalExplanation": "É a analogia com uma função: dendritos são os parâmetros de entrada, o corpo é o corpo da função (soma e decisão) e o axônio é o valor de retorno. O que a engenharia acrescenta é que cada entrada tem um peso: quanto aquela informação conta na soma."
+    },
+    {
+      "id": "l10-q18",
+      "label": "Onde fica o conhecimento (slides 5, 6 e 8)",
+      "type": "single",
+      "prompt": "Segundo os slides 5, 6 e 8, onde uma rede neural artificial guarda o que aprendeu e que propriedade biológica isso imita?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Nos neurônios de cada camada, que armazenam os exemplos vistos no treino; imita a memória de longo prazo do cérebro.",
+          "correct": false,
+          "explanation": "Os neurônios calculam, não armazenam exemplos. O slide 6 diz que o conhecimento adquirido fica nos pesos das conexões. Guardar exemplos seria característica de métodos como o k-NN, não de redes neurais."
+        },
+        {
+          "id": "b",
+          "text": "Na função de ativação, que memoriza o limiar de cada neurônio; imita o disparo do impulso elétrico no axônio.",
+          "correct": false,
+          "explanation": "A função de ativação (slide 9) decide se a saída é ativada, mas é uma função fixa escolhida pelo projetista; o que muda no aprendizado são os pesos. O disparo do axônio é outra analogia, não a da plasticidade."
+        },
+        {
+          "id": "c",
+          "text": "Nos pesos das conexões, ajustados com a experiência; imita a plasticidade, em que neurônios modificam suas conexões em resposta a eventos novos.",
+          "correct": true,
+          "explanation": "Slides 5, 6 e 8: o cérebro aprende por plasticidade (reforçando conexões que levam a boas soluções e enfraquecendo as outras), e a rede artificial faz o mesmo ajustando os pesos. A configuração dos pesos é o conhecimento."
+        },
+        {
+          "id": "d",
+          "text": "No número de camadas e de neurônios, que é definido uma vez e reflete o que foi aprendido; imita a quantidade de neurônios do cérebro.",
+          "correct": false,
+          "explanation": "Número de camadas e neurônios é um hiperparâmetro (slide 35), definido antes do treino. O que se aprende com os dados são os pesos, e a plasticidade é a capacidade de mudar as conexões."
+        }
+      ],
+      "generalExplanation": "Pense na diferença entre código e configuração aprendida: a estrutura da rede é o código, escrito por você; os pesos são o estado que o treino preenche. Para trocar de modelo bastaria trocar o arquivo de pesos. A plasticidade é isso: mexer nas conexões sem trocar o 'hardware'."
+    },
+    {
+      "id": "l10-q19",
+      "label": "Neurônio MCP: o que é verdade (slides 7 a 9)",
+      "type": "multiple",
+      "prompt": "Marque todas as afirmativas verdadeiras sobre o neurônio MCP (McCulloch e Pitts, 1943), conforme os slides 7 a 9.",
+      "options": [
+        {
+          "id": "a",
+          "text": "Possui n terminais de entrada (x1, x2, ..., xn) e apenas uma saída y.",
+          "correct": true,
+          "explanation": "Verdadeiro (slide 8). A saída única é uma característica do modelo, e o que faz um neurônio ter muitas setas de saída é apenas o reaproveitamento do mesmo valor (slide 20)."
+        },
+        {
+          "id": "b",
+          "text": "Cada entrada tem um peso associado que determina em que grau aquela informação deve ser considerada.",
+          "correct": true,
+          "explanation": "Verdadeiro (slide 8). Os pesos simulam as sinapses e são eles que armazenam o conhecimento: quanto maior o peso, mais a entrada influencia a soma."
+        },
+        {
+          "id": "c",
+          "text": "Uma função de ativação compara a soma ponderada com um limiar e define se a saída é ativada ou não.",
+          "correct": true,
+          "explanation": "Verdadeiro (slide 9). Imita o neurônio biológico, que só dispara quando a soma dos impulsos ultrapassa um limiar."
+        },
+        {
+          "id": "d",
+          "text": "Os pesos são ajustados automaticamente a cada erro, por isso o MCP já aprende sozinho a partir de exemplos.",
+          "correct": false,
+          "explanation": "Falso (slide 9): o MCP não possui algoritmo de aprendizado; um humano precisa redesenhar pesos e limiar. O ajuste por erro é a contribuição do Perceptron (slide 10)."
+        },
+        {
+          "id": "e",
+          "text": "O MCP tem uma saída diferente para cada entrada: uma saída y1 para x1, outra y2 para x2, e assim por diante.",
+          "correct": false,
+          "explanation": "Falso (slide 8): há uma única saída y, que é função da soma ponderada de todas as entradas, e não uma saída por entrada."
+        },
+        {
+          "id": "f",
+          "text": "Para o MCP aprender o XOR basta aumentar o número de entradas, porque mais entradas dão mais retas para separar as classes.",
+          "correct": false,
+          "explanation": "Falso: mais entradas não mudam o fato de a fronteira ser uma única reta ou hiperplano. A solução do XOR exige camadas intermediárias (slide 18)."
+        }
+      ],
+      "generalExplanation": "O MCP é uma função pura: n entradas, n pesos, uma soma, um limiar e uma saída. O que ele não tem é o laço de treino: os pesos são constantes que alguém escreveu no código. Isso dá o contraste exato com o Perceptron do slide 10."
+    },
+    {
+      "id": "l10-q20",
+      "label": "Como a rede aprende (slide 11)",
+      "type": "single",
+      "prompt": "O slide 11 resume o aprendizado de uma rede neural. Qual frase corresponde ao que ele diz?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A rede aprende ajustando os pesos das conexões, usando o erro nos dados de treino para modificá-los e diminuir o erro produzido.",
+          "correct": true,
+          "explanation": "É o texto do slide 11: o conhecimento está na intensidade das conexões, e o erro no treino indica a direção do ajuste. O ciclo 'errar, medir o erro, corrigir pesos' é o núcleo de todos os algoritmos do restante da aula."
+        },
+        {
+          "id": "b",
+          "text": "A rede aprende memorizando cada exemplo de treino, e o erro serve para decidir quais exemplos descartar do conjunto.",
+          "correct": false,
+          "explanation": "Memorizar exemplos é overfitting, justamente o que se tenta evitar (slide 37). O erro serve para ajustar pesos, não para descartar exemplos."
+        },
+        {
+          "id": "c",
+          "text": "A rede aprende aumentando o número de neurônios sempre que o erro é alto, até que a camada de saída acerte todas as amostras do treino.",
+          "correct": false,
+          "explanation": "O número de neurônios é um hiperparâmetro fixado antes do treino (slide 35). O que se altera durante o aprendizado são os valores dos pesos."
+        },
+        {
+          "id": "d",
+          "text": "A rede aprende trocando a função de ativação de cada neurônio, até encontrar a que produz o menor erro no conjunto de teste.",
+          "correct": false,
+          "explanation": "A ativação é escolhida pelo projetista (slides 42 a 51) e o erro de treinamento, não o de teste, orienta o ajuste dos pesos. Usar o teste para ajustar a rede o contaminaria."
+        }
+      ],
+      "generalExplanation": "É um laço de depuração automático: executar, comparar com o esperado, calcular a diferença e corrigir as constantes na direção que reduz a diferença. As constantes são os pesos."
+    },
+    {
+      "id": "l10-q21",
+      "label": "Taxa de aprendizagem pequena (slide 12)",
+      "type": "single",
+      "prompt": "Um aluno ajustou um Perceptron com η = 5, para 'aprender mais rápido'. O que o slide 12 recomenda sobre a taxa de aprendizagem e por quê?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Que seja grande, para a rede corrigir de uma vez cada amostra errada; e passos pequenos só atrasariam o treino.",
+          "correct": false,
+          "explanation": "Contraria o slide: a taxa deve ser sempre pequena. Corrigir de uma vez cada erro faz cada amostra dominar os pesos, e a rede acaba desfazendo na próxima amostra o que fez na anterior."
+        },
+        {
+          "id": "b",
+          "text": "Que seja pequena, com ajustes em passos pequenos, para evitar aprender ruídos dos dados.",
+          "correct": true,
+          "explanation": "Slide 12: η é a proporção do ajuste e deve ser pequena. Passos grandes deixam a rede reagir demais a amostras isoladas (inclusive ruidosas); passos pequenos acumulam a tendência geral."
+        },
+        {
+          "id": "c",
+          "text": "Que comece em zero e cresça um pouco a cada época, porque no começo qualquer peso já acerta algumas amostras.",
+          "correct": false,
+          "explanation": "O slide não menciona taxa crescente. Pesos iniciais são aleatórios (slide 15), mas a taxa é uma constante pequena (como 0,3), e nada indica que deva começar em zero."
+        },
+        {
+          "id": "d",
+          "text": "Que seja irrelevante, porque o erro e já corrige o peso e a taxa só muda a escala dos números.",
+          "correct": false,
+          "explanation": "A taxa controla a proporção do ajuste (slides 12 e 41) e afeta se a rede converge. Muito grande, passa do mínimo; muito pequena, demora. Não é só escala."
+        }
+      ],
+      "generalExplanation": "É o botão de intensidade de um deploy gradual: aplicar a mudança em 100% das instâncias de uma vez é arriscado; aplicar aos poucos permite perceber o efeito antes de comprometer tudo. Passos pequenos suavizam o ruído; passos gigantes o amplificam."
+    },
+    {
+      "id": "l10-q22",
+      "label": "Codificar entradas e saída (slides 13 e 14)",
+      "type": "single",
+      "prompt": "O exemplo dos slides 13 a 17 quer classificar nomes em 'compositor' ou 'cientista'. A tabela abaixo mostra a codificação usada.\n\n| Texto | Decimal | x1 | x2 |\n| :-- | :-: | :-: | :-: |\n| Bach | 0 | 0 | 0 |\n| Beethoven | 1 | 0 | 1 |\n| Einstein | 2 | 1 | 0 |\n| Kepler | 3 | 1 | 1 |\n\nSaída: compositor = 0 e cientista = 1. Como fica a estrutura do Perceptron desse exemplo?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Duas entradas (x1 e x2, que juntas codificam o nome em binário) e uma saída y, com 0 para compositor e 1 para cientista.",
+          "correct": true,
+          "explanation": "É o exemplo dos slides 14 a 17: o nome vira dois bits (x1, x2) e a classe vira um bit (y). A rede só trabalha com números, então o texto precisa ser codificado antes."
+        },
+        {
+          "id": "b",
+          "text": "Quatro entradas, uma para cada nome, e duas saídas, uma para a classe compositor e outra para a classe cientista.",
+          "correct": false,
+          "explanation": "Seria uma codificação de um-para-quente (one-hot) com duas saídas. O slide usa uma só saída binária e dois bits de entrada, portanto uma rede menor."
+        },
+        {
+          "id": "c",
+          "text": "Uma entrada com o número decimal de 0 a 3 e quatro saídas, uma para cada nome possível.",
+          "correct": false,
+          "explanation": "A tabela mostra duas colunas binárias de entrada (x1 e x2), e não uma decimal. E a saída do exemplo é só a classe (compositor ou cientista), e não o nome."
+        },
+        {
+          "id": "d",
+          "text": "Duas entradas binárias e uma saída decimal de 0 a 3, que identifica qual dos quatro nomes foi apresentado.",
+          "correct": false,
+          "explanation": "A saída do exemplo é a categoria (0 ou 1), e não o nome. O nome é a entrada. Confundir entrada e saída é o erro: a rede recebe o nome codificado e devolve a classe."
+        }
+      ],
+      "generalExplanation": "É como serializar uma requisição para a rede: texto não entra direto num cálculo, precisa de um esquema de codificação. Aqui, dois bits cobrem quatro valores (2² = 4), e um bit cobre duas classes. O contrato da função é: recebe dois bits, devolve um bit."
+    },
+    {
+      "id": "l10-q23",
+      "label": "Ordem de treino do Perceptron (slides 12, 15 a 17)",
+      "type": "single",
+      "prompt": "Qual é a ordem correta das ações no treinamento de um Perceptron simples, segundo os slides 12 e 15 a 17?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Calcular o erro e = Yd − Y → inicializar pesos e taxa → somar entradas vezes pesos e aplicar a ativação → atualizar os pesos → repetir até o erro total ser 0.",
+          "correct": false,
+          "explanation": "Calcular o erro antes de ter a saída Y é impossível: e depende de Y. A inicialização também precisa vir primeiro, pois sem pesos não há soma nem saída."
+        },
+        {
+          "id": "b",
+          "text": "Inicializar pesos e taxa → somar entradas vezes pesos e aplicar a ativação (Y) → calcular e = Yd − Y → atualizar os pesos → repetir até o erro total ser 0.",
+          "correct": true,
+          "explanation": "É o ciclo mostrado nas tabelas dos slides 16 e 17: cada linha calcula Σ e Y, depois e, e só então atualiza os pesos; uma época termina quando todas as amostras foram apresentadas, e o treino para com erro total 0."
+        },
+        {
+          "id": "c",
+          "text": "Inicializar pesos e taxa → calcular e = Yd − Y → atualizar os pesos → somar entradas vezes pesos e aplicar a ativação → repetir até o erro total ser 0.",
+          "correct": false,
+          "explanation": "Atualizar os pesos antes da soma ponderada usa um erro que ainda não existe. O erro só pode ser calculado depois que a saída Y foi gerada com os pesos atuais."
+        },
+        {
+          "id": "d",
+          "text": "Inicializar pesos e taxa → atualizar os pesos com a regra η · e · x → calcular e = Yd − Y → somar e aplicar a ativação → repetir.",
+          "correct": false,
+          "explanation": "A regra de atualização precisa de e, que depende de Y; logo ela só pode vir por último. Executar a atualização primeiro usaria valores indefinidos."
+        }
+      ],
+      "generalExplanation": "É um laço de treino em quatro passos: propagar (calcular a saída), medir o erro, corrigir os pesos e repetir. Pense num ciclo de feedback: não se corrige antes de medir, e não se mede antes de produzir uma saída."
+    },
+    {
+      "id": "l10-q24",
+      "label": "Ler a tabela de iterações (slides 16 e 17)",
+      "type": "single",
+      "prompt": "Os slides 16 e 17 mostram o treino do Perceptron do exemplo, com entradas (x1, x2), saída obtida Y, desejada Yd e erro e = Yd − Y. Um resumo das duas épocas:\n\n| Época | Amostra (x1,x2) | Y | Yd | e | Pesos após a amostra |\n| :-: | :-: | :-: | :-: | :-: | :-- |\n| 1 | (1,1) | 0 | 1 | 1 | w1 = 0,3 e w2 = 0,3 |\n| 1 | (1,0) | 1 | 1 | 0 | sem mudança |\n| 1 | (0,1) | 1 | 0 | −1 | w1 = 0,3 e w2 = 0 |\n| 1 | (0,0) | 0 | 0 | 0 | sem mudança |\n| 2 | as quatro | = Yd | | 0 em todas | w1 = 0,3 e w2 = 0 |\n\nErro total da época = soma dos |e|. Qual é a leitura correta?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A época 1 teve erro total 2 e ajustou os pesos nas duas amostras erradas; na época 2 o erro total é 0, e o Perceptron converge e o treino pode parar.",
+          "correct": true,
+          "explanation": "Erros da época 1: |1| + |−1| = 2, nas amostras (1,1) e (0,1). Com pesos (0,3; 0) todas as quatro amostras são acertadas e o erro total é zero: essa é a convergência (e o treino pode parar). Os dados são linearmente separáveis."
+        },
+        {
+          "id": "b",
+          "text": "A época 2 não alterou os pesos porque falhou: erro 0 indica que a rede parou de aprender e precisa de nova inicialização.",
+          "correct": false,
+          "explanation": "Erro 0 não é falha: é o objetivo. Os pesos não mudam na época 2 porque não há erro a corrigir, exatamente como na regra do slide 12."
+        },
+        {
+          "id": "c",
+          "text": "O erro total 0 na época 2 indica overfitting, porque a rede acertou todo o treino e deve ser interrompida com a regularização.",
+          "correct": false,
+          "explanation": "Acertar todo o treino em um problema separável de 4 amostras é o resultado esperado. Overfitting exige comparar com dados novos (validação ou teste), o que a tabela não mostra."
+        },
+        {
+          "id": "d",
+          "text": "O peso w2 caiu de 0,3 para 0 porque a taxa de aprendizagem foi reduzida entre as amostras, o que mostra o Perceptron regulando η automaticamente.",
+          "correct": false,
+          "explanation": "Quem reduziu w2 foi o erro negativo na amostra (0,1): w2 novo = 0,3 + η · (−1) · 1, com η = 0,3, o que dá 0. A taxa η é constante em todo o exemplo."
+        }
+      ],
+      "generalExplanation": "O critério de parada é parecido com uma suíte de testes: se a época inteira passa com zero falhas, termina. Se alguma amostra ainda falha, os pesos continuam sendo ajustados na época seguinte. A tabela também mostra que só as linhas com erro mexem nos pesos."
+    },
+    {
+      "id": "l10-q25",
+      "label": "Qual peso a correção mexe (slide 12)",
+      "type": "single",
+      "prompt": "No exemplo do slide 16, a amostra (x1 = 0, x2 = 1) produziu Y = 1 mas a saída desejada era Yd = 0, ou seja, e = −1. Com a regra novo peso = peso atual + η · e · x, o que acontece?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Os dois pesos diminuem na mesma proporção, porque o erro é negativo e afeta todas as conexões igualmente.",
+          "correct": false,
+          "explanation": "O ajuste de cada peso é multiplicado pela entrada correspondente: a entrada x1 = 0 zera o termo de w1. Só o peso cujo x é diferente de 0 se move."
+        },
+        {
+          "id": "b",
+          "text": "O peso w2 diminui, porque x2 = 1 e e é negativo; w1 não muda, porque x1 = 0 anula o termo η · e · x1.",
+          "correct": true,
+          "explanation": "O termo do peso de cada entrada é η · e · x. Para w1, x = 0, logo não há mudança; para w2, x = 1 e e = −1, então ele diminui por η. Só pesa o que contribuiu para a resposta errada."
+        },
+        {
+          "id": "c",
+          "text": "O peso w1 aumenta e w2 diminui, para compensar o erro e manter a soma dos pesos constante.",
+          "correct": false,
+          "explanation": "A regra não preserva soma nenhuma. Os dois termos são calculados independentemente: w1 não muda (x1 = 0) e w2 diminui."
+        },
+        {
+          "id": "d",
+          "text": "Nenhum peso muda, porque o erro negativo só é corrigido na época seguinte, quando a rede recebe a mesma amostra novamente.",
+          "correct": false,
+          "explanation": "A correção é imediata, na própria amostra: o slide 16 mostra os pesos atualizados logo depois da linha com erro, e a linha seguinte já usa o novo valor."
+        }
+      ],
+      "generalExplanation": "É uma culpa proporcional: só se responsabiliza quem participou. Se uma entrada vale zero, ela não contribuiu para a soma, então não faz sentido mexer no peso dela. Entradas grandes são mais culpadas e levam ajuste maior."
+    },
+    {
+      "id": "l10-q26",
+      "label": "Tabelas do AND, OR e XOR (slide 18; complemento)",
+      "type": "single",
+      "prompt": "Três funções lógicas de duas entradas foram apresentadas a um Perceptron simples (uma camada, com bias). As tabelas-verdade:\n\n| x1 | x2 | AND | OR | XOR |\n| :-: | :-: | :-: | :-: | :-: |\n| 0 | 0 | 0 | 0 | 0 |\n| 0 | 1 | 0 | 1 | 1 |\n| 1 | 0 | 0 | 1 | 1 |\n| 1 | 1 | 1 | 1 | 0 |\n\nO slide 18 diz que redes de uma camada só resolvem problemas lineares. Quais dessas funções o Perceptron simples consegue aprender? (As funções AND, OR e XOR são exemplos nossos, complemento.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "As três, porque todas têm só duas entradas binárias e quatro linhas, o que é pouco dado para qualquer rede.",
+          "correct": false,
+          "explanation": "O tamanho da tabela não decide nada. O XOR tem as mesmas quatro linhas e o mesmo tipo de entrada que AND e OR, e mesmo assim não é separável por uma reta."
+        },
+        {
+          "id": "b",
+          "text": "Somente o XOR, porque ele é o único que exige separar as classes pelas duas entradas ao mesmo tempo.",
+          "correct": false,
+          "explanation": "É o contrário: o XOR é justamente o que o Perceptron simples não consegue. Exigir as duas entradas ao mesmo tempo é característico do AND, que é linearmente separável."
+        },
+        {
+          "id": "c",
+          "text": "AND e OR, porque em cada uma uma única reta separa os 0 dos 1; o XOR não, pois os 1 ficam em diagonal entre os 0.",
+          "correct": true,
+          "explanation": "No AND só (1,1) vale 1; no OR só (0,0) vale 0. Em ambos uma reta separa as classes. No XOR os pontos (0,1) e (1,0) valem 1 e (0,0) e (1,1) valem 0, em xadrez: nenhuma reta separa. É a limitação do slide 18."
+        },
+        {
+          "id": "d",
+          "text": "Somente o OR, porque o AND precisa de um limiar maior e o Perceptron simples só trabalha com um limiar fixo em zero, sem deslocamento.",
+          "correct": false,
+          "explanation": "O bias permite deslocar o limiar para onde for preciso, inclusive para o AND (uma reta que isola só o ponto (1,1)). Sem bias a história seria outra, mas o Perceptron deste problema tem bias."
+        }
+      ],
+      "generalExplanation": "Pense em regras de validação: 'a e b' (AND) e 'a ou b' (OR) são condições simples e se resolvem com uma única checagem de soma. O 'um ou outro, mas não os dois' (XOR) exige duas checagens combinadas, e uma camada oculta é justamente essa combinação."
+    },
+    {
+      "id": "l10-q27",
+      "label": "Fronteira reta × fronteira curva (slides 10 e 18)",
+      "type": "single",
+      "prompt": "Dois conjuntos de pontos (vermelhos e azuis) foram desenhados num plano com duas variáveis.\n\n| | Gráfico 1 | Gráfico 2 |\n| :-- | :-- | :-- |\n| Pontos vermelhos | todos acima e à direita de uma reta diagonal | formam um grupo no alto e à esquerda, cercado por azuis |\n| Pontos azuis | todos abaixo e à esquerda da reta | espalhados ao redor e abaixo, entrando pela direita e por baixo |\n| Fronteira que separa | uma reta | uma curva fechada, que dobra |\n\nO slide 10 mostra um caso com fronteira reta e o slide 18 um caso com fronteira curva. Qual modelo o Perceptron exige em cada caso?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Gráfico 1: Perceptron simples basta, pois uma reta separa as classes. Gráfico 2: é preciso uma MLP, com camadas intermediárias e ativação não linear.",
+          "correct": true,
+          "explanation": "Slide 10: o Perceptron sempre aprende em problemas linearmente separáveis; slide 18: para fronteira não linear são necessárias camadas intermediárias associadas a ativações não lineares."
+        },
+        {
+          "id": "b",
+          "text": "Gráfico 1: precisa de MLP, porque as classes são muitas. Gráfico 2: Perceptron simples com taxa de aprendizado menor, para dar passos mais finos ao redor da curva.",
+          "correct": false,
+          "explanation": "Reduzir a taxa não curva a fronteira: o Perceptron simples só gera retas. E a quantidade de classes não decide: o Gráfico 1 é separável por uma reta."
+        },
+        {
+          "id": "c",
+          "text": "Gráfico 1 e Gráfico 2: Perceptron simples, mas treinando por mais épocas, porque o número de épocas faz a reta se curvar.",
+          "correct": false,
+          "explanation": "Mais épocas não deixam uma reta mais curva. No Gráfico 2 o Perceptron simples nunca converge, por mais épocas que rode."
+        },
+        {
+          "id": "d",
+          "text": "Gráfico 1: MLP com Dropout, para impedir overfitting. Gráfico 2: Perceptron simples, que é o modelo mais robusto a curvas.",
+          "correct": false,
+          "explanation": "Dropout é regularização (slide 40) e não substitui a escolha de arquitetura. Um problema de duas classes bem separadas por uma reta não precisa de MLP, e o Gráfico 2 é onde o Perceptron simples falha."
+        }
+      ],
+      "generalExplanation": "Antes de escolher a arquitetura, olhe para o dado: se uma reta resolve, o modelo mais simples basta (e é mais fácil de treinar e explicar). Se a fronteira curva, a rede precisa de camadas ocultas para compor várias retas numa curva."
+    },
+    {
+      "id": "l10-q28",
+      "label": "Ler a rede desenhada (slides 6, 19 e 20)",
+      "type": "single",
+      "prompt": "Uma rede foi descrita assim (cada neurônio de uma camada se liga a todos os da camada seguinte):\n\n```\nEntrada      Oculta 1      Oculta 2      Saída\n x1 ─┐\n x2 ─┼──▶   h1 h2 h3 h4  ──▶  k1 k2  ──▶  y\n x3 ─┘\n 3 valores   4 neurônios     2 neurônios   1 neurônio\n```\n\nQuantas camadas ocultas ela tem e qual é a saída?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Três camadas ocultas (entrada, oculta 1 e oculta 2) e uma saída y.",
+          "correct": false,
+          "explanation": "A camada de entrada não é oculta: ela só distribui os valores x1, x2 e x3. Camadas ocultas são as intermediárias, entre a entrada e a saída."
+        },
+        {
+          "id": "b",
+          "text": "Quatro camadas ocultas, uma por camada desenhada, e uma saída y.",
+          "correct": false,
+          "explanation": "Contar todas as colunas inclui a entrada e a saída, que não são ocultas. Aqui só há duas camadas intermediárias: a de 4 e a de 2 neurônios."
+        },
+        {
+          "id": "c",
+          "text": "Uma camada oculta (a de 4 neurônios), porque a camada de 2 neurônios já faz parte da saída.",
+          "correct": false,
+          "explanation": "A camada de 2 neurônios é intermediária, porque seus resultados ainda alimentam outra camada: o neurônio y. A camada de saída é só a que produz a resposta final: y."
+        },
+        {
+          "id": "d",
+          "text": "Duas camadas ocultas (a de 4 e a de 2 neurônios) e uma camada de saída com um único neurônio, que devolve y.",
+          "correct": true,
+          "explanation": "Oculta é toda camada entre a entrada e a saída (slides 18 e 19). Aqui há duas: h1 a h4 e k1 e k2. A última, y, é a camada de saída. É um MLP: mais de uma camada de neurônios."
+        }
+      ],
+      "generalExplanation": "É um pipeline de três estágios entre a entrada e a saída: h detecta sinais simples, k combina, y decide. 'Oculta' significa que o estágio não é interface: nem recebe diretamente a entrada, nem entrega a resposta. Só aparece para você durante o treino."
+    },
+    {
+      "id": "l10-q29",
+      "label": "Contar pesos de uma rede (slides 6, 19 e 20)",
+      "type": "single",
+      "prompt": "Uma rede tem 2 entradas, uma camada oculta de 3 neurônios, uma segunda camada oculta de 2 neurônios e 1 neurônio de saída. Cada neurônio liga-se a todos da camada seguinte. Sem contar os bias, quantos pesos de conexão existem?\n\n```\n x1 ─┬─▶ h1 ─┬─▶ k1 ─┐\n     ├─▶ h2 ─┤       ├─▶ y\n x2 ─┴─▶ h3 ─┴─▶ k2 ─┘\n 2 entradas  3 neurônios  2 neurônios  1 saída\n```",
+      "options": [
+        {
+          "id": "a",
+          "text": "14, que é a soma das conexões entre cada par de camadas vizinhas: 2 vezes 3, mais 3 vezes 2, mais 2 vezes 1.",
+          "correct": true,
+          "explanation": "Entrada→oculta 1: 2 × 3 = 6 setas. Oculta 1→oculta 2: 3 × 2 = 6. Oculta 2→saída: 2 × 1 = 2. Total 14. Cada seta tem um peso, e o conhecimento da rede está justamente nesses valores (slide 6)."
+        },
+        {
+          "id": "b",
+          "text": "12, que é o produto dos tamanhos das camadas: 2 vezes 3 vezes 2 vezes 1, já que cada neurônio se combina com todos os demais.",
+          "correct": false,
+          "explanation": "Multiplicar tamanhos de todas as camadas não conta as setas. As conexões só existem entre camadas vizinhas, então o certo é multiplicar par a par e somar."
+        },
+        {
+          "id": "c",
+          "text": "8, que é o total de neurônios, contando entradas, ocultos e saída: 2 mais 3 mais 2 mais 1.",
+          "correct": false,
+          "explanation": "Neurônios e pesos são coisas diferentes. Pesos são as conexões entre neurônios, que são muito mais numerosas (cada neurônio tem um peso para cada neurônio da camada seguinte)."
+        },
+        {
+          "id": "d",
+          "text": "6, que são os pesos da primeira camada: cada uma das 3 unidades ocultas recebe as 2 entradas.",
+          "correct": false,
+          "explanation": "Contar só a primeira camada ignora as outras duas. Todos os pesos do caminho contam, até a saída."
+        }
+      ],
+      "generalExplanation": "É um grafo: contar pesos é contar arestas. Como as camadas são densas (cada nó liga-se a todos da seguinte), arestas entre duas camadas valem a × b. Em modelos reais isso explode: milhares de neurônios por camada geram milhões de pesos, e é por isso que o slide 37 alerta para o overfitting."
+    },
+    {
+      "id": "l10-q30",
+      "label": "Uma saída, várias setas (slide 20)",
+      "type": "single",
+      "prompt": "Na rede do slide 20, o neurônio h1 tem setas saindo para vários neurônios da camada seguinte. Um aluno concluiu: 'então h1 produz uma saída diferente para cada neurônio seguinte'. O que o slide diz?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O aluno está certo: um neurônio oculto produz uma saída por conexão, e é isso que permite à próxima camada tomar decisões diferentes.",
+          "correct": false,
+          "explanation": "Se cada seta fosse uma saída independente, o neurônio teria mais de uma função de ativação ou mais de uma soma. O slide 20 afirma o contrário: um Perceptron possui apenas uma saída."
+        },
+        {
+          "id": "b",
+          "text": "O aluno está errado: um Perceptron tem uma só saída, e as várias setas indicam que esse mesmo valor alimenta vários neurônios.",
+          "correct": true,
+          "explanation": "Está no slide 20: um valor, vários destinatários. O que muda de seta para seta é o peso aplicado pelo neurônio seguinte, não o valor emitido por h1."
+        },
+        {
+          "id": "c",
+          "text": "O aluno está errado: um neurônio oculto não tem saída própria, quem produz resposta é apenas a camada final.",
+          "correct": false,
+          "explanation": "Todo neurônio tem saída: a saída dos neurônios ocultos é a entrada da camada seguinte (slide 23). Só não é a resposta final da rede."
+        },
+        {
+          "id": "d",
+          "text": "O aluno está certo se a rede usar Softmax nas camadas ocultas, pois ela gera uma saída para cada classe.",
+          "correct": false,
+          "explanation": "A Softmax é para a camada de saída em classificação multiclasse (slide 50) e não faz um neurônio oculto ter várias saídas. Fora dela, a saída do neurônio continua sendo única."
+        }
+      ],
+      "generalExplanation": "É uma variável compartilhada: o neurônio calcula um valor e o publica; vários consumidores o leem, cada um com seu peso. Não são várias chamadas de função com resultados distintos."
+    },
+    {
+      "id": "l10-q31",
+      "label": "Quem recebe maior ajuste (slide 22)",
+      "type": "single",
+      "prompt": "Numa rede treinada com backpropagation, a camada de saída errou. Dois neurônios ocultos, A e B, alimentam o neurônio de saída: a conexão de A com a saída tem peso grande (0,9) e a de B tem peso pequeno (0,05). Segundo o slide 22, quem recebe o maior ajuste?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O neurônio B, porque o peso dele é pequeno e é ele que precisa de mais correção para ficar importante.",
+          "correct": false,
+          "explanation": "Inverte a lógica do slide 22: conexão fraca significa que o neurônio quase não influenciou o resultado, então o ajuste dele é pequeno. A rede não corrige o que não contribuiu."
+        },
+        {
+          "id": "b",
+          "text": "Os dois recebem o mesmo ajuste, porque o erro de saída é repartido igualmente entre todas as conexões.",
+          "correct": false,
+          "explanation": "O erro é repassado proporcionalmente aos valores das conexões (slide 22), e não em partes iguais. Dividir igualmente ignoraria a responsabilidade de cada neurônio."
+        },
+        {
+          "id": "c",
+          "text": "Nenhum dos dois, porque só os pesos da camada de saída são ajustados; as camadas ocultas permanecem fixas.",
+          "correct": false,
+          "explanation": "O objetivo do backpropagation é justamente ajustar as camadas ocultas (slides 21 e 22), para as quais não existe saída desejada. Se elas ficassem fixas, nenhuma representação intermediária seria aprendida."
+        },
+        {
+          "id": "d",
+          "text": "O neurônio A, porque a conexão forte significa que ele teve grande responsabilidade no erro final e portanto merece o ajuste maior.",
+          "correct": true,
+          "explanation": "Slide 22: peso grande significa grande responsabilidade e ajuste grande; peso pequeno significa pouca influência e ajuste pequeno. O erro é repassado às camadas intermediárias em proporção aos pesos."
+        }
+      ],
+      "generalExplanation": "É a lógica de um post-mortem: quem teve mais influência no incidente é quem mais revisa o processo. Se o serviço A respondia por 90% do tráfego do erro e o B por 5%, não há por que mexer igualmente nos dois."
+    },
+    {
+      "id": "l10-q32",
+      "label": "Ordem de uma iteração do backpropagation (slides 23 e 24)",
+      "type": "single",
+      "prompt": "Qual é a ordem correta das ações numa iteração de treinamento de um MLP com backpropagation?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Propagar a entrada para frente → comparar a saída com a desejada (erro) → propagar o erro para trás → atualizar pesos e bias → repetir.",
+          "correct": true,
+          "explanation": "É o ciclo dos slides 23 e 24. Primeiro a resposta existe (forward) e o erro é medido; depois o gradiente é calculado de trás para frente; só então os pesos são atualizados. O processo continua até o erro não poder mais ser reduzido."
+        },
+        {
+          "id": "b",
+          "text": "Calcular o erro → apresentar a entrada e propagar para frente → atualizar pesos e bias → propagar o erro para trás → repetir até o erro cair a zero.",
+          "correct": false,
+          "explanation": "O erro depende da saída da rede, que só existe depois da propagação para frente. Além disso, atualizar os pesos antes de calcular o gradiente usaria valores que ainda não existem."
+        },
+        {
+          "id": "c",
+          "text": "Apresentar a entrada e propagar para frente → atualizar pesos e bias → calcular o erro → propagar o erro para trás → repetir.",
+          "correct": false,
+          "explanation": "Os pesos só podem ser atualizados com o gradiente, que vem do erro propagado para trás. Atualizar antes de calcular o erro seria ajustar a rede às cegas."
+        },
+        {
+          "id": "d",
+          "text": "Propagar o erro para trás → apresentar a entrada → atualizar pesos e bias → calcular o erro → repetir.",
+          "correct": false,
+          "explanation": "Sem entrada propagada para frente não há saída, logo não há erro para propagar. A fase backward é sempre posterior à forward."
+        }
+      ],
+      "generalExplanation": "É o ciclo clássico de execução e depuração: rodar o programa com a entrada, comparar com o esperado, rastrear a origem do desvio de trás para a frente e só então corrigir o código. Inverter a ordem equivale a corrigir antes de rodar."
+    },
+    {
+      "id": "l10-q33",
+      "label": "Convergência e parada (slides 24 e 33)",
+      "type": "single",
+      "prompt": "Segundo os slides 24 e 33, o que significa a rede ter convergido e quando o processo de ajuste para?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Convergência é quando a acurácia de teste chega a 100%; o treino para nesse momento para evitar overfitting.",
+          "correct": false,
+          "explanation": "O slide 24 define convergência pelo erro de treino (custo), e não pela acurácia no teste. Parar pelo teste vazaria informação do teste para o treino."
+        },
+        {
+          "id": "b",
+          "text": "Convergência é quando o erro não pode mais ser reduzido (mínimo); o ajuste segue até o custo ser zero ou próximo de zero.",
+          "correct": true,
+          "explanation": "Slides 24 e 33: a rede continua até que o erro não possa mais ser reduzido, e esse estado é a convergência. Em problemas reais o custo costuma não chegar a exatamente zero, por isso 'suficientemente próximo' (complemento: na prática também se usa um número máximo de épocas)."
+        },
+        {
+          "id": "c",
+          "text": "Convergência é quando o número de épocas atinge um valor fixo escolhido pelo usuário, e então os pesos são congelados no estado em que estiverem.",
+          "correct": false,
+          "explanation": "Fixar épocas é um critério prático, mas não é a definição do slide: a convergência diz respeito ao erro parar de diminuir, e não a ter contado épocas."
+        },
+        {
+          "id": "d",
+          "text": "Convergência é quando a taxa de aprendizado chega a zero, pois sem ajuste os pesos deixam de mudar.",
+          "correct": false,
+          "explanation": "A taxa de aprendizado é constante no SGD (slide 36). Os pesos param de mudar porque o gradiente se anula perto do mínimo, e não porque a taxa chegou a zero."
+        }
+      ],
+      "generalExplanation": "É como parar um loop de refatoração quando a próxima mudança não melhora mais nenhuma métrica. 'Chegou ao fundo do vale': qualquer passo adicional não diminui o custo."
+    },
+    {
+      "id": "l10-q34",
+      "label": "O que é a função de custo (slide 25)",
+      "type": "single",
+      "prompt": "O slide 25 define a função de custo C(w, b) e diz que, em regressão, comumente se usa o erro quadrático médio (MSE). O que o treinamento faz com essa função?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Maximiza C(w, b), pois um custo alto indica que a rede está aprendendo mais rápido.",
+          "correct": false,
+          "explanation": "O objetivo é o contrário: minimizar o custo, que mede o quão mal a rede acerta. Quanto menor, mais próximas as saídas previstas das desejadas."
+        },
+        {
+          "id": "b",
+          "text": "Calcula C apenas no conjunto de teste, e o resultado é usado para escolher a taxa de aprendizado.",
+          "correct": false,
+          "explanation": "O custo que guia o treino é o do conjunto de treino. Escolher hiperparâmetros com o teste o contaminaria, e o slide fala de minimizar o custo para ajustar os parâmetros."
+        },
+        {
+          "id": "c",
+          "text": "Minimiza C(w, b) em função de pesos e bias, com a descida do gradiente, até a diferença entre previsto e desejado ser a menor possível.",
+          "correct": true,
+          "explanation": "Slide 25: o objetivo do treinamento é minimizar o custo em função de pesos e bias, e isso se faz com a descida do gradiente. O MSE é a média dos quadrados das diferenças entre saída desejada e obtida."
+        },
+        {
+          "id": "d",
+          "text": "Fixa os pesos e ajusta as entradas x, pois C depende dos dados e é deles que se tenta reduzir o custo, escolhendo os exemplos que erram menos.",
+          "correct": false,
+          "explanation": "As entradas são dados do problema e ficam fixas. As variáveis do custo são os pesos e os bias, que a descida do gradiente ajusta."
+        }
+      ],
+      "generalExplanation": "A função de custo é uma métrica de qualidade que o treino tenta reduzir ao mínimo, como o tempo médio de resposta numa otimização de desempenho. As variáveis que você pode mexer são os pesos e bias; os dados são fixos."
+    },
+    {
+      "id": "l10-q35",
+      "label": "Para onde andar no gradiente (slides 26, 30 e 32)",
+      "type": "single",
+      "prompt": "Na descida do gradiente com a regra do slide 32 (coeficiente = coeficiente − alfa × derivada), o custo, em um certo ponto, está subindo à medida que o coeficiente aumenta (derivada positiva). Em que sentido o coeficiente é movido?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Para valores maiores, seguindo o gradiente, porque a derivada positiva indica a direção em que o custo cresce e é nela que se procura o mínimo.",
+          "correct": false,
+          "explanation": "O gradiente aponta para onde o custo cresce mais depressa (slide 30), e por isso a descida anda no sentido contrário. Seguir o gradiente seria subida, e não descida."
+        },
+        {
+          "id": "b",
+          "text": "Para valores menores: o método anda no sentido do negativo do gradiente, e com derivada positiva o termo subtraído reduz o coeficiente.",
+          "correct": true,
+          "explanation": "Slide 26: o algoritmo se move na direção do negativo do gradiente. Com derivada positiva, coeficiente − alfa × derivada diminui o coeficiente, e o custo desce em direção ao mínimo."
+        },
+        {
+          "id": "c",
+          "text": "Fica no mesmo valor, porque derivada positiva indica que o custo já está no mínimo.",
+          "correct": false,
+          "explanation": "Derivada zero é o indicativo de ponto de mínimo (ou plano), e não a derivada positiva. Com derivada positiva o custo ainda pode diminuir, andando para menos."
+        },
+        {
+          "id": "d",
+          "text": "O sentido é aleatório, porque o gradiente descendente sorteia a direção para fugir de mínimos locais.",
+          "correct": false,
+          "explanation": "A direção não é sorteada: é dada pela derivada. O sorteio aparece no SGD (de qual amostra usar), e não na direção do passo."
+        }
+      ],
+      "generalExplanation": "É um hill climbing às avessas: se o terreno sobe para a direita, a bola rola para a esquerda. A derivada diz a inclinação; o sinal de menos na regra faz o passo ser contra a inclinação."
+    },
+    {
+      "id": "l10-q36",
+      "label": "Ordem dos passos do gradiente descendente (slides 31 a 33)",
+      "type": "single",
+      "prompt": "Qual é a ordem correta dos passos do gradiente descendente descrita nos slides 31 a 33?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Valores iniciais → avaliar o custo → calcular a derivada → atualizar o coeficiente com alfa → repetir até o custo ficar próximo de zero.",
+          "correct": true,
+          "explanation": "É a sequência dos slides 31 a 33. O ponto de partida vem primeiro; sem ele não há custo nem derivada. A atualização usa a derivada e a taxa alfa; o ciclo se repete até o custo ficar suficientemente próximo de zero."
+        },
+        {
+          "id": "b",
+          "text": "Calcular a derivada → começar com valores iniciais → atualizar o coeficiente → avaliar o custo → repetir.",
+          "correct": false,
+          "explanation": "Derivar o custo exige um ponto de partida e um custo já definidos. Começar pela derivada não tem ponto onde medir a inclinação."
+        },
+        {
+          "id": "c",
+          "text": "Começar com valores iniciais → atualizar o coeficiente com alfa → calcular a derivada → avaliar o custo → repetir.",
+          "correct": false,
+          "explanation": "A atualização depende da derivada (coeficiente − alfa × derivada), que depende do custo. Atualizar primeiro seria um passo sem direção."
+        },
+        {
+          "id": "d",
+          "text": "Começar com valores iniciais → avaliar o custo → atualizar o coeficiente → calcular a derivada → repetir até o custo ser maior que zero.",
+          "correct": false,
+          "explanation": "Duas falhas: a derivada precisa vir antes da atualização, e o critério de parada é o custo chegar perto de zero, e não ficar maior que zero."
+        }
+      ],
+      "generalExplanation": "É um laço while com quatro passos fixos: medir, derivar, mover, repetir. Só se move depois de saber para onde, e só se para quando a métrica (o custo) está suficientemente baixa."
+    },
+    {
+      "id": "l10-q37",
+      "label": "Código: erro de sinal no gradiente",
+      "type": "single",
+      "prompt": "O trecho abaixo implementa o gradiente descendente para encontrar o valor de coef que minimiza o custo (as funções custo e derivada estão corretas). O custo sobe a cada iteração em vez de descer. Onde está o erro de lógica?\n\n```python\ncoef = 0.0          # valor inicial\nalfa = 0.1          # taxa de aprendizagem\n\nfor passo in range(100):\n    c = custo(coef)\n    delta = derivada(coef)\n    coef = coef + alfa * delta\n```",
+      "options": [
+        {
+          "id": "a",
+          "text": "O coeficiente deveria ser inicializado com valor aleatório grande, e não com 0.0, para não ficar preso.",
+          "correct": false,
+          "explanation": "O slide 31 diz que o valor inicial pode ser 0,0 ou pequeno aleatório. O ponto de partida não explica um custo que cresce passo a passo."
+        },
+        {
+          "id": "b",
+          "text": "A taxa alfa = 0.1 é grande demais; com alfa = 0.001 o custo passaria a diminuir normalmente.",
+          "correct": false,
+          "explanation": "Uma taxa muito alta pode oscilar (slide 41), mas aqui o custo sobe sempre e na mesma direção, porque o passo está dado no sentido do gradiente, que é o da subida. Reduzir alfa só tornaria a subida mais lenta."
+        },
+        {
+          "id": "c",
+          "text": "O laço deveria usar range(1000), pois 100 passos ainda não bastam para o custo baixar.",
+          "correct": false,
+          "explanation": "O número de passos só mudaria quanto o custo avançaria. Com o sinal errado, mais passos significam subir mais. O custo cresce desde a primeira iteração."
+        },
+        {
+          "id": "d",
+          "text": "O passo está no sentido errado: é coef = coef − alfa * delta. Com + o coeficiente anda na direção em que o custo cresce.",
+          "correct": true,
+          "explanation": "Slide 32: coeficiente = coeficiente − (alfa × delta). A derivada aponta para onde o custo aumenta; o sinal de menos faz o passo ir contra isso. Com +, a rede sobe a encosta em vez de descer o vale."
+        }
+      ],
+      "generalExplanation": "É um bug de sinal clássico, equivalente a incrementar um contador que devia decrementar. O código roda, não lança exceção e produz números; só olhando a curva de custo se descobre que o laço otimiza ao contrário. (Conferimos numericamente: com custo (coef − 3)², o coeficiente se afasta de 3 com + e converge para 3 com −.)"
+    },
+    {
+      "id": "l10-q38",
+      "label": "Derivada na tabela (slides 29 e 30)",
+      "type": "single",
+      "prompt": "Para um custo em forma de vale, medimos a derivada (inclinação da reta tangente, slide 29) em cinco pontos:\n\n| Ponto (coeficiente) | −2 | −1 | 0 | 1 | 2 |\n| :-- | :-: | :-: | :-: | :-: | :-: |\n| Derivada do custo | −4 | −2 | 0 | +2 | +4 |\n\nO que a tabela indica?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O mínimo está no ponto 2, onde a derivada é maior, porque ali a inclinação é mais forte.",
+          "correct": false,
+          "explanation": "Derivada grande significa terreno muito inclinado, e não o fundo do vale. O ponto 2 é um dos mais altos do custo, o oposto do mínimo."
+        },
+        {
+          "id": "b",
+          "text": "O mínimo está no ponto −2, onde a derivada é a menor (mais negativa), porque ali o custo é menor.",
+          "correct": false,
+          "explanation": "Derivada muito negativa significa que o custo cai rápido nesse ponto, e não que ele já está baixo. Em −2 o custo ainda está alto, e vai descer à medida que se avança para a direita."
+        },
+        {
+          "id": "c",
+          "text": "A derivada nula no ponto 0 indica reta tangente horizontal e é o fundo do vale (mínimo); à esquerda a derivada é negativa (custo descendo) e à direita positiva (custo subindo).",
+          "correct": true,
+          "explanation": "Slide 30: a derivada é positiva onde a curva sobe, negativa onde desce e zero onde a tangente é horizontal. Aqui o sinal muda de − para + em 0, formando um vale. (Complemento: derivada zero também ocorre em picos; o sinal decide.)"
+        },
+        {
+          "id": "d",
+          "text": "A derivada ser nula em 0 significa que o gradiente descendente não consegue operar ali, e o algoritmo trava e precisa ser reiniciado.",
+          "correct": false,
+          "explanation": "Derivada zero é o objetivo da descida: o algoritmo chegou ao fundo do vale e o termo alfa × derivada se anula, de modo que os pesos param de mudar. Não é um travamento, é convergência."
+        }
+      ],
+      "generalExplanation": "É a leitura de um perfil de elevação: se a inclinação passa de negativa para positiva, você passou pelo ponto mais baixo. A bola do slide 27 rola até onde a inclinação zera."
+    },
+    {
+      "id": "l10-q39",
+      "label": "Um lote, uma atualização (slide 34)",
+      "type": "single",
+      "prompt": "Uma rede é treinada com mini-batches de 128 amostras. Do ponto de vista da atualização dos pesos, o que o slide 34 afirma?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Cada uma das 128 amostras produz uma atualização separada, então um lote gera 128 atualizações em sequência, o que torna o treino mais fino.",
+          "correct": false,
+          "explanation": "Isso seria o SGD puro (uma amostra por vez). No mini-batch o erro de todas as amostras é combinado em um erro médio antes de qualquer atualização."
+        },
+        {
+          "id": "b",
+          "text": "Os pesos só são atualizados uma vez por época, depois que todos os lotes foram processados.",
+          "correct": false,
+          "explanation": "Isso é o gradiente descendente em lote completo. No mini-batch cada lote já gera uma atualização, o que dá várias por época."
+        },
+        {
+          "id": "c",
+          "text": "O lote calcula o erro médio das 128 amostras e então faz uma única atualização de pesos: 1 amostra equivale a 128 amostras.",
+          "correct": true,
+          "explanation": "Slide 34: passa-se o lote pela rede, calcula-se o erro médio e então se faz o backpropagation e a atualização dos pesos. A atualização acontece uma vez por lote, o que torna o treino de grandes modelos viável."
+        },
+        {
+          "id": "d",
+          "text": "As 128 amostras são separadas, e cada uma atualiza uma camada diferente, na ordem da entrada para a saída.",
+          "correct": false,
+          "explanation": "Lotes são agrupamentos de dados, e não divisões de camadas. Todas as camadas são atualizadas juntas, depois do backward do lote."
+        }
+      ],
+      "generalExplanation": "É um commit em lote: você acumula 128 alterações e comita uma vez. O resultado médio é um sinal estável o suficiente para decidir o passo, e muito mais barato do que um commit por linha."
+    },
+    {
+      "id": "l10-q40",
+      "label": "Hiperparâmetros × pesos (slide 35)",
+      "type": "multiple",
+      "prompt": "O slide 35 lista os hiperparâmetros principais de uma rede neural. Marque todas as opções que são hiperparâmetros (definidos pelo projetista antes do treino).",
+      "options": [
+        {
+          "id": "a",
+          "text": "Número de neurônios em cada camada.",
+          "correct": true,
+          "explanation": "Hiperparâmetro (slide 35). Define a arquitetura antes do treino: é uma escolha do projetista, e a rede não a altera sozinha."
+        },
+        {
+          "id": "b",
+          "text": "Otimizador do peso (por exemplo SGD ou Adam).",
+          "correct": true,
+          "explanation": "Hiperparâmetro (slide 35). É a função que ajusta os pesos; escolher entre SGD e Adam altera o modo de aprender, sem ser aprendido."
+        },
+        {
+          "id": "c",
+          "text": "Função de ativação dos neurônios.",
+          "correct": true,
+          "explanation": "Hiperparâmetro (slide 35). É escolhida entre degrau, linear, sigmoide, ReLU, softmax e outras; é uma decisão de projeto."
+        },
+        {
+          "id": "d",
+          "text": "Taxa de aprendizado.",
+          "correct": true,
+          "explanation": "Hiperparâmetro (slides 35 e 41). Define o tamanho do passo do ajuste; valores comuns vão de 0,001 a 0,3."
+        },
+        {
+          "id": "e",
+          "text": "Os valores dos pesos das conexões entre as camadas.",
+          "correct": false,
+          "explanation": "Não é hiperparâmetro: os pesos são o que a rede aprende durante o treino (slide 11). Eles são parâmetros do modelo, e não configuração externa."
+        },
+        {
+          "id": "f",
+          "text": "O valor do erro ao fim de cada época.",
+          "correct": false,
+          "explanation": "Não é hiperparâmetro: é um resultado medido durante o treino. Serve para acompanhar a convergência, não para configurar a rede."
+        }
+      ],
+      "generalExplanation": "Hiperparâmetro é configuração (o arquivo de configuração do experimento); parâmetro é estado aprendido (o que o treino grava). O erro por época é um log, e não uma configuração."
+    },
+    {
+      "id": "l10-q41",
+      "label": "Gradiente descendente, SGD e Adam (slide 36)",
+      "type": "single",
+      "prompt": "O slide 36 apresenta três otimizadores. Qual afirmação os descreve corretamente?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O GD é o mais antigo e usa todos os exemplos; o SGD usa só alguns, é mais rápido e tem taxa fixa; o Adam mantém uma taxa por peso, adaptada ao longo do aprendizado.",
+          "correct": true,
+          "explanation": "Resume exatamente o slide 36: o GD é a estratégia mais antiga; o SGD é a evolução que usa só alguns exemplos por vez e uma taxa fixa; o Adam é a evolução do SGD com taxa adaptativa por peso."
+        },
+        {
+          "id": "b",
+          "text": "O Adam é o mais antigo, e o SGD é uma evolução dele, com taxa adaptativa por peso, o que o torna mais preciso e explica por que o Adam foi deixado de lado em redes grandes.",
+          "correct": false,
+          "explanation": "A ordem está trocada. O Adam é a evolução do SGD, e o SGD usa taxa única e fixa. O slide 36 apresenta o Gradiente Descendente como o mais antigo."
+        },
+        {
+          "id": "c",
+          "text": "O SGD calcula o erro sobre todos os exemplos a cada atualização e por isso é mais lento que o GD, que usa apenas alguns exemplos, e o Adam não muda essa relação.",
+          "correct": false,
+          "explanation": "O SGD é mais rápido justamente porque usa apenas alguns exemplos (slide 36). A descrição inverte GD e SGD."
+        },
+        {
+          "id": "d",
+          "text": "Os três usam a mesma taxa fixa e mudam apenas o formato da função de custo: quadrática, absoluta ou entropia cruzada, conforme o problema a resolver.",
+          "correct": false,
+          "explanation": "Os otimizadores diferem no modo de atualizar os pesos, e não na função de custo (slide 52). Só o SGD tem taxa fixa; o Adam adapta uma taxa para cada peso."
+        }
+      ],
+      "generalExplanation": "É uma linha de evolução de ferramentas: o gradiente descendente completo é o 'build completo' a cada mudança; o SGD é o build incremental; o Adam é o build incremental que ainda ajusta a configuração de cada módulo conforme o histórico."
+    },
+    {
+      "id": "l10-q42",
+      "label": "Gráfico erro × época: onde parar (slide 38)",
+      "type": "single",
+      "prompt": "Uma rede foi treinada por 50 épocas, com parte do treino separada para validação (parada antecipada, slide 38). O erro por época:\n\n| Época | 1 | 5 | 10 | 20 | 30 | 40 | 50 |\n| :-- | :-: | :-: | :-: | :-: | :-: | :-: | :-: |\n| Erro no treino | 0,80 | 0,45 | 0,30 | 0,18 | 0,10 | 0,05 | 0,02 |\n| Erro na validação | 0,82 | 0,50 | 0,38 | 0,33 | 0,37 | 0,44 | 0,55 |\n\nEm que ponto o treino deveria ter sido interrompido e por quê?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Perto da época 50, onde o erro de treino é o menor, porque é nesse ponto que a rede aprendeu os dados melhor.",
+          "correct": false,
+          "explanation": "Erro de treino continua caindo mesmo quando a rede passa a decorar. O erro de validação, que subiu de 0,33 para 0,55, mostra que a generalização piorou."
+        },
+        {
+          "id": "b",
+          "text": "Na época 1, porque ali os dois erros estão próximos e muito altos, o que indica ausência de overfitting.",
+          "correct": false,
+          "explanation": "Na época 1 a rede praticamente não aprendeu (erro alto nos dois), um caso de subajuste. Parar ali jogaria fora o aprendizado que acontece entre as épocas 1 e 20."
+        },
+        {
+          "id": "c",
+          "text": "Perto da época 40, no meio do aumento da validação, porque ali treino e validação já estão com diferença moderada.",
+          "correct": false,
+          "explanation": "No meio da subida a validação já piorou há duas medições. O melhor ponto é onde a validação é mínima, e não onde a diferença é 'moderada'."
+        },
+        {
+          "id": "d",
+          "text": "Perto da época 20, onde o erro de validação é mínimo; depois disso a validação sobe enquanto o treino continua caindo, sinal de que a rede começou a decorar.",
+          "correct": true,
+          "explanation": "Slide 38: a parada antecipada usa a validação para indicar quando a rede começa a errar nesse conjunto enquanto acerta no treino. O vale da curva de validação (cerca de 0,33, em torno da época 20) marca o ponto de parada."
+        }
+      ],
+      "generalExplanation": "É o comportamento do overfitting em curvas: o treino sempre melhora, a validação tem forma de U. A parada antecipada é um 'circuit breaker': ao ver a validação piorar por algumas épocas seguidas, interrompe e fica com os pesos do melhor ponto."
+    },
+    {
+      "id": "l10-q43",
+      "label": "L1 ou L2 pela tabela de pesos (slides 39 e 40)",
+      "type": "single",
+      "prompt": "A mesma rede foi treinada três vezes com os mesmos dados: sem regularização, com a regularização X e com a Y. Os pesos finais de cinco conexões:\n\n| Peso | Sem regularização | Regularização X | Regularização Y |\n| :-- | :-: | :-: | :-: |\n| w1 | 0,90 | 0,60 | 0,55 |\n| w2 | −0,70 | −0,40 | −0,45 |\n| w3 | 0,40 | 0,10 | 0,25 |\n| w4 | 0,05 | 0,00 | 0,03 |\n| w5 | 0,02 | 0,00 | 0,01 |\n\nQual conclusão está correta?",
+      "options": [
+        {
+          "id": "a",
+          "text": "X é L2 e Y é L1, porque X reduziu mais os pesos e a L2 é a mais forte das duas, o que explica por que ela chega a anular alguns pesos.",
+          "correct": false,
+          "explanation": "A L2 mantém todos os pesos pequenos, mas não os zera (slide 40). O sinal de L1 é pesos que viram exatamente zero, e é isso que aparece em X."
+        },
+        {
+          "id": "b",
+          "text": "X é L1 (pesos w4 e w5 viraram exatamente zero, como seleção de atributos) e Y é L2 (todos diminuíram, mas nenhum zerou).",
+          "correct": true,
+          "explanation": "Slide 40: L1 faz alguns pesos virarem exatamente zero e ajuda a selecionar atributos; L2 mantém todos os pesos, mas pequenos. Em X, dois pesos são zero; em Y, todos continuam não nulos."
+        },
+        {
+          "id": "c",
+          "text": "Os dois são L1, porque ambos reduziram todos os pesos em relação ao treino sem regularização.",
+          "correct": false,
+          "explanation": "Reduzir pesos é efeito de L1 e de L2. O que diferencia é o destino: só o L1 leva pesos a exatamente zero."
+        },
+        {
+          "id": "d",
+          "text": "Os dois são Dropout, porque o Dropout é a única técnica que reduz pesos grandes.",
+          "correct": false,
+          "explanation": "O Dropout desliga neurônios durante o treino (slide 40), e não encolhe pesos de forma sistemática. Quem encolhe pesos é L1 ou L2."
+        }
+      ],
+      "generalExplanation": "L1 funciona como uma limpeza de código morto: o que não for importante é removido (peso zero). L2 é mais como limitar o uso de recursos de cada módulo: ninguém desaparece, mas ninguém pode ser exagerado."
+    },
+    {
+      "id": "l10-q44",
+      "label": "Quando o Dropout desliga neurônios (slide 40)",
+      "type": "single",
+      "prompt": "Uma equipe ativou Dropout de 30% numa camada oculta. O que o slide 40 diz e, como complemento, quando isso vale?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Remove permanentemente os 30% de neurônios menos importantes antes do treino, para a rede ficar menor, mais rápida e com menos risco de overfitting.",
+          "correct": false,
+          "explanation": "Isso seria poda (pruning), outra técnica. O Dropout desliga neurônios de forma aleatória e temporária durante o treino, sem remover nada da rede."
+        },
+        {
+          "id": "b",
+          "text": "Desliga neurônios aleatoriamente durante o treino, para a rede não depender de conexões específicas; (complemento) na previsão usa a rede completa.",
+          "correct": true,
+          "explanation": "Slide 40: o Dropout desliga neurônios aleatoriamente durante o treino. Cada passo usa uma rede diferente, o que obriga a rede a distribuir o conhecimento. Na predição todos os neurônios são usados (complemento: não está no slide)."
+        },
+        {
+          "id": "c",
+          "text": "Desliga neurônios aleatoriamente tanto no treino quanto na previsão, para que cada resposta seja uma média de várias redes.",
+          "correct": false,
+          "explanation": "O slide fala em desligar durante o treino. Desligar aleatoriamente na predição tornaria a mesma entrada capaz de dar respostas diferentes, o que não é desejado numa previsão."
+        },
+        {
+          "id": "d",
+          "text": "Desliga as conexões cujos pesos são zero, o que equivale a aplicar a regularização L1 durante o treino.",
+          "correct": false,
+          "explanation": "Dropout não depende dos valores dos pesos: o sorteio é aleatório. Zerar pesos pequenos é o efeito do L1 (slide 40)."
+        }
+      ],
+      "generalExplanation": "É o chaos testing da rede: derrubar aleatoriamente parte dos componentes em teste faz o sistema não depender de um único caminho. Em produção, todos os componentes ficam no ar."
+    },
+    {
+      "id": "l10-q45",
+      "label": "Diagnóstico da taxa de aprendizado (slide 41)",
+      "type": "single",
+      "prompt": "Três treinos da mesma rede, com taxas de aprendizado diferentes (A, B e C), registraram o custo nas primeiras épocas:\n\n| Época | 1 | 2 | 3 | 4 | 5 |\n| :-- | :-: | :-: | :-: | :-: | :-: |\n| Treino A | 2,00 | 1,98 | 1,96 | 1,94 | 1,92 |\n| Treino B | 2,00 | 1,20 | 0,70 | 0,40 | 0,25 |\n| Treino C | 2,00 | 3,40 | 1,90 | 3,60 | 2,20 |\n\nQual diagnóstico, no sentido do slide 41, está correto?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A: taxa adequada, porque o custo cai sempre. B: taxa pequena demais. C: taxa muito grande, mas funciona.",
+          "correct": false,
+          "explanation": "O custo de A cai quase nada por época, o que é típico de taxa pequena: vai demorar muito para convergir. B é a que cai de forma rápida e estável. C oscila sem chegar a lugar nenhum."
+        },
+        {
+          "id": "b",
+          "text": "A: taxa muito grande, porque o custo quase não muda. B: taxa pequena. C: taxa adequada, porque varia bastante.",
+          "correct": false,
+          "explanation": "A variação mínima de A indica passos minúsculos, e não passos gigantes. E o ziguezague de C não é adequação: é o sinal de que o passo ultrapassa o mínimo."
+        },
+        {
+          "id": "c",
+          "text": "A: taxa muito pequena (cai devagar). B: taxa adequada (cai rápido e estável). C: taxa muito grande (passa do mínimo e o custo oscila).",
+          "correct": true,
+          "explanation": "Slide 41: taxa muito pequena demora a convergir (custoso computacionalmente); taxa muito grande pode falhar em convergir por passar do mínimo. A é o primeiro caso, C é o segundo, e B é o desejável."
+        },
+        {
+          "id": "d",
+          "text": "A: erro de implementação, porque o custo deveria cair mais rápido. B e C: taxas adequadas, porque o custo se movimenta de forma visível.",
+          "correct": false,
+          "explanation": "Em A não há erro: custo caindo devagar é o comportamento esperado de uma taxa pequena. C não é adequada: a oscilação mostra que a rede não está se aproximando do mínimo."
+        }
+      ],
+      "generalExplanation": "É o ajuste de um passo de busca: passo minúsculo demora; passo gigante passa direto pelo ponto procurado e volta, sem nunca parar. O gráfico da direita do slide 41 mostra exatamente essa ida e volta, e a tabela C é a versão em números."
+    },
+    {
+      "id": "l10-q46",
+      "label": "O que fazer com o custo oscilando (slide 41)",
+      "type": "single",
+      "prompt": "Um treino registrou o custo por época (1 a 5) como 2,00; 3,40; 1,90; 3,60; 2,20, ou seja, oscilando sem cair. Qual ajuste é coerente com o slide 41, que cita valores comuns de taxa entre 0,001 e 0,3?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Reduzir a taxa de aprendizado (por exemplo, de 0,3 para 0,01), para o passo parar de ultrapassar o mínimo.",
+          "correct": true,
+          "explanation": "Slide 41: se a taxa for muito grande, o algoritmo pode falhar em convergir por passar do mínimo. Diminuir o passo permite que ele assente no fundo do vale."
+        },
+        {
+          "id": "b",
+          "text": "Aumentar a taxa para 3,0, porque passos maiores dão mais chance de encontrar o mínimo mais depressa e de escapar do ziguezague.",
+          "correct": false,
+          "explanation": "Passos maiores intensificam a oscilação e podem divergir. O valor 3,0 está inclusive bem fora da faixa citada no slide (0,001 a 0,3)."
+        },
+        {
+          "id": "c",
+          "text": "Trocar a ativação das camadas ocultas pelo degrau, porque ela é mais estável que a ReLU.",
+          "correct": false,
+          "explanation": "O degrau tem gradiente zero (slide 46) e não é usado no treino. Trocar a ativação não corrige um passo grande demais."
+        },
+        {
+          "id": "d",
+          "text": "Adicionar mais camadas ocultas, porque uma rede maior amortece as oscilações do custo.",
+          "correct": false,
+          "explanation": "Mais camadas aumentam a capacidade, e não resolvem um passo grande demais. O problema é o tamanho do passo, e não a quantidade de neurônios."
+        }
+      ],
+      "generalExplanation": "É a velocidade de um carro numa curva fechada: se você está derrapando e passando do ponto, a solução é reduzir a velocidade, e não acelerar ou trocar de carro."
+    },
+    {
+      "id": "l10-q47",
+      "label": "Por que a ativação precisa ser suave (slides 42 e 43)",
+      "type": "single",
+      "prompt": "Os slides 42 e 43 explicam por que se usa função de ativação. Comparando um neurônio que tem degrau com outro que tem sigmoide, quando um peso muda um pouquinho:\n\n| Mudança no peso | Saída com degrau | Saída com sigmoide |\n| :-- | :-: | :-: |\n| antes | 0 | 0,49 |\n| depois de +0,01 | 1 | 0,50 |\n\nQual é a propriedade que o slide quer garantir?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Que uma pequena mudança nos pesos cause apenas uma pequena alteração na saída; isso é o que permite aprender e que o degrau não oferece.",
+          "correct": true,
+          "explanation": "Slides 42 e 43: para a aprendizagem funcionar, pequenas mudanças de peso devem gerar pequenas mudanças de saída. No degrau a saída pode virar de 0 para 1 de uma vez e bagunçar o resto da rede."
+        },
+        {
+          "id": "b",
+          "text": "Que a saída sempre mude muito quando o peso muda pouco, para o aprendizado ser rápido.",
+          "correct": false,
+          "explanation": "Seria o contrário do desejado: uma mudança desproporcional desorganiza o restante da rede (slide 43). Rapidez vem de passos bem controlados."
+        },
+        {
+          "id": "c",
+          "text": "Que a saída seja sempre um inteiro, porque números inteiros são mais fáceis de retropropagar.",
+          "correct": false,
+          "explanation": "A sigmoide devolve números reais, e é justamente isso que permite ajustes finos. Inteiros (0 ou 1) vêm do degrau."
+        },
+        {
+          "id": "d",
+          "text": "Que a saída nunca mude, porque estabilidade evita que a rede esqueça o que já aprendeu.",
+          "correct": false,
+          "explanation": "Se a saída nunca mudasse, nenhum ajuste de peso teria efeito, e a rede não aprenderia. Queremos mudança pequena e proporcional, e não nula."
+        }
+      ],
+      "generalExplanation": "É a diferença entre um controle deslizante e uma chave liga/desliga: com o deslizante você ajusta aos poucos e percebe o efeito; com a chave, a mudança é tudo ou nada e dificulta o ajuste fino."
+    },
+    {
+      "id": "l10-q48",
+      "label": "Reconhecer as ativações por uma tabela (slides 44 a 49)",
+      "type": "single",
+      "prompt": "Quatro funções de ativação (P, Q, R e S) foram avaliadas em cinco entradas:\n\n| Entrada x | −3 | −1 | 0 | 2 | 5 |\n| :-- | :-: | :-: | :-: | :-: | :-: |\n| Função P | 0 | 0 | 1 | 1 | 1 |\n| Função Q | −3 | −1 | 0 | 2 | 5 |\n| Função R | 0,05 | 0,27 | 0,50 | 0,88 | 0,99 |\n| Função S | 0 | 0 | 0 | 2 | 5 |\n\nQual é a ReLU, f(x) = max(0, x)?",
+      "options": [
+        {
+          "id": "a",
+          "text": "P, porque devolve 0 para os negativos e um valor positivo para os demais.",
+          "correct": false,
+          "explanation": "P devolve só 0 ou 1: é o degrau (slide 46). A ReLU devolveria o próprio valor para x positivo (2 e 5), e não 1 e 1."
+        },
+        {
+          "id": "b",
+          "text": "R, porque suaviza os negativos até chegar a zero e depois cresce sem limite.",
+          "correct": false,
+          "explanation": "R tem saídas entre 0 e 1, que é a sigmoide (slide 48). A ReLU não tem teto: com x = 5 devolve 5."
+        },
+        {
+          "id": "c",
+          "text": "S, porque zera os valores negativos e repete o valor de entrada para os positivos.",
+          "correct": true,
+          "explanation": "Em S, −3, −1 e 0 viram 0; 2 e 5 permanecem 2 e 5. É exatamente max(0, x) (slide 49). A quebra em zero é a não linearidade que a torna útil."
+        },
+        {
+          "id": "d",
+          "text": "Q, porque devolve o valor de entrada e, por isso, é a mais simples e a mais usada nas camadas ocultas.",
+          "correct": false,
+          "explanation": "Q devolve a própria entrada, inclusive os negativos: é a função linear (slide 47), usada na saída de regressão. Usada nas camadas ocultas, ela colapsaria a rede numa regressão linear (slide 45)."
+        }
+      ],
+      "generalExplanation": "Ler tabela de entrada e saída é o mesmo que testar uma função com casos: degrau é um 'if' que devolve 0 ou 1; linear devolve o próprio valor; sigmoide comprime tudo em 0 a 1; ReLU é um 'max(0, x)'."
+    },
+    {
+      "id": "l10-q49",
+      "label": "Saída linear na regressão (slide 47)",
+      "type": "single",
+      "prompt": "Uma rede deve prever a temperatura do dia em graus Celsius, que pode ser negativa (por exemplo, −5 °C ou 32 °C). Qual ativação usar no neurônio de saída, segundo o slide 47?",
+      "options": [
+        {
+          "id": "a",
+          "text": "ReLU, porque é a ativação mais usada atualmente e devolve valores a partir de zero, sem limite superior para a temperatura.",
+          "correct": false,
+          "explanation": "A ReLU nunca devolve valores negativos, e −5 °C ficaria impossível de prever. O slide 51 também indica que ela é para camadas ocultas, e não para a saída."
+        },
+        {
+          "id": "b",
+          "text": "Linear, porque não modifica a soma ponderada e permite devolver qualquer valor real, positivo ou negativo.",
+          "correct": true,
+          "explanation": "Slide 47: usar uma ativação linear significa não modificar o resultado da soma ponderada, e é usada na camada de saída de modelos de regressão. É a que cobre toda a faixa de valores."
+        },
+        {
+          "id": "c",
+          "text": "Sigmoide, porque ela comprime a saída e evita valores absurdos de temperatura.",
+          "correct": false,
+          "explanation": "A sigmoide limita a saída entre 0 e 1, o que impossibilita prever 32 °C ou −5 °C sem reescalar. Ela é indicada para classificação binária (slide 48)."
+        },
+        {
+          "id": "d",
+          "text": "Softmax, porque ela transforma os escores em valores bem comportados que somam 1.",
+          "correct": false,
+          "explanation": "A softmax é para classificação multiclasse (slide 50). Uma temperatura única não é uma distribuição de probabilidades, e a soma 1 não faz sentido aqui."
+        }
+      ],
+      "generalExplanation": "A saída da rede de regressão é como o valor de retorno de uma função numérica genérica: ele não deve ser comprimido nem cortado. Qualquer limite na ativação final vira um limite na resposta possível."
+    },
+    {
+      "id": "l10-q50",
+      "label": "Sigmoide na saída binária (slide 48)",
+      "type": "single",
+      "prompt": "Uma rede decide se um e-mail é spam (1) ou não (0). Qual configuração da saída faz sentido, segundo os slides 48 e 52, e o que significa uma saída de 0,93?",
+      "options": [
+        {
+          "id": "a",
+          "text": "ReLU; a saída 0,93 é a nota de spam e a rede decide acima de 0,5 se é spam, sem precisar limitar a faixa da saída.",
+          "correct": false,
+          "explanation": "A ReLU não limita a saída entre 0 e 1 e é para camadas ocultas (slide 51); o 0,93 não teria interpretação de probabilidade. O custo de classificação binária também não casa com ela."
+        },
+        {
+          "id": "b",
+          "text": "Sigmoide; 0,93 é a probabilidade estimada de ser spam, e a decisão pode ser tomada por um limiar.",
+          "correct": true,
+          "explanation": "Slides 48 e 52: sigmoide é a saída de classificação binária (com entropia cruzada binária). Ela empurra os valores para os extremos, o que é desejável ao classificar; 0,93 indica alta confiança na classe 1."
+        },
+        {
+          "id": "c",
+          "text": "Degrau; a saída 0,93 indica que o neurônio disparou parcialmente, com 93% de ativação.",
+          "correct": false,
+          "explanation": "O degrau só devolve 0 ou 1, e nunca 0,93. Além disso ele tem gradiente zero (slide 46) e não permite o treino com backpropagation."
+        },
+        {
+          "id": "d",
+          "text": "Linear; a saída 0,93 é o escore bruto, e valores maiores que 0 significam spam.",
+          "correct": false,
+          "explanation": "A linear é para regressão (slide 47). Na classificação binária o slide 52 indica a sigmoide, que dá uma saída interpretável como probabilidade, entre 0 e 1."
+        }
+      ],
+      "generalExplanation": "A sigmoide é o 'confidence score' da classe positiva: 0,93 se lê 'tenho 93% de certeza de que é spam'. O limiar de decisão é uma regra de negócio por cima: pode ser 0,5 ou mais exigente."
+    },
+    {
+      "id": "l10-q51",
+      "label": "ReLU só nas camadas ocultas (slides 49 e 51)",
+      "type": "single",
+      "prompt": "Um aluno usou ReLU na camada de saída de um classificador binário e o modelo devolveu valores como 7,3 e 0,0. O que o slide 51 diz e qual é o problema?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Que a ReLU deve ser usada apenas nas camadas ocultas; na saída binária a recomendação é a sigmoide, de 0 a 1.",
+          "correct": true,
+          "explanation": "Slides 51 e 52: ReLU só nas camadas ocultas. Na saída ela produz números sem teto (7,3), que não são probabilidades. Se a ReLU não der bons resultados, o slide manda tentar outras funções, mas nunca no lugar errado da rede."
+        },
+        {
+          "id": "b",
+          "text": "O slide 51 diz que a ReLU deve ser usada em todas as camadas, inclusive a de saída, e o problema é somente a taxa de aprendizado alta.",
+          "correct": false,
+          "explanation": "O slide diz o contrário: ReLU apenas nas ocultas. E o problema dos valores 7,3 e 0,0 vem da faixa da ReLU na saída, e não da taxa."
+        },
+        {
+          "id": "c",
+          "text": "O slide 51 diz que o problema é a falta de uma segunda camada oculta, porque a ReLU só funciona com mais de uma camada.",
+          "correct": false,
+          "explanation": "A ReLU funciona numa única camada oculta ou em muitas. O problema aqui é de lugar, e não de profundidade."
+        },
+        {
+          "id": "d",
+          "text": "O slide 51 diz que a ReLU deve ser trocada pela linear, porque a linear é mais estável na saída de classificação.",
+          "correct": false,
+          "explanation": "A linear é a recomendação para regressão. Para classificação binária o slide 52 indica sigmoide; trocar por linear devolveria escores sem interpretação."
+        }
+      ],
+      "generalExplanation": "É um problema de tipos: a camada de saída precisa devolver um valor no tipo esperado (probabilidade entre 0 e 1). Usar uma função sem teto é devolver 'qualquer float' onde o contrato pede um 'float entre 0 e 1'."
+    },
+    {
+      "id": "l10-q52",
+      "label": "Quais saídas podem vir de uma softmax (slide 50)",
+      "type": "single",
+      "prompt": "Uma rede com softmax na saída classifica uma imagem em quatro classes (cão, gato, pássaro, peixe). Qual dos vetores de saída abaixo pode ter sido produzido por uma softmax?",
+      "options": [
+        {
+          "id": "a",
+          "text": "(0,90 ; 0,60 ; 0,30 ; 0,10), porque todos os valores ficam entre 0 e 1.",
+          "correct": false,
+          "explanation": "Estar entre 0 e 1 não basta: a soma é 1,9. A softmax divide pela soma, de modo que o total sempre dá 1. Esse vetor lembra o resultado de sigmoides independentes (multilabel)."
+        },
+        {
+          "id": "b",
+          "text": "(0,70 ; 0,20 ; 0,07 ; 0,03), porque os valores ficam entre 0 e 1 e somam 1.",
+          "correct": true,
+          "explanation": "Slide 50: softmax leva as saídas para valores entre 0 e 1 e as divide pela soma, resultando numa probabilidade por classe. Aqui a soma é 1,00 e a classe mais provável é o cão."
+        },
+        {
+          "id": "c",
+          "text": "(0,70 ; 0,30 ; −0,10 ; 0,10), porque a soma é exatamente 1.",
+          "correct": false,
+          "explanation": "A soma bate, mas há um valor negativo. A softmax usa exponenciais e todas as saídas são positivas; probabilidade negativa não existe."
+        },
+        {
+          "id": "d",
+          "text": "(3,2 ; 1,1 ; −0,5 ; 0,2), porque são os escores já normalizados da camada, prontos para serem lidos como probabilidades.",
+          "correct": false,
+          "explanation": "São escores brutos (valores antes da softmax), pois incluem valores fora de 0 a 1 e uma soma diferente de 1. A softmax é o passo que converte escores nesse tipo de probabilidade."
+        }
+      ],
+      "generalExplanation": "Pense em uma função de normalização: recebe notas soltas e devolve fatias de uma pizza, em que todas as fatias são positivas e juntas somam 100%. Se a saída não cumpre as duas condições, não saiu de uma softmax."
+    },
+    {
+      "id": "l10-q53",
+      "label": "Tabela de custo e ativação (slide 52)",
+      "type": "multiple",
+      "prompt": "Marque todas as combinações corretas, de acordo com a tabela do slide 52.",
+      "options": [
+        {
+          "id": "a",
+          "text": "Classificação binária: entropia cruzada binária e saída sigmoide.",
+          "correct": true,
+          "explanation": "Correto (slide 52). A saída sigmoide dá a probabilidade da classe positiva, e a entropia cruzada binária mede o erro dessa probabilidade."
+        },
+        {
+          "id": "b",
+          "text": "Classificação multiclasse: entropia cruzada categorizada e saída softmax.",
+          "correct": true,
+          "explanation": "Correto (slide 52). Softmax gera uma distribuição entre as classes, e a entropia cruzada categorizada é o custo correspondente."
+        },
+        {
+          "id": "c",
+          "text": "Regressão: erro quadrático médio e saída linear (ou nenhuma).",
+          "correct": true,
+          "explanation": "Correto (slide 52). A saída linear cobre qualquer valor real e o MSE é o custo padrão da regressão (slide 25)."
+        },
+        {
+          "id": "d",
+          "text": "Classificação multilabel: entropia cruzada categorizada e saída softmax em todos os neurônios.",
+          "correct": false,
+          "explanation": "Incorreto: o multilabel usa entropia cruzada binária e sigmoide em cada neurônio, pois os rótulos não competem entre si (slide 52)."
+        },
+        {
+          "id": "e",
+          "text": "Regressão com outliers: erro quadrático médio e saída sigmoide.",
+          "correct": false,
+          "explanation": "Incorreto: para outliers a tabela indica erro absoluto médio e saída linear. A sigmoide limitaria a saída entre 0 e 1."
+        },
+        {
+          "id": "f",
+          "text": "Classificação binária: erro quadrático médio e saída linear, que é mais simples que a sigmoide.",
+          "correct": false,
+          "explanation": "Incorreto: o slide indica entropia cruzada binária e sigmoide. Linear não limita a saída a uma probabilidade, e o MSE é do tipo regressão."
+        }
+      ],
+      "generalExplanation": "Sigmoide e softmax são tipos de saída com o contrato 'devolve probabilidade'; linear tem o contrato 'devolve um número qualquer'. A função de custo acompanha o tipo de saída: probabilidade pede entropia cruzada, número pede erro (quadrático ou absoluto)."
+    },
+    {
+      "id": "l10-q54",
+      "label": "Código: erro invertido no Perceptron (slide 12)",
+      "type": "single",
+      "prompt": "O código abaixo treina um Perceptron simples com a regra do slide 12 (novo peso = peso + η · e · x, com e = Yd − Y) nas quatro amostras do exemplo (a classe é 1 quando x1 = 1). O erro total nunca chega a zero, mesmo com muitas épocas. Onde está o erro de lógica?\n\n```python\ndef treinar(X, yd, eta=0.3, epocas=50):\n    w = [0.0, 0.0]\n    for epoca in range(epocas):\n        erro_total = 0\n        for x, alvo in zip(X, yd):\n            u = x[0] * w[0] + x[1] * w[1]\n            y = 1 if u > 0 else 0\n            e = y - alvo                 # erro\n            w[0] += eta * e * x[0]\n            w[1] += eta * e * x[1]\n            erro_total += abs(e)\n        if erro_total == 0:\n            break\n    return w\n```",
+      "options": [
+        {
+          "id": "a",
+          "text": "O erro está invertido: deveria ser e = alvo − y (Yd − Y). Assim, os pesos são empurrados para o lado errado.",
+          "correct": true,
+          "explanation": "Slide 12: e = Yd − Y. Com o sinal trocado, um peso que deveria subir desce e vice-versa, e o erro nunca zera. (Conferimos rodando o código com as 4 amostras do exemplo: os pesos divergem e o erro total fica em 2 em todas as épocas.)"
+        },
+        {
+          "id": "b",
+          "text": "O limiar deveria ser u >= 0 em vez de u > 0, pois o slide 46 define o degrau com x >= 0.",
+          "correct": false,
+          "explanation": "A diferença entre > e >= só afeta o caso u = 0 e não explica uma divergência contínua. O problema é a direção em que os pesos são empurrados, que independe do limiar."
+        },
+        {
+          "id": "c",
+          "text": "Os pesos deveriam ser inicializados aleatoriamente em [0, 1] e não com zeros, porque com zero a rede não aprende.",
+          "correct": false,
+          "explanation": "O exemplo dos slides 16 e 17 também parte de pesos zero e converge em duas épocas. O ponto inicial não é a causa."
+        },
+        {
+          "id": "d",
+          "text": "A taxa eta = 0,3 é grande demais; com eta = 0,01 o erro total chegaria a zero.",
+          "correct": false,
+          "explanation": "A taxa afeta a velocidade, mas não o sentido da correção. Com o sinal trocado, qualquer eta empurra os pesos para o lado errado."
+        }
+      ],
+      "generalExplanation": "É o mesmo bug de sinal do gradiente descendente: o código roda, retorna pesos, e parece funcionar, mas otimiza ao contrário. O sintoma é o erro total que nunca baixa."
+    },
+    {
+      "id": "l10-q55",
+      "label": "Código: escalonar antes de dividir (complemento)",
+      "type": "single",
+      "prompt": "(Complemento: padronização vem de outra aula.) O trecho prepara dados para um MLP. Onde está o erro de lógica?\n\n```python\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.neural_network import MLPClassifier\n\nX_esc = StandardScaler().fit_transform(X)\nX_train, X_test, y_train, y_test = train_test_split(\n    X_esc, y, test_size=0.2, random_state=42)\n\nmlp = MLPClassifier(hidden_layer_sizes=(32,), random_state=42)\nmlp.fit(X_train, y_train)\nprint(mlp.score(X_test, y_test))\n```",
+      "options": [
+        {
+          "id": "a",
+          "text": "O MLPClassifier não aceita dados padronizados; a padronização deveria ser aplicada apenas às saídas y, nunca às entradas, pois os pesos já fazem esse papel.",
+          "correct": false,
+          "explanation": "O oposto: redes neurais se beneficiam de entradas padronizadas. O que se evita é padronizar o alvo de classificação, que é uma classe."
+        },
+        {
+          "id": "b",
+          "text": "O erro está em test_size=0.2: redes neurais precisam de pelo menos 50% dos dados para teste.",
+          "correct": false,
+          "explanation": "Não há essa regra. 80/20 é uma divisão comum. O problema está na ordem das operações, e não na proporção."
+        },
+        {
+          "id": "c",
+          "text": "O escalonador foi ajustado (fit) com todos os dados antes da divisão: o teste vaza informação para o treino. Divida primeiro e ajuste só no treino.",
+          "correct": true,
+          "explanation": "Ajustar com X inteiro faz o teste influenciar as estatísticas usadas no treino, o que deixa o teste menos independente. O correto é dividir, fit no treino e apenas transform no teste, de preferência num Pipeline."
+        },
+        {
+          "id": "d",
+          "text": "A camada oculta (32,) é pequena demais; o erro é dimensionar mal a rede, e não a ordem do pré-processamento.",
+          "correct": false,
+          "explanation": "O tamanho da rede afeta o desempenho, mas a pergunta é sobre um erro de lógica, que está na ordem fit_transform antes do split."
+        }
+      ],
+      "generalExplanation": "É vazar o gabarito para o aluno: o teste tem de ser dados que o modelo nunca viu, inclusive nas estatísticas de pré-processamento. Qualquer 'fit' deve acontecer só depois da divisão e só no treino; no teste só vale 'transform'."
+    },
+    {
+      "id": "l10-q56",
+      "label": "Código: MLP sem padronizar (complemento)",
+      "type": "single",
+      "prompt": "(Complemento: a padronização é tema de outra aula; aqui conectamos com a taxa de aprendizado.) Uma base tem as colunas renda (1.000 a 20.000 reais) e idade (18 a 90). O aluno treinou um MLP sem pré-processamento e o treino ficou instável e lento:\n\n```python\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, random_state=42)\n\nmlp = MLPClassifier(hidden_layer_sizes=(32, 16), random_state=42)\nmlp.fit(X_train, y_train)\nprint(mlp.score(X_test, y_test))\n```\n\nO que falta?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Padronizar os atributos (StandardScaler com fit só no treino), porque variáveis em escalas muito diferentes desequilibram o gradiente.",
+          "correct": true,
+          "explanation": "A renda, com valores de milhares, domina a soma ponderada e os gradientes, enquanto a idade quase não conta. Padronizar põe os atributos em escalas comparáveis. Relação com o slide 41: com o gradiente desproporcional, a taxa de aprendizado única fica mal ajustada."
+        },
+        {
+          "id": "b",
+          "text": "Falta trocar a ativação da camada oculta por degrau, porque o degrau é imune à escala dos atributos.",
+          "correct": false,
+          "explanation": "O degrau tem gradiente zero (slide 46) e inviabiliza o treino. Ele não é imune à escala: apenas deixa de ter sinal de ajuste."
+        },
+        {
+          "id": "c",
+          "text": "Falta ordenar as linhas por renda crescente antes do treino, para a rede ver os valores em ordem.",
+          "correct": false,
+          "explanation": "Ordenar os dados por renda enviesaria o treino, porque a rede veria sequências de amostras parecidas. A prática usual é embaralhar, e a escala continuaria o problema."
+        },
+        {
+          "id": "d",
+          "text": "Remover a coluna de renda, pois atributos com valores grandes não podem ser usados em redes neurais e desequilibram o treino de qualquer modelo.",
+          "correct": false,
+          "explanation": "Não se descarta a variável: o problema é a escala, que se resolve com padronização. Remover renda poderia tirar o atributo mais informativo."
+        }
+      ],
+      "generalExplanation": "É normalizar unidades antes de comparar: somar metros com quilômetros distorce tudo. A rede soma entradas vezes pesos, então um atributo com números grandes ganha influência que não merece."
+    },
+    {
+      "id": "l10-q57",
+      "label": "Código: avaliar no treino",
+      "type": "single",
+      "prompt": "Um desenvolvedor treinou um MLP e relatou ao time a 'capacidade de generalização' do modelo:\n\n```python\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, random_state=42)\n\nmlp = MLPClassifier(hidden_layer_sizes=(64, 64), random_state=42)\nmlp.fit(X_train, y_train)\n\nacc = mlp.score(X_train, y_train)\nprint('Acurácia de generalização:', acc)\n```\n\nO valor é de 1,00. Qual é o erro de lógica?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A acurácia é medida nos mesmos dados do treino; a generalização exige score em X_test e y_test, que a rede nunca viu.",
+          "correct": true,
+          "explanation": "Redes com muitos pesos conseguem decorar o treino (slide 37). Acurácia de 1,00 no treino é compatível com overfitting. Só os dados de teste, que ficaram de fora do treino, medem a generalização."
+        },
+        {
+          "id": "b",
+          "text": "O erro é usar duas camadas ocultas de 64 neurônios: redes assim sempre dão acurácia 1,00 e portanto não servem.",
+          "correct": false,
+          "explanation": "O número de camadas não é o erro. O problema é o conjunto usado na avaliação, e não a arquitetura: mesma rede em X_test teria um valor diferente e honesto."
+        },
+        {
+          "id": "c",
+          "text": "O erro é usar random_state=42 duas vezes: a semente repetida faz o modelo decorar a divisão.",
+          "correct": false,
+          "explanation": "Semente fixa só torna o experimento reprodutível. Ela não faz o modelo decorar nada nem inflaciona a acurácia."
+        },
+        {
+          "id": "d",
+          "text": "O score deveria ser calculado com a função de custo (entropia cruzada), pois a acurácia não é uma métrica válida para redes neurais.",
+          "correct": false,
+          "explanation": "A acurácia é uma métrica válida para classificação. O erro não é a métrica, e sim o conjunto onde ela é calculada."
+        }
+      ],
+      "generalExplanation": "É como testar um código com os mesmos casos que foram usados para escrevê-lo: sempre passa. O teste precisa ser um conjunto separado, em que o desempenho possa surpreender."
+    },
+    {
+      "id": "l10-q58",
+      "label": "Código: MLP com ativação linear no XOR (slide 45)",
+      "type": "single",
+      "prompt": "Um aluno quis mostrar que uma rede profunda resolve o XOR e escreveu:\n\n```python\nimport numpy as np\nfrom sklearn.neural_network import MLPClassifier\n\nX = np.array([[0, 0], [0, 1], [1, 0], [1, 1]] * 25)\ny = np.array([0, 1, 1, 0] * 25)\n\nmlp = MLPClassifier(hidden_layer_sizes=(50, 50),\n                    activation='identity',\n                    max_iter=2000, random_state=0)\nmlp.fit(X, y)\nprint(mlp.score(X, y))   # resultado: 0.5\n```\n\nPor que a acurácia é 0,5, mesmo com duas camadas ocultas de 50 neurônios? (Rodamos o código: o resultado foi 0,5. Com activation='relu', o mesmo código chegou a 1,0.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "O parâmetro max_iter=2000 é alto demais e a rede acabou decorando os dados, caindo para 0,5 por overfitting depois de muitas épocas de treino.",
+          "correct": false,
+          "explanation": "Overfitting aumentaria a acurácia no treino, e não a derrubaria. O 0,5 vem de uma rede que não consegue representar o XOR."
+        },
+        {
+          "id": "b",
+          "text": "A ativação 'identity' é linear; sem não linearidade a rede equivale a uma regressão linear, que não separa o XOR, mesmo com mais camadas.",
+          "correct": true,
+          "explanation": "Slide 45: sem ativação não linear a rede é essencialmente um modelo de regressão linear. A rede continua separando por uma reta, e o XOR não é linearmente separável. Trocar por relu resolve."
+        },
+        {
+          "id": "c",
+          "text": "O XOR precisa de pelo menos 100 neurônios por camada; 50 ainda é insuficiente para aprender a função.",
+          "correct": false,
+          "explanation": "O XOR precisa de poucos neurônios não lineares (dois ocultos já bastam). O problema não é a quantidade de neurônios, e sim a falta da não linearidade."
+        },
+        {
+          "id": "d",
+          "text": "A base foi repetida 25 vezes, o que cria amostras duplicadas e impede o aprendizado.",
+          "correct": false,
+          "explanation": "Repetir as quatro linhas só aumenta a quantidade de amostras idênticas; não impede o aprendizado, e a mesma base funciona com relu. A causa é a ativação."
+        }
+      ],
+      "generalExplanation": "É o 'refactor' que não muda o comportamento: empilhar funções lineares dá uma função linear equivalente. Para a profundidade ter efeito, é preciso inserir a não linearidade entre as camadas."
+    }
+  ]
+}

@@ -1,0 +1,833 @@
+{
+  "schema": "questions/v2",
+  "id": "bloco-2-aula-5",
+  "title": "Aula 5 · Questões de Regressão Linear",
+  "instructions": "Responda **antes** de ler qualquer explicação. Depois de responder, leia a explicação de **todas** as alternativas, inclusive das que você acertou: é nelas que está o conteúdo. Nenhuma questão exige cálculo: as perguntas são sobre **ler** tabelas e curvas, **a ordem** das ações, **erros de lógica** em trechos curtos de código e a interpretação de modelos de regressão.",
+  "questions": [
+    {
+      "id": "q01",
+      "label": "Definição e aplicação",
+      "type": "single",
+      "prompt": "Um engenheiro de software quer prever o **tempo de resposta (em milissegundos)** de uma rota de API a partir do número de conexões simultâneas e do tamanho do payload. Por que a regressão linear é conceitualmente adequada a esse problema?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Porque o tempo de resposta pode ser tratado como uma categoria (rápido, médio ou lento), e a regressão linear traça a fronteira entre essas categorias.",
+          "correct": false,
+          "explanation": "Traçar fronteiras entre categorias é **classificação**. Embora possamos transformar milissegundos em faixas, isso joga informação fora; a regressão trabalha direto com o número. O enunciado pede o valor em ms, não a categoria."
+        },
+        {
+          "id": "b",
+          "text": "Porque, com poucas variáveis de entrada, a regressão linear consegue ajustar qualquer curva aos dados sem risco de overfitting, por ser um modelo simples.",
+          "correct": false,
+          "explanation": "A regressão linear só representa **retas (ou hiperplanos)**, não qualquer curva. Ser simples reduz o risco de overfitting, mas não o elimina, e se a relação real for curva o modelo sofre de underfitting. Simplicidade não é o mesmo que 'serve para tudo'."
+        },
+        {
+          "id": "c",
+          "text": "Porque ela é um algoritmo não supervisionado, que descobre sozinho grupos de rotas parecidas sem precisar do tempo de resposta já medido.",
+          "correct": false,
+          "explanation": "A regressão linear é **supervisionada**: precisa de exemplos históricos em que o tempo de resposta já foi medido (o alvo conhecido). Agrupar sem alvo é o que faz o clustering, que é outra família de algoritmos. É como tentar calibrar um alerta de latência sem nunca ter medido a latência."
+        },
+        {
+          "id": "d",
+          "text": "Porque o alvo (milissegundos) é um número contínuo, e queremos aprender, com exemplos já medidos, como as variáveis de entrada se relacionam com ele.",
+          "correct": true,
+          "explanation": "Regressão serve para estimar um **valor contínuo** (tempo, preço, consumo) a partir de variáveis independentes, usando dados históricos com a resposta conhecida (aprendizado supervisionado). É o caso: conexões e payload entram, o tempo em ms sai."
+        }
+      ],
+      "generalExplanation": "**Cenário.** Pense na regressão linear como a função que um engenheiro ajustaria para estimar uma métrica contínua a partir de outras métricas: você tem um histórico (conexões, payload, latência medida) e quer uma fórmula que, dado um novo par (conexões, payload), devolva a latência esperada. Como há a resposta conhecida no histórico, é **aprendizado supervisionado**; como a resposta é um número contínuo, é **regressão** (e não classificação). Slides 3 e 10. Regra de bolso para a prova: alvo contínuo → regressão; alvo categórico → classificação; sem alvo → não supervisionado."
+    },
+    {
+      "id": "q02",
+      "label": "Correlação de Pearson",
+      "type": "single",
+      "prompt": "Ao analisar duas variáveis de um conjunto de dados, o coeficiente de correlação de Pearson calculado foi r = 0,02. Qual é a conclusão **correta**?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Uma das variáveis causa as variações da outra, mas o efeito é pequeno, o que explica o valor baixo de r.",
+          "correct": false,
+          "explanation": "Correlação, em qualquer valor, não prova causalidade. Aqui nem há associação linear a explicar: r ≈ 0 apenas diz que não há alinhamento em reta. Atribuir causa 'pequena' é inventar uma conclusão que os dados não sustentam."
+        },
+        {
+          "id": "b",
+          "text": "As duas variáveis são totalmente independentes e não têm nenhuma relação matemática entre si, de qualquer tipo.",
+          "correct": false,
+          "explanation": "O coeficiente de Pearson mede apenas a associação **linear**. Duas variáveis podem ter uma relação perfeita, porém curva (por exemplo, y = x², um 'U'), e ainda assim apresentar r próximo de 0. Zero na correlação não prova independência."
+        },
+        {
+          "id": "c",
+          "text": "Os dados mostram uma associação linear fraca ou inexistente: uma reta não descreve bem a relação entre as duas variáveis.",
+          "correct": true,
+          "explanation": "Um r próximo de zero indica ausência de relação **linear** (a nuvem de pontos não se alinha em reta). Isso não exclui relações não lineares, mas para um modelo de regressão linear significa pouco poder preditivo."
+        },
+        {
+          "id": "d",
+          "text": "Existe uma forte relação linear inversa: quando uma variável sobe, a outra cai quase na mesma proporção, o que torna as previsões muito confiáveis.",
+          "correct": false,
+          "explanation": "Relação linear inversa forte teria r perto de -1. O valor 0,02 está praticamente em zero, e não perto de nenhum dos extremos (-1 ou +1)."
+        }
+      ],
+      "generalExplanation": "**Cenário.** O r de Pearson é um 'medidor de alinhamento em reta' que vai de -1 a +1 (slide 7). Perto de +1: os pontos sobem juntos numa reta; perto de -1: uma sobe quando a outra desce; perto de 0: não há reta que resuma a nuvem. Analogia de engenharia de software: é como um teste que só detecta um tipo de bug; passar nele (r ≈ 0) não prova que o código está correto (que não há relação), prova só que esse bug (a relação linear) não existe. Na regressão queremos r forte entre cada atributo e o alvo (slide 8)."
+    },
+    {
+      "id": "q03",
+      "label": "Multicolinearidade",
+      "type": "single",
+      "prompt": "Para montar um modelo de regressão múltipla, que padrão de correlação devemos procurar entre as variáveis?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Alta correlação dos atributos entre si, pois assim eles se reforçam mutuamente, sendo a correlação com o alvo algo secundário.",
+          "correct": false,
+          "explanation": "Atributos muito correlacionados entre si são **redundantes** (multicolinearidade): carregam a mesma informação duas vezes e deixam os coeficientes β instáveis. E a correlação com o alvo não é secundária: é ela que dá o poder preditivo."
+        },
+        {
+          "id": "b",
+          "text": "Forte correlação de cada atributo com o alvo (poder preditivo) e baixa correlação dos atributos entre si (sem redundância).",
+          "correct": true,
+          "explanation": "Cada atributo deve ajudar a prever Y (correlação forte com o alvo) e trazer informação nova (baixa correlação com os outros atributos). É a lógica do slide 8: avaliar a correlação em duas situações, X com Y e X1 com X2."
+        },
+        {
+          "id": "c",
+          "text": "Baixa correlação entre todos os pares de variáveis, inclusive atributos e alvo, para que o modelo não dependa de nenhum atributo.",
+          "correct": false,
+          "explanation": "Se os atributos têm baixa correlação com o alvo, não há o que a reta aproveitar: a previsão fica próxima da média. A independência desejada vale entre atributos, não entre atributo e alvo."
+        },
+        {
+          "id": "d",
+          "text": "Alta correlação apenas do primeiro atributo com o alvo, descartando os demais, pois um bom atributo basta na regressão múltipla.",
+          "correct": false,
+          "explanation": "A regressão múltipla existe justamente para combinar vários atributos, cada um com seu β. Basta cada atributo trazer informação própria sobre o alvo; descartar os demais só faz sentido se forem redundantes ou inúteis, e não por princípio."
+        }
+      ],
+      "generalExplanation": "**Cenário.** Imagine prever o tempo de build de um projeto. 'Número de arquivos alterados' e 'linhas alteradas' andam juntos (alta correlação entre atributos): usar os dois é como ter dois sensores medindo a mesma coisa. O modelo não sabe a quem atribuir o efeito, e os β ficam instáveis (multicolinearidade). Já cada atributo deve se relacionar bem com o tempo de build (poder preditivo). Regra do slide 8: **X com Y → queremos correlação forte; X1 com X2 → queremos correlação baixa.** Atenção: se o enunciado trocar as duas situações, a alternativa está errada."
+    },
+    {
+      "id": "q04",
+      "label": "Função de custo e resíduos",
+      "type": "single",
+      "prompt": "Por que a função de custo mais usada na regressão linear eleva os resíduos (diferença entre o valor real e o previsto) ao **quadrado**, em vez de simplesmente somar os erros brutos (com sinal)?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Porque a soma dos erros com sinal deixa erros positivos e negativos se anularem, e o quadrado ainda faz os erros grandes pesarem muito mais no custo.",
+          "correct": true,
+          "explanation": "Dois erros de +5 e -5 somam zero, e o modelo pareceria perfeito. Elevar ao quadrado torna todos os termos positivos e, de quebra, penaliza mais os erros grandes (um erro 10 vale 100; um erro 2 vale só 4). O segundo efeito é conhecimento padrão, o slide 10 só define o erro como diferença entre previsto e real."
+        },
+        {
+          "id": "b",
+          "text": "Porque o quadrado cria vários mínimos locais na função de custo, o que ajuda o gradiente descendente a escapar de regiões ruins e achar a melhor reta.",
+          "correct": false,
+          "explanation": "É o contrário: o custo quadrático da regressão linear é **convexo**, com um único mínimo, e por isso o gradiente descendente sempre chega ao mesmo lugar. Mínimos locais seriam um problema, não uma vantagem."
+        },
+        {
+          "id": "c",
+          "text": "Porque o quadrado diminui o valor de todos os erros, deixando o custo sempre menor que 1 e evitando estouro numérico durante o treino.",
+          "correct": false,
+          "explanation": "Elevar ao quadrado **aumenta** os erros maiores que 1 (10 vira 100) e só diminui os menores que 1. Não há garantia de custo menor que 1, e não é esse o motivo de usar o quadrado."
+        },
+        {
+          "id": "d",
+          "text": "Porque o quadrado dispensa o intercepto α, já que o erro elevado ao quadrado deixa de depender do ponto em que a reta cruza o eixo y.",
+          "correct": false,
+          "explanation": "O intercepto α continua necessário: ele desloca a reta na vertical (Y = α + βx, slide 4). A função de custo mede o erro da reta inteira, e α é um dos dois parâmetros ajustados pelo método."
+        }
+      ],
+      "generalExplanation": "**Cenário.** A função de custo é a 'nota' da reta: queremos um único número que seja baixo quando a reta está boa. Se somássemos os erros com sinal, uma reta que erra 100 para cima num ponto e 100 para baixo em outro teria nota zero, como um teste automatizado que soma 'falhas' positivas e negativas e acusa verde. Tomando o quadrado de cada resíduo (SQR, soma dos quadrados dos resíduos), nenhum erro cancela outro e erros grandes pesam mais. Note que o valor absoluto também evitaria o cancelamento (é o MAE), mas o quadrado é o padrão do MQO e do gradiente por ser suave e convexo. Slides 10 e 11."
+    },
+    {
+      "id": "q05",
+      "label": "MQO versus gradiente descendente",
+      "type": "single",
+      "prompt": "Um sistema precisa treinar uma regressão linear em uma base com 100.000 características (colunas). Por que o **gradiente descendente** é preferível ao **método dos mínimos quadrados ordinários (MQO / OLS)** nesse cenário?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Porque o MQO só funciona com poucas linhas; acima de algumas dezenas de instâncias a solução fechada deixa de existir e o gradiente passa a ser obrigatório.",
+          "correct": false,
+          "explanation": "O limite do MQO não está no número de linhas, e sim no custo de operar com uma matriz grande de colunas. Com muitas instâncias ele continua funcionando (o tempo cresce de forma linear com elas, slide 22)."
+        },
+        {
+          "id": "b",
+          "text": "Porque o MQO exige inverter uma matriz enorme, o que é lento ou até impossível com muitas colunas, enquanto o gradiente repete passos baratos.",
+          "correct": true,
+          "explanation": "O MQO depende da inversão da matriz de dados, operação lenta para matrizes grandes e que nem sempre existe (slide 20). O gradiente descendente dá o mesmo resultado, mas só repete atualizações simples e lida bem com muitas dimensões (slide 47)."
+        },
+        {
+          "id": "c",
+          "text": "Porque o gradiente descendente encontra a solução exata em uma única passada, enquanto o MQO precisa testar várias retas candidatas.",
+          "correct": false,
+          "explanation": "O gradiente é **iterativo**: precisa de muitas iterações até convergir. E o MQO não testa retas candidatas: ele calcula a solução diretamente por álgebra de matrizes. A descrição está invertida."
+        },
+        {
+          "id": "d",
+          "text": "Porque o MQO só estima retas com uma variável, e apenas o gradiente descendente consegue ajustar hiperplanos com muitas variáveis.",
+          "correct": false,
+          "explanation": "O MQO funciona para regressão simples e múltipla, e os dois métodos chegam ao mesmo resultado (slide 20). A diferença é de custo computacional, não de capacidade de representar hiperplanos."
+        }
+      ],
+      "generalExplanation": "**Cenário.** MQO e gradiente descendente resolvem o mesmo problema (achar α e β que minimizam o custo) e **chegam à mesma reta**. A diferença é o caminho. O MQO é uma fórmula fechada: ótima e direta, mas exige inverter uma matriz, o que fica caro quando há muitos atributos. O gradiente descendente é um laço que melhora α e β aos poucos: cada passo é barato. Analogia: resolver um sistema de equações gigante por álgebra exata versus refinar a resposta por tentativas barata e repetidamente. Regra do slide 47: **poucas variáveis → MQO; muitas variáveis → gradiente descendente.**"
+    },
+    {
+      "id": "q06",
+      "label": "Taxa de aprendizado (learning rate)",
+      "type": "single",
+      "prompt": "Durante o treino de uma regressão linear por gradiente descendente, o custo J medido a cada iteração aparece como 12 → 85 → 410 → 2.300 → 11.000: o erro alterna de lado do vale e **cresce** a cada passo em vez de diminuir. Qual é a causa mais provável e a correção?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O número de iterações é pequeno demais; basta aumentá-lo para que, com mais passos, o custo volte a diminuir naturalmente depois de alguns ciclos.",
+          "correct": false,
+          "explanation": "O número de iterações define por quanto tempo o laço roda, não a direção em que o custo anda. Se cada passo piora o erro, rodar mais passos só piora mais. Poucas iterações causam o problema da curva lenta que 'para antes de convergir'."
+        },
+        {
+          "id": "b",
+          "text": "A taxa está alta demais: cada passo ultrapassa o vale do custo e o erro aumenta; deve-se reduzir a taxa até o custo cair a cada iteração.",
+          "correct": true,
+          "explanation": "Com taxa alta o ajuste 'pula' por cima do mínimo e cai do outro lado, mais alto do que estava. Repetido, o custo explode (slide 39: se for muito grande, pode falhar em convergir por passar do mínimo). A correção é diminuir a taxa."
+        },
+        {
+          "id": "c",
+          "text": "A taxa de aprendizado está baixa demais; deve-se multiplicá-la por 100 para o algoritmo caminhar mais rápido até o mínimo.",
+          "correct": false,
+          "explanation": "Taxa baixa demais produz o oposto: descida muito lenta e suave, que ainda não terminou quando as iterações acabam. Ela nunca faria o custo aumentar. Multiplicar por 100 pioraria uma situação que já é de passo grande demais."
+        },
+        {
+          "id": "d",
+          "text": "O ponto inicial aleatório de α e β foi mal sorteado; sorteando novos valores iniciais o custo passa a decrescer a cada passo.",
+          "correct": false,
+          "explanation": "O ponto de partida pode ser aleatório (slide 39) e, como o custo da regressão linear é convexo, qualquer ponto inicial leva ao mesmo mínimo se a taxa for adequada. O sintoma de custo crescente aponta para passo grande demais, não para o ponto inicial."
+        }
+      ],
+      "generalExplanation": "**Cenário.** A taxa de aprendizado é o tamanho do passo (slide 39: no tabuleiro, andar 2 casas por jogada). Imagine descer um vale: passo pequeno demais leva uma eternidade; passo grande demais faz você pular de um lado ao outro e subir a encosta oposta. Analogia de software: é como o intervalo de retentativa de um backoff, ou o passo de uma busca binária mal calibrada: muito grande e você passa do ponto, muito pequeno e demora. Sintoma → causa: **custo cresce ou oscila = taxa alta**; **custo cai muito devagar e ainda alto no fim = taxa baixa** (ou poucas iterações). Slides 39 a 42."
+    },
+    {
+      "id": "q07",
+      "label": "Padronização e coeficientes β",
+      "type": "single",
+      "prompt": "O slide 19 diz que é 'um bom hábito padronizar as características' antes de interpretar os coeficientes β. Considere dois atributos: tamanho do arquivo em GB (valores entre 0,001 e 0,005) e número de requisições (valores entre 1.000 e 5.000). Por que padronizar ajuda?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Porque atributos em escala pequena recebem β enorme só para compensar a unidade, e sem padronizar os β enganam sobre a importância de cada atributo.",
+          "correct": true,
+          "explanation": "Para o arquivo em GB influenciar o resultado tanto quanto as requisições, seu β precisa ser gigante, só por causa da unidade. Comparar β brutos faria o arquivo parecer o atributo mais importante. Padronizado, cada β passa a medir a intensidade relativa do efeito. As previsões do modelo não mudam; muda só a interpretação."
+        },
+        {
+          "id": "b",
+          "text": "Porque a padronização deixa todos os coeficientes positivos, e assim passam a poder ser comparados diretamente entre si.",
+          "correct": false,
+          "explanation": "A padronização não muda o **sinal** de nenhum coeficiente: uma variável com efeito inverso continua com β negativo. O objetivo é colocar os atributos na mesma escala, não retirar o sinal."
+        },
+        {
+          "id": "c",
+          "text": "Porque a regressão só converge se todas as variáveis tiverem exatamente a mesma média e o mesmo desvio padrão antes do treino, sem o que o gradiente trava.",
+          "correct": false,
+          "explanation": "Escalas diferentes podem atrasar o gradiente descendente, mas não impedem a convergência, e o MQO nem usa iterações. Padronizar é uma boa prática de interpretação (e de velocidade), não uma condição para o algoritmo funcionar."
+        },
+        {
+          "id": "d",
+          "text": "Porque a padronização aumenta o R² do modelo, e comparar β só faz sentido quando o R² é alto.",
+          "correct": false,
+          "explanation": "Padronizar com uma transformação linear não altera o R² nem as previsões do modelo linear. A comparação de β depende de estar na mesma escala, não de o R² ser alto."
+        }
+      ],
+      "generalExplanation": "**Cenário.** Um β diz 'quanto Y muda para cada 1 unidade de X'. Se uma coluna está em GB e outra em milhares de requisições, 'uma unidade' significa coisas absurdamente diferentes: comparar β brutos é como comparar a latência medida em segundos com a medida em microssegundos achando que a de microssegundos é 'maior'. Padronizar (subtrair a média e dividir pelo desvio padrão) coloca todos na mesma régua, então o β passa a indicar a importância relativa. Slide 19: β perto de zero → efeito pequeno; longe de zero (positivo ou negativo) → efeito grande, **se as escalas forem comparáveis**."
+    },
+    {
+      "id": "q08",
+      "label": "Regularização: Ridge versus Lasso",
+      "type": "single",
+      "prompt": "Sobre as regularizações em regressão linear, assinale a diferença fundamental entre **Ridge (L2)** e **Lasso (L1)**.",
+      "options": [
+        {
+          "id": "a",
+          "text": "O Ridge só funciona com variáveis correlacionadas entre si, enquanto o Lasso só funciona com variáveis independentes umas das outras.",
+          "correct": false,
+          "explanation": "Nenhum dos dois tem essa restrição. O slide diz que o Ridge **ajuda muito** quando há variáveis correlacionadas, o que não significa que só funcione nesse caso; e o Lasso também pode ser aplicado quando há correlação."
+        },
+        {
+          "id": "b",
+          "text": "O Ridge usa como erro o MAE e o Lasso usa o MSE; a penalidade é a mesma nos dois, e é isso que diferencia os dois métodos.",
+          "correct": false,
+          "explanation": "Os dois usam o mesmo termo de erro da regressão (soma dos quadrados). A diferença está na **penalidade**: Ridge penaliza a soma dos quadrados dos coeficientes (L2) e Lasso a soma dos valores absolutos (L1)."
+        },
+        {
+          "id": "c",
+          "text": "O Ridge zera os coeficientes de variáveis irrelevantes, enquanto o Lasso apenas os aproxima de zero, sem nunca zerá-los.",
+          "correct": false,
+          "explanation": "Está invertido. Quem pode zerar coeficientes é o **Lasso** (faz seleção de variáveis); o **Ridge** encolhe os coeficientes sem zerá-los (slide 46)."
+        },
+        {
+          "id": "d",
+          "text": "O Lasso pode levar coeficientes exatamente a zero, selecionando variáveis, enquanto o Ridge apenas reduz todos os coeficientes sem eliminar nenhum.",
+          "correct": true,
+          "explanation": "Slide 46: Lasso 'limpa' automaticamente, mantendo só as variáveis que importam (pode ser usado para seleção de features); Ridge diminui todos os coeficientes, mas não os zera, e ajuda quando há variáveis correlacionadas."
+        }
+      ],
+      "generalExplanation": "**Cenário.** Regularizar é adicionar à função de custo uma 'multa' sobre o tamanho dos coeficientes, para impedir o modelo de decorar ruído (overfitting). O tipo de multa muda o comportamento. **Ridge (L2)**: multa proporcional ao quadrado dos β; encolhe todos, nenhum chega a zero (o 'sossega-leão' do slide 46). **Lasso (L1)**: multa proporcional ao valor absoluto dos β; pode zerar alguns, funcionando como seleção automática de variáveis. Analogia: Ridge é um limite de CPU dividido entre todos os processos; Lasso é desligar os processos que não valem a pena. Macete: **L1 = esparso (zera); L2 = encolhe**."
+    },
+    {
+      "id": "q09",
+      "label": "MAE versus MSE",
+      "type": "single",
+      "prompt": "Um analista calculou duas métricas para o mesmo modelo de regressão (alvo em reais): MAE = 4 e MSE = 60. Ele concluiu: 'o modelo é 15 vezes pior no MSE do que no MAE'. Por que essa conclusão é **conceitualmente incorreta**?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Porque a razão entre as duas métricas só vale quando medidas no treino; no conjunto de teste elas deixam de ser comparáveis.",
+          "correct": false,
+          "explanation": "O problema da comparação não depende do conjunto de dados: vem das unidades e da forma de calcular. No treino ou no teste, MSE e MAE continuam em escalas diferentes."
+        },
+        {
+          "id": "b",
+          "text": "Porque o MSE deveria ser sempre menor que o MAE, de modo que o valor 60 só pode ser fruto de um erro de cálculo no código.",
+          "correct": false,
+          "explanation": "Para erros maiores que 1 o quadrado cresce, então o MSE costuma ser **maior** que o MAE (o slide fala em 'sempre'). Só ficaria menor se os erros fossem menores que 1 (0,3² = 0,09). MSE 60 com MAE 4 é perfeitamente coerente."
+        },
+        {
+          "id": "c",
+          "text": "Porque o MSE está em reais², então não se compara seu valor com o MAE; compara-se o MSE de um modelo com o MSE de outro.",
+          "correct": true,
+          "explanation": "O MSE eleva o resíduo ao quadrado e, portanto, mede o erro em reais², uma escala diferente da do MAE (reais). O slide 54 diz que não se deve comparar o MSE ao MAE e que faz mais sentido comparar o MSE com o MSE de outro modelo."
+        },
+        {
+          "id": "d",
+          "text": "Porque o MAE mede apenas o viés do modelo e o MSE mede apenas a variância, de modo que as duas métricas descrevem fenômenos incompatíveis entre si.",
+          "correct": false,
+          "explanation": "Essa divisão não existe. As duas métricas medem o tamanho do erro de previsão, só que com pesos diferentes (linear no MAE, quadrático no MSE). Viés e variância são conceitos da decomposição do erro, não são o MAE e o MSE."
+        }
+      ],
+      "generalExplanation": "**Cenário.** Se o alvo é em reais, o MAE sai em reais ('erro médio de 4 reais'), fácil de explicar. O MSE sai em reais ao quadrado (60 reais², sem significado direto). Dizer '15 vezes pior' é comparar centímetros com metros quadrados. Use o MSE para ranquear modelos entre si (menor é melhor) e, se quiser uma versão na unidade original, a raiz do MSE (RMSE). **Ressalva para a prova:** o slide 54 afirma que o MSE 'sempre será maior' que o MAE; na verdade isso vale para erros maiores que 1 (com erros menores que 1 o quadrado diminui). Se a afirmação aparecer com 'sempre', responda o que o slide diz; a ideia central (não comparar MSE com MAE) vale em qualquer versão."
+    },
+    {
+      "id": "q10",
+      "label": "Sensibilidade a outliers nas métricas",
+      "type": "single",
+      "prompt": "Um conjunto de teste contém alguns erros pontuais muito grandes (outliers graves). Qual métrica sofre o **maior impacto** e qual é a mais **robusta**?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O MAE sofre mais, pois não usa quadrados nem raízes para amortecer os erros; o MSE é o mais robusto por dividir a soma pelo número de pontos.",
+          "correct": false,
+          "explanation": "Incorreto. O MAE soma os erros de forma linear, então um erro de 100 contribui com 100. O MSE o eleva ao quadrado (10.000), o que o torna muito mais sensível. Dividir pelo número de pontos não amortece esse peso."
+        },
+        {
+          "id": "b",
+          "text": "O MSE (e o RMSE) sofre o maior impacto, por elevar o resíduo ao quadrado; o MAE é mais robusto, pois trata todos os erros de forma linear.",
+          "correct": true,
+          "explanation": "Um erro de 100 contribui com 10.000 no MSE e só 100 no MAE. Por isso poucos erros grandes puxam o MSE para cima, enquanto o MAE se mantém mais estável. Escolher o MSE é escolher punir muito os erros graves."
+        },
+        {
+          "id": "c",
+          "text": "Ambas sofrem a mesma variação percentual com qualquer outlier, pois as duas dependem da mesma diferença entre valor real e previsto.",
+          "correct": false,
+          "explanation": "Partem da mesma diferença, mas a transformam de modo diferente: linear no MAE e quadrática no MSE. A variação percentual causada por um outlier é muito maior no MSE."
+        },
+        {
+          "id": "d",
+          "text": "Nenhuma das duas é afetada, pois ambas são médias e a média dilui um erro isolado entre todos os pontos da base.",
+          "correct": false,
+          "explanation": "A média é sensível a valores extremos, especialmente quando cada termo já foi elevado ao quadrado (MSE). Um outlier pode dominar a soma e deslocar o valor da métrica."
+        }
+      ],
+      "generalExplanation": "**Cenário.** Pense em medir a qualidade de um serviço pelo tempo de resposta. O MAE é como a média simples do atraso por requisição: um timeout de 100 s entre 99 respostas normais aumenta a média, mas de forma proporcional. O MSE é como uma média em que atrasos grandes pesam ao quadrado: um timeout de 100 s pesa 10.000 e domina a conta. Logo: **MSE/RMSE sensível a outliers (pune erros graves); MAE robusto.** Slides 53 e 54. Se o negócio tolera pequenos erros mas não suporta erros grandes, o MSE é a métrica certa; se outliers são ruído, prefira o MAE."
+    },
+    {
+      "id": "q11",
+      "label": "Coeficiente de determinação R²",
+      "type": "single",
+      "prompt": "Sobre o coeficiente de determinação (R²), assinale a afirmação **correta**.",
+      "options": [
+        {
+          "id": "a",
+          "text": "R² = 0 significa que o modelo explica perfeitamente todos os dados, com erro zero em todas as previsões.",
+          "correct": false,
+          "explanation": "Quem indica explicação perfeita é R² = 1. R² = 0 indica que o modelo **não explica nada** da variabilidade de Y em torno da média: não é melhor do que prever sempre a média (slide 51)."
+        },
+        {
+          "id": "b",
+          "text": "Ao adicionar uma variável aleatória e inútil, o R² simples diminui, pois o modelo fica mais complexo sem ganho de informação.",
+          "correct": false,
+          "explanation": "O R² simples **não diminui** ao adicionar variáveis (no treino, com intercepto): na pior hipótese, fica igual. Por isso ele não serve para comparar modelos com números diferentes de variáveis; para isso existe o R² ajustado (slide 52)."
+        },
+        {
+          "id": "c",
+          "text": "O R² medido no treino já mostra a capacidade de generalização do modelo, então dispensa avaliá-lo em dados de teste e também a validação cruzada.",
+          "correct": false,
+          "explanation": "O R² no treino diz o quanto o modelo se ajusta aos dados que ele já viu. Um modelo em overfitting pode ter R² altíssimo no treino e péssimo no teste. A generalização só se verifica em dados separados."
+        },
+        {
+          "id": "d",
+          "text": "O R² mede a fração da variabilidade de Y em torno da média que o modelo explica: 1 explica tudo, 0 não explica nada além da média.",
+          "correct": true,
+          "explanation": "É a definição do slide 51. Na fórmula, R² = 1 - SQR/SQT: compara o erro do modelo (SQR) com o erro de uma previsão constante igual à média (SQT). Quanto menor o erro do modelo em relação à média, mais perto de 1."
+        }
+      ],
+      "generalExplanation": "**Cenário.** O R² responde: 'quanto melhor meu modelo é do que o modelo mais bobo possível, aquele que sempre prevê a média de Y?'. O SQT é o erro desse modelo bobo (baseline); o SQR é o erro do seu modelo. R² = 1 - SQR/SQT. Se SQR é pequeno perto de SQT, R² fica perto de 1. Analogia: é o ganho do seu algoritmo sobre uma implementação ingênua usada como referência de benchmark. Slide 51. Cuidado com a pegadinha: o R² simples **sobe (ou fica igual)** quando se adiciona variável, mesmo inútil; quem a penaliza é o R² ajustado."
+    },
+    {
+      "id": "q12",
+      "label": "R² no slide versus na literatura",
+      "type": "single",
+      "prompt": "O slide 51 afirma que 'o R² está sempre entre 0 e 1'. Ao avaliar um modelo no scikit-learn com os dados de **teste**, você obtém R² = -0,42. O que esse valor negativo significa?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Que houve erro de divisão por zero na biblioteca, pois um R² negativo é matematicamente impossível.",
+          "correct": false,
+          "explanation": "Valores negativos são perfeitamente possíveis na fórmula R² = 1 - SQR/SQT: basta SQR ser maior do que SQT. Nenhuma divisão por zero está envolvida."
+        },
+        {
+          "id": "b",
+          "text": "Que o modelo, no teste, errou mais do que erraria uma previsão constante igual à média: foi pior que o baseline mais simples possível.",
+          "correct": true,
+          "explanation": "SQR > SQT faz o R² ficar negativo. Prever sempre a média daria R² = 0; um modelo que erra mais do que isso fica abaixo de zero. É comum quando há overfitting: o modelo vai bem no treino e muito mal em dados novos."
+        },
+        {
+          "id": "c",
+          "text": "Que existe uma relação inversa entre atributos e alvo, e o modelo aprendeu uma reta decrescente, como acontece com a correlação negativa.",
+          "correct": false,
+          "explanation": "O sinal do R² não indica o sentido da relação. A direção (reta crescente ou decrescente) está no sinal do coeficiente β; o R² é uma medida de qualidade do ajuste, e negativo quer dizer ajuste pior que a média."
+        },
+        {
+          "id": "d",
+          "text": "Que o R² varia de -1 a 1, como o coeficiente de Pearson, e -0,42 é uma associação negativa moderada entre previsões e valores reais.",
+          "correct": false,
+          "explanation": "O R² não é uma correlação. Ele pode ser negativo, mas o limite inferior não é -1: pode ser tão negativo quanto o modelo for ruim (-5, -100). Não é uma associação, é uma comparação com a previsão pela média."
+        }
+      ],
+      "generalExplanation": "**O que responder na prova (as duas versões).** (1) **Versão do slide 51:** 'R² está sempre entre 0 e 1' (0 = não explica nada, 1 = explica tudo). Vale para o ajuste por mínimos quadrados com intercepto, calculado sobre os dados de treino. Se a afirmativa copiar o slide, marque conforme o slide. (2) **Versão da literatura/scikit-learn:** em dados de teste (ou modelo sem intercepto), o R² **pode ser negativo**, quando o modelo é pior do que prever a média. Se o enunciado trouxer um R² negativo, falar em 'pior que a média' ou em teste, responda pela literatura. Analogia: o baseline é o 'return media' de uma função; se sua função elaborada erra mais que isso, o R² vai para baixo de zero."
+    },
+    {
+      "id": "q13",
+      "label": "R² ajustado e seleção de modelos",
+      "type": "single",
+      "prompt": "Por que o **R² ajustado** (slide 52) é a métrica indicada para comparar se um modelo com 5 variáveis é realmente melhor que um modelo com 3?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Porque o R² simples nunca cai ao acrescentar variáveis, mesmo inúteis, enquanto o ajustado as penaliza e cai quando elas só acrescentam ruído.",
+          "correct": true,
+          "explanation": "Com mais variáveis, o R² simples sempre melhora um pouco (ajusta até o ruído). O ajustado desconta o número de variáveis e só sobe se a nova variável ajudar de fato a explicar Y (slide 52: variável útil, sobe; irrelevante, cai)."
+        },
+        {
+          "id": "b",
+          "text": "Porque o R² ajustado ignora as variáveis menos correlacionadas com Y e calcula o ajuste só com as mais importantes, descartando as demais do modelo.",
+          "correct": false,
+          "explanation": "O R² ajustado usa todas as variáveis do modelo; ele não filtra nenhuma. O que ele faz é aplicar uma penalidade conforme o número de variáveis. Quem faz seleção de variáveis é o Lasso, por exemplo."
+        },
+        {
+          "id": "c",
+          "text": "Porque o R² simples só pode ser calculado quando os modelos comparados têm o mesmo número de variáveis.",
+          "correct": false,
+          "explanation": "O R² simples é calculável para qualquer número de variáveis. A limitação é outra: ele tende a favorecer o modelo com mais variáveis, tornando a comparação injusta."
+        },
+        {
+          "id": "d",
+          "text": "Porque o R² ajustado mede o erro na mesma unidade de Y, como o MAE, o que facilita comparar modelos de tamanhos diferentes.",
+          "correct": false,
+          "explanation": "O R² ajustado continua sendo uma medida adimensional (proporção), como o R². Quem mede erro na unidade de Y é o MAE ou o RMSE. O motivo do R² ajustado é outro: descontar o número de variáveis."
+        }
+      ],
+      "generalExplanation": "**Cenário.** Comparar o R² simples de um modelo com 3 variáveis e outro com 5 é injusto, como comparar a cobertura de testes de dois projetos contando testes triviais que sempre passam: acrescentar variável sempre 'melhora o número'. O R² ajustado cobra um 'imposto' por variável: se a nova não compensa o imposto, o valor cai. Slide 52: é **a métrica correta para comparar** modelos com números diferentes de variáveis. Regra: R² ajustado ≤ R²; se o R² simples sobe e o ajustado cai, a variável adicionada era ruído."
+    },
+    {
+      "id": "q14",
+      "label": "Regressão múltipla e hiperplanos",
+      "type": "single",
+      "prompt": "Ao passar de uma regressão linear simples para uma **múltipla** com 10 atributos de entrada (x1, ..., x10), qual é a representação geométrica da função de predição?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Uma reta, pois todo modelo linear, tenha uma ou dez variáveis, é sempre uma reta, apenas com mais inclinação.",
+          "correct": false,
+          "explanation": "Uma reta só existe com **uma** variável de entrada (plano x-y). Com 10 atributos cada um ganha seu eixo e seu β, e o conjunto deixa de caber numa reta (slide 15)."
+        },
+        {
+          "id": "b",
+          "text": "Um hiperplano: a generalização da reta para vários atributos, em que cada atributo tem o seu próprio coeficiente β.",
+          "correct": true,
+          "explanation": "Slide 15: na regressão múltipla o espaço tem várias dimensões, uma por característica, e a função é um hiperplano e não mais uma linha. Cada atributo contribui com seu x ponderado pelo próprio β."
+        },
+        {
+          "id": "c",
+          "text": "Dez retas independentes, uma por atributo, cuja previsão final é decidida por votação entre elas.",
+          "correct": false,
+          "explanation": "Não há votação: as 10 contribuições são **somadas** numa única equação (α + β1·x1 + ... + β10·x10). É um único hiperplano, e não um comitê de retas."
+        },
+        {
+          "id": "d",
+          "text": "Uma superfície curva (paraboloide) que se adapta ao formato dos dados em cada uma das dez dimensões.",
+          "correct": false,
+          "explanation": "Modelos lineares produzem superfícies **planas** (reta, plano, hiperplano). Para curvar a superfície seria preciso incluir termos polinomiais ou usar outro modelo."
+        }
+      ],
+      "generalExplanation": "**Cenário.** Regressão simples: uma variável, uma reta num gráfico 2D. Regressão com 2 atributos: um plano num gráfico 3D. Com 10 atributos não dá para desenhar, mas a ideia é a mesma, e se chama **hiperplano**. É sempre uma função plana (linear), só que em mais dimensões. Analogia: uma função com mais parâmetros de entrada que continua sendo uma soma ponderada simples. Slides 13 e 15. Simples = uma variável independente; múltipla = várias."
+    },
+    {
+      "id": "q15",
+      "label": "Gráfico: curvas de custo por iteração",
+      "type": "single",
+      "prompt": "Três treinos da mesma regressão por gradiente descendente usaram taxas de aprendizado diferentes: 0,01, 0,1 e 0,9. A tabela abaixo é o **gráfico de custo × iteração** em forma numérica (cada coluna seria uma curva do gráfico, com o custo no eixo vertical e a iteração no horizontal).\n\n| Iteração | Curva A (custo) | Curva B (custo) | Curva C (custo) |\n| :-- | :-- | :-- | :-- |\n| 0 | 100 | 100 | 100 |\n| 10 | 99 | 1.500 | 30 |\n| 20 | 97 | 24.000 | 12 |\n| 30 | 96 | 390.000 | 8 |\n| 40 | 95 | 6.200.000 | 7 |\n| 50 | 94 | 99.000.000 | 7 |\n\nQual associação entre curva e taxa está correta?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A = 0,9; B = 0,01; C = 0,1. A curva que quase não se mexe é a que 'pula' demais e fica oscilando num mesmo patamar.",
+          "correct": false,
+          "explanation": "Taxa alta não deixa o custo parado: ela **ultrapassa o vale** e faz o custo crescer (curva B). Uma curva quase horizontal e ainda alta no fim é descida lenta, ou seja, taxa baixa."
+        },
+        {
+          "id": "b",
+          "text": "A = 0,01; B = 0,9; C = 0,1. A curva A desce muito devagar, a B explode e a C cai rápido e estabiliza.",
+          "correct": true,
+          "explanation": "A: 50 iterações e o custo mal saiu do lugar (100 → 94), é a taxa muito baixa (0,01), iteração acaba antes da convergência (slide 42). B: o custo cresce a cada passo, é a taxa alta (0,9) que ultrapassa o mínimo (slide 43). C: queda forte no início e estabilização em torno de 7, é a taxa equilibrada (slide 44)."
+        },
+        {
+          "id": "c",
+          "text": "A = 0,1; B = 0,9; C = 0,01. A curva C é a mais lenta, porque a que estabiliza depressa deve ter taxa baixa.",
+          "correct": false,
+          "explanation": "Estabilizar rápido não é sinal de taxa baixa: a curva C fez a maior queda nas primeiras iterações e estacionou no mínimo. Uma taxa baixa daria a descida lenta da curva A, que não estabiliza dentro de 50 iterações."
+        },
+        {
+          "id": "d",
+          "text": "A = 0,01; B = 0,1; C = 0,9. A curva B cresce, porque a taxa equilibrada aumenta o custo antes de reduzi-lo.",
+          "correct": false,
+          "explanation": "Taxa equilibrada não faz o custo crescer de forma contínua: nas primeiras iterações pode haver alguma perturbação, mas o custo depois se atenua e cai (slide 44). Custo que só cresce, até 99 milhões, é divergência por taxa alta."
+        }
+      ],
+      "generalExplanation": "**Como ler a figura.** Em prova, esta questão aparece como 3 painéis de linha. Eixo horizontal = iteração (cada passo do laço), eixo vertical = custo (quanto menor, melhor). Três formatos clássicos: (1) **linha quase plana e ainda alta no fim** = taxa muito baixa ou poucas iterações (o laço terminou antes de convergir); (2) **linha que sobe ou oscila para o infinito** = taxa alta demais (o passo ultrapassa o vale); (3) **queda forte no início que se achata** = taxa equilibrada (alta perturbação inicial, atenuada ao longo das épocas). Analogia: é o gráfico de erro por tentativa de um ajuste automático de timeout: o certo cai e estabiliza; o instável explode; o lento parece nem se mover. Slides 41 a 44."
+    },
+    {
+      "id": "q16",
+      "label": "Resumo das técnicas de regularização",
+      "type": "multiple",
+      "prompt": "Quais das afirmações a seguir sobre **regularização em modelos lineares** são **verdadeiras**? (Selecione todas as corretas.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "O Ridge (L2) é especialmente útil quando há muitas variáveis correlacionadas entre si, pois diminui os coeficientes de todas elas de forma suave.",
+          "correct": true,
+          "explanation": "Verdadeiro (slide 46): o Ridge 'dá um sossega-leão' em variáveis agitadas e ajuda muito quando há muitas variáveis correlacionadas, que sem penalidade tendem a produzir coeficientes instáveis e grandes."
+        },
+        {
+          "id": "b",
+          "text": "O Ridge (L2), assim como o Lasso, leva a zero os coeficientes das variáveis irrelevantes quando o parâmetro de penalidade λ é suficientemente grande.",
+          "correct": false,
+          "explanation": "Falso. O Ridge diminui todos os coeficientes e os aproxima de zero, **mas não os zera** (slide 46). A capacidade de zerar coeficientes, e assim eliminar variáveis, é do Lasso."
+        },
+        {
+          "id": "c",
+          "text": "O Lasso (L1) pode ser usado para seleção de variáveis, porque sua penalidade é capaz de levar coeficientes de variáveis irrelevantes a exatamente zero.",
+          "correct": true,
+          "explanation": "Verdadeiro (slide 46): o Lasso reduz o coeficiente de uma variável até zero, 'limpando' o modelo e mantendo só o que importa. Por isso pode ser usado para seleção de features."
+        },
+        {
+          "id": "d",
+          "text": "A regularização adiciona uma penalidade à função de custo que encarece coeficientes β grandes, para o modelo não decorar o ruído do treino.",
+          "correct": true,
+          "explanation": "Verdadeiro (slides 45 e 46): regularizar é punir a complexidade. Se os β crescem demais, o custo aumenta, e isso força um modelo mais simples e menos propenso a overfitting."
+        }
+      ],
+      "generalExplanation": "**Cenário.** Sem regularização, o modelo tenta reduzir o erro a quase zero e acaba passando por todos os pontos, inclusive pelo ruído e pelos outliers (slide 45): é overfitting. Com regularização, dizemos: 'reduza o erro, mas pagando um custo extra se seus β ficarem grandes'. Analogia: um linter de complexidade que reprova código que cresce demais. **Ridge (L2): encolhe, não zera, bom com variáveis correlacionadas. Lasso (L1): pode zerar, faz seleção de variáveis.** (Na prática, costuma-se padronizar os atributos antes de regularizar, porque a penalidade olha o tamanho dos β; isso é uma boa prática geral e não consta nos slides desta aula.)"
+    },
+    {
+      "id": "q17",
+      "label": "Tabela: lendo α e β",
+      "type": "single",
+      "prompt": "Uma imobiliária ajustou uma regressão linear para prever o **valor do aluguel (em reais)** de imóveis. A tabela mostra os parâmetros aprendidos:\n\n| Termo do modelo | Valor aprendido |\n| :-- | :-- |\n| α (constante da regressão) | 400 |\n| β1 · área (m²) | 12 |\n| β2 · idade do imóvel (anos) | -5 |\n| β3 · número de vagas | 0,4 |\n\nOs atributos são área, idade e vagas; o alvo é o valor do aluguel. Qual leitura da tabela está **correta**?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O α = 400 é o aluguel médio de todos os imóveis da base de treino, já que a constante da regressão representa a média de Y.",
+          "correct": false,
+          "explanation": "α é o valor previsto quando **todos os atributos valem zero** (o ponto onde o hiperplano cruza o eixo de Y), e não a média. Em geral, esse caso nem existe na prática (imóvel de 0 m²). A média de Y seria a previsão do modelo mais simples, sem atributos."
+        },
+        {
+          "id": "b",
+          "text": "O β1 = 12 indica que um imóvel com 1 m² a mais tem aluguel 12 vezes maior que o de um imóvel com 1 m² a menos, qualquer que seja a idade ou o número de vagas.",
+          "correct": false,
+          "explanation": "β1 é um acréscimo **aditivo**, em reais por m², e não um multiplicador: cada m² a mais soma 12 reais ao aluguel previsto. A previsão é uma soma ponderada (Y = α + β1·x1 + ...), não um produto."
+        },
+        {
+          "id": "c",
+          "text": "O aluguel é a variável dependente, os três atributos são independentes, e cada ano a mais de idade reduz em 5 reais o aluguel previsto, mantidas as demais.",
+          "correct": true,
+          "explanation": "Slides 5 e 6: o alvo (aluguel) é a variável **dependente**; os atributos são as **independentes**. Cada β é o efeito, por unidade do atributo, sobre a previsão: β2 = -5 significa 5 reais a menos por ano de idade, com área e vagas fixas. O sinal negativo é perfeitamente normal."
+        },
+        {
+          "id": "d",
+          "text": "O sinal negativo de β2 mostra um erro no treino, já que um coeficiente de regressão precisa ser positivo para expressar um efeito relevante.",
+          "correct": false,
+          "explanation": "O sinal de β só indica a **direção** do efeito: positivo = Y sobe com X; negativo = Y cai quando X sobe. A relevância vem da distância do β até zero (slide 19: longe de zero, positivo ou negativo, o efeito é significativo)."
+        }
+      ],
+      "generalExplanation": "**Cenário.** A equação aprendida é: aluguel previsto = 400 + 12·área - 5·idade + 0,4·vagas. Pense nela como uma função pura que soma contribuições: α é o valor base (o 'default' quando todas as entradas são zero) e cada β é o peso do atributo correspondente. Variável **dependente (Y)** = o que queremos prever, e **independentes (X)** = as entradas. Slides 4 a 6 e 19. Para comparar a importância relativa de áreas, idades e vagas pelo tamanho dos β, é preciso padronizar os atributos (a unidade de cada um é diferente)."
+    },
+    {
+      "id": "q18",
+      "label": "Regressão simples ou múltipla",
+      "type": "single",
+      "prompt": "Uma equipe quer prever o **tempo de build** de um projeto. No primeiro experimento usou apenas o número de arquivos alterados. No segundo, usou o número de arquivos alterados, o número de testes executados e o tamanho do cache. Qual descrição está **correta**?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O primeiro é regressão simples e o segundo é múltipla; em ambos o tempo de build é a variável dependente.",
+          "correct": true,
+          "explanation": "Slide 13: simples = uma variável independente (X); múltipla = várias. O alvo (tempo de build) é a variável dependente nos dois casos. No segundo experimento, cada atributo ganha seu próprio β, e a função passa a ser um hiperplano."
+        },
+        {
+          "id": "b",
+          "text": "O primeiro é regressão simples, mas o segundo vira classificação, porque com mais variáveis o alvo passa a ser categórico.",
+          "correct": false,
+          "explanation": "O tipo de problema depende do alvo, não do número de atributos. O tempo de build é contínuo, então segue sendo regressão, agora com mais entradas."
+        },
+        {
+          "id": "c",
+          "text": "Os dois são regressão múltipla, pois o tempo de build depende de várias coisas na prática, mesmo que o modelo use só uma delas.",
+          "correct": false,
+          "explanation": "O tipo de regressão é definido por quantas variáveis independentes o **modelo** usa, e não por quantas causas existem no mundo real. Com uma única variável de entrada, a regressão é simples."
+        },
+        {
+          "id": "d",
+          "text": "O primeiro é regressão simples porque usa um único exemplo de treino, e o segundo é múltipla porque usa vários exemplos de treino.",
+          "correct": false,
+          "explanation": "A distinção não tem a ver com o número de linhas (exemplos), e sim com o número de **colunas** de entrada (variáveis independentes). Ambos os experimentos podem usar milhares de exemplos."
+        }
+      ],
+      "generalExplanation": "**Cenário.** Simples vs múltipla é só quantidade de **colunas de entrada**: simples = 1 variável independente (uma reta: Y = α + βx); múltipla = várias, cada uma ponderada pelo seu β (um hiperplano). O alvo (variável dependente) continua sendo o mesmo. Analogia: uma função com um único parâmetro versus uma com vários parâmetros. Regra para a prova: conte as variáveis **independentes**; não confunda com o número de exemplos, nem com o tipo do alvo. Slides 13 e 15."
+    },
+    {
+      "id": "q19",
+      "label": "Correlação r = 0,77 e causalidade",
+      "type": "single",
+      "prompt": "O slide 9 mostra, para vários países, um gráfico de dispersão entre o **índice de felicidade** (variável independente) e a **expectativa de vida** (variável dependente), com correlação de 0,77. Qual conclusão é **adequada**?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Países mais felizes tendem a ter maior expectativa de vida: associação linear positiva razoavelmente forte, que não prova por si só que a felicidade cause a longevidade.",
+          "correct": true,
+          "explanation": "r = 0,77 é positivo e alto, então há tendência linear crescente: mais felicidade, em média, mais expectativa de vida. Mas correlação não prova causa: renda, saúde pública e educação poderiam explicar ambas. Nomear 'independente' e 'dependente' define o papel no modelo, não a causalidade."
+        },
+        {
+          "id": "b",
+          "text": "Cada ponto a mais no índice de felicidade aumenta a expectativa de vida em 0,77 ano, pois r é o coeficiente angular da reta.",
+          "correct": false,
+          "explanation": "r é um número entre -1 e 1 que mede a força da associação linear; **não** é o coeficiente angular β. A inclinação da reta (anos por ponto de índice) depende das escalas das duas variáveis e seria outro número."
+        },
+        {
+          "id": "c",
+          "text": "Como 0,77 está bem distante de 1, a correlação é fraca e a regressão linear não é adequada para esses dados, sendo melhor outro algoritmo.",
+          "correct": false,
+          "explanation": "0,77 é uma correlação **forte** para dados reais. Não precisa chegar a 1 (relação perfeita, rara em dados reais) para a regressão linear ser útil: o slide 18 pede 'uma boa correlação linear', e 0,77 satisfaz isso."
+        },
+        {
+          "id": "d",
+          "text": "Como r = 0,77, a felicidade explica 77% da variação da expectativa de vida e é a causa de 77% dos casos, sendo o restante efeito de ruído.",
+          "correct": false,
+          "explanation": "O percentual da variação explicada é o R², que para a regressão simples é r² ≈ 0,59 (cerca de 59%), e não 77%. Além disso, 'explica' é estatístico e não significa causar: não existe 'causa de 77% dos casos'."
+        }
+      ],
+      "generalExplanation": "**Cenário.** O gráfico de dispersão põe um ponto por país: eixo horizontal = felicidade, vertical = expectativa de vida. A nuvem sobe da esquerda para a direita (tendência positiva) e é razoavelmente estreita em volta de uma reta (r = 0,77, forte). Dá para ajustar uma reta e fazer previsões. O que **não** dá é concluir causa: 'quem acessa mais o site tem mais compras' não prova que o site causa compras, pode haver um terceiro fator. Distinções que caem: **r** (força linear, entre -1 e 1), **β** (inclinação da reta, na unidade de Y por unidade de X), **R²** (proporção explicada; na regressão simples vale r²). Slides 7 a 9."
+    },
+    {
+      "id": "q20",
+      "label": "Tabela: quando a regressão linear serve",
+      "type": "single",
+      "prompt": "Um conjunto de 7 pontos (x, y) foi coletado para tentar uma regressão linear simples. Este é o equivalente numérico de um gráfico de dispersão:\n\n| x | -3 | -2 | -1 | 0 | 1 | 2 | 3 |\n| :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |\n| y | 9 | 4 | 1 | 0 | 1 | 4 | 9 |\n\nSegundo o critério do slide 18 ('aplicar quando há boa correlação linear'), a regressão linear simples é adequada a esses dados?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Sim: bastaria aumentar o número de iterações do gradiente descendente até a reta passar por todos os pontos.",
+          "correct": false,
+          "explanation": "Mais iterações só levam o gradiente mais perto da melhor reta possível, e esta é horizontal. Nenhuma reta passa por todos os pontos de uma parábola. A limitação está na forma do modelo, e não no treino."
+        },
+        {
+          "id": "b",
+          "text": "Não: a regressão linear exige que todos os valores de x sejam positivos, e aqui há valores negativos, que invalidam o cálculo dos coeficientes.",
+          "correct": false,
+          "explanation": "A regressão linear aceita valores negativos, nulos e positivos em x e em y. O problema aqui é a forma da relação (curva), e não o sinal dos valores."
+        },
+        {
+          "id": "c",
+          "text": "Não: a relação é nítida, mas em forma de U, então a correlação linear é zero e a melhor reta seria horizontal, sem poder preditivo.",
+          "correct": true,
+          "explanation": "Os pontos seguem y = x², que desce e depois sobe. Os lados esquerdo e direito se anulam e r = 0: a reta ajustada fica horizontal, na média (y ≈ 3,9), e o R² é 0. Há relação perfeita, mas **não linear**. Seria preciso outro modelo ou transformar o atributo (por exemplo, usar x²)."
+        },
+        {
+          "id": "d",
+          "text": "Sim: como y é completamente determinado por x, a relação é perfeita e a regressão linear terá R² = 1, já que o ajuste será exato.",
+          "correct": false,
+          "explanation": "Que y seja determinado por x não implica relação **linear**. O modelo linear só enxerga alinhamento em reta, e aqui o melhor ajuste linear tem R² = 0. Determinismo e linearidade são coisas diferentes."
+        }
+      ],
+      "generalExplanation": "**Cenário.** Antes de ajustar uma reta, olhe o formato da nuvem de pontos. Regressão linear funciona quando há uma boa correlação linear, positiva ou negativa (slide 18). Em formato de U, os pontos à esquerda 'puxam' a reta para um lado e os da direita para o outro, e o resultado é uma reta plana. Analogia: é um teste que só valida relações monotônicas, aplicado a um comportamento em U, e passa a impressão falsa de 'sem relação'. Diagnóstico prático: gráfico de dispersão e correlação de Pearson. **r ≈ 0 não significa independência; significa ausência de relação linear** (ver também a questão sobre r = 0,02)."
+    },
+    {
+      "id": "q21",
+      "label": "Complexidade do MQO",
+      "type": "single",
+      "prompt": "A equipe dobrou a quantidade de instâncias (linhas) da base e vai treinar a regressão linear pelo **método dos mínimos quadrados (MQO)**. Segundo o slide 22, como muda o tempo de treino?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Permanece praticamente igual, pois a solução fechada calcula os coeficientes de uma só vez, sem depender de quantos pontos existem.",
+          "correct": false,
+          "explanation": "A solução fechada não é gratuita: o cálculo percorre todos os pontos para montar as matrizes. 'Sem iterações' não quer dizer 'sem custo'; mais pontos significam mais trabalho."
+        },
+        {
+          "id": "b",
+          "text": "Cresce de forma proporcional: dobrar o número de instâncias dobra, aproximadamente, o tempo.",
+          "correct": true,
+          "explanation": "Slide 22: a complexidade do MQO é **linear** no número de instâncias (e de características). Dobrar as instâncias dobra o tempo. Versão da literatura: o custo dominante é inverter uma matriz de d×d (cresce cerca de d³ com o número de atributos), por isso o gradiente é melhor com muitos atributos."
+        },
+        {
+          "id": "c",
+          "text": "Cresce com o quadrado: dobrar as instâncias quadruplica o tempo, pois cada ponto precisa ser comparado com todos os outros pontos da base.",
+          "correct": false,
+          "explanation": "Comparar cada ponto com todos os outros é característica de algoritmos como o k-NN ao classificar, não do MQO. No MQO o tempo cresce de forma linear com as instâncias."
+        },
+        {
+          "id": "d",
+          "text": "Diminui pela metade, pois com mais instâncias a matriz fica mais bem condicionada e a inversão se torna mais rápida.",
+          "correct": false,
+          "explanation": "Mais dados podem melhorar a estimativa dos coeficientes, mas não reduzem o custo de calcular a solução. Mais linhas significam mais operações."
+        }
+      ],
+      "generalExplanation": "**O que responder (as duas versões).** (1) **Slide 22:** a complexidade do MQO é linear no número de instâncias e de características; dobrar as instâncias dobra o tempo. Se o enunciado fala em *instâncias*, responda linear. (2) **Literatura/slides 20 e 47:** a solução fechada exige inverter uma matriz do tamanho do número de atributos, o que é lento para muitos atributos (cresce de forma mais rápida, cerca de cúbica); por isso, com muitas dimensões, prefere-se o gradiente descendente. Se o enunciado fala em *muitos atributos*, a resposta é 'prefira gradiente descendente'. Analogia: um loop que passa uma vez por cada linha da tabela; dobrar as linhas dobra o tempo."
+    },
+    {
+      "id": "q22",
+      "label": "Ordem: passos do gradiente descendente",
+      "type": "single",
+      "prompt": "Os passos abaixo compõem o treino de uma regressão linear por **gradiente descendente**, mas estão numerados fora de ordem:\n\n1. Atualizar α e β, deslocando-os no sentido contrário ao do gradiente, em um passo proporcional à taxa de aprendizado.\n2. Repetir os passos até convergir ou até atingir o número de iterações.\n3. Inicializar α e β (por exemplo, com valores aleatórios).\n4. Calcular o gradiente do custo em relação a α e β (a inclinação da função de custo naquele ponto).\n5. Calcular as previsões e o custo (o erro quadrático) com os valores atuais de α e β.\n\nQual sequência é a **correta**?",
+      "options": [
+        {
+          "id": "a",
+          "text": "3 → 1 → 4 → 5 → 2: inicializa, atualiza os parâmetros, calcula o gradiente, calcula o custo da nova reta e repete até convergir.",
+          "correct": false,
+          "explanation": "Atualizar (1) antes de saber em qual direção andar (4) não faz sentido: o gradiente é justamente o que diz para onde ajustar. E o custo (5) precisa vir antes do gradiente, pois é ele que é derivado."
+        },
+        {
+          "id": "b",
+          "text": "5 → 3 → 4 → 1 → 2: calcula o custo, inicializa os parâmetros, calcula o gradiente, atualiza e repete até convergir.",
+          "correct": false,
+          "explanation": "Não existe custo sem parâmetros: o primeiro passo é dar valores iniciais a α e β (3). Só depois dá para fazer previsões e medir o erro."
+        },
+        {
+          "id": "c",
+          "text": "3 → 5 → 4 → 2 → 1: inicializa, calcula o custo, calcula o gradiente, repete e por fim atualiza.",
+          "correct": false,
+          "explanation": "'Repetir' (2) é o laço que envolve todos os passos, incluindo a atualização (1). Repetir sem atualizar α e β faria o algoritmo recalcular sempre o mesmo custo e o mesmo gradiente, sem sair do lugar."
+        },
+        {
+          "id": "d",
+          "text": "3 → 5 → 4 → 1 → 2: inicializa, calcula previsões e custo, calcula o gradiente, atualiza α e β, e repete até convergir.",
+          "correct": true,
+          "explanation": "Slides 35 e 38 a 41: parte-se de um ponto inicial (que pode ser aleatório), mede-se o erro, calcula-se o gradiente (inclinação), e atualiza-se os coeficientes em sentido oposto ao dele, com passo igual à taxa de aprendizado. Repete-se até convergir. Se o gradiente é negativo, o parâmetro aumenta; se positivo, diminui."
+        }
+      ],
+      "generalExplanation": "**Cenário.** É um laço `for` de otimização: `inicializar(); repetir N vezes { prever; medir custo; calcular gradiente; atualizar }`. O gradiente é a inclinação da função de custo no ponto atual: aponta para onde o custo **cresce**; por isso o ajuste anda no **sentido contrário** (daí 'descendente'). Slide 35: gradiente negativo → aumenta o valor do parâmetro; gradiente positivo → diminui. O tamanho do passo é a taxa de aprendizado (γ). Regra para a prova de ordem: **inicializar vem primeiro, atualizar só depois de ter o gradiente, e o 'repetir' fecha o ciclo.**"
+    },
+    {
+      "id": "q23",
+      "label": "Tabela: escolhendo entre modelos",
+      "type": "single",
+      "prompt": "Quatro modelos de regressão foram ajustados nos mesmos dados (30 exemplos) e avaliados. A tabela traz o número de variáveis e as métricas no treino:\n\n| Modelo | Nº de variáveis | R² | R² ajustado |\n| :-- | :-- | :-- | :-- |\n| M1 | 3 | 0,81 | 0,79 |\n| M2 | 5 | 0,82 | 0,78 |\n| M3 | 8 | 0,83 | 0,77 |\n| M4 | 2 | 0,75 | 0,73 |\n\nQual modelo é a melhor escolha e por quê?",
+      "options": [
+        {
+          "id": "a",
+          "text": "M4, porque usa só 2 variáveis e, por ser o mais simples, é sempre o melhor modelo para generalizar a dados novos, independentemente das métricas.",
+          "correct": false,
+          "explanation": "Simplicidade não garante melhor desempenho. M4 tem o menor R² e o menor R² ajustado: está subajustando (underfitting), pois deixa de explicar parte da variação. O critério é equilíbrio, não apenas a simplicidade."
+        },
+        {
+          "id": "b",
+          "text": "M3, porque tem o maior R², o que indica que explica a maior parte da variabilidade dos dados e, portanto, o melhor desempenho entre os quatro modelos.",
+          "correct": false,
+          "explanation": "O R² simples sobe sempre que se acrescentam variáveis, mesmo inúteis, então seu valor maior em M3 reflete as 8 variáveis, não necessariamente melhor qualidade. Para comparar números de variáveis diferentes, usa-se o R² ajustado (slide 52)."
+        },
+        {
+          "id": "c",
+          "text": "M2, porque é o modelo intermediário e equilibra o R² simples com o número de variáveis, sem ser o maior nem o menor.",
+          "correct": false,
+          "explanation": "Não existe regra de 'meio-termo' para escolher modelos. O critério do slide 52 é o maior **R² ajustado**, e este é de M1 (0,79), não de M2 (0,78)."
+        },
+        {
+          "id": "d",
+          "text": "M1, porque tem o maior R² ajustado: as variáveis extras de M2 e M3 elevaram o R², mas não trouxeram informação útil suficiente.",
+          "correct": true,
+          "explanation": "R² ajustado: M1 0,79 > M2 0,78 > M3 0,77. À medida que se acrescentam variáveis, o R² simples sobe (0,81 → 0,83), mas o ajustado cai: as variáveis novas pouco acrescentam e são mais ruído que sinal. M1 é o melhor custo-benefício (slide 52)."
+        }
+      ],
+      "generalExplanation": "**Como ler a tabela.** Duas colunas de R², e o padrão de interesse: conforme o número de variáveis cresce (3 → 5 → 8), o **R² simples sobe** (0,81 → 0,82 → 0,83) mas o **R² ajustado cai** (0,79 → 0,78 → 0,77). Isso é o sinal clássico de variáveis que não ajudam. Analogia: é o aumento de cobertura de testes causado por testes triviais: o número sobe, mas a qualidade, não. Regra do slide 52: para comparar modelos com números de variáveis diferentes, **escolha o de maior R² ajustado** (e não o de maior R² simples). Observação: o R² ajustado é sempre ≤ R²."
+    },
+    {
+      "id": "q24",
+      "label": "Código: erro de lógica em regressão",
+      "type": "single",
+      "prompt": "O trecho abaixo treina e avalia uma regressão linear com atributos padronizados. `train_test_split` separa treino e teste; `StandardScaler` padroniza (média 0, desvio 1); `fit_transform` aprende os parâmetros e já transforma; `transform` só aplica os parâmetros já aprendidos; `r2_score(y_real, y_previsto)` calcula o R².\n\n```python\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)\n\nscaler = StandardScaler()\nX_train_s = scaler.fit_transform(X_train)\nX_test_s = scaler.fit_transform(X_test)\n\nmodel = LinearRegression().fit(X_train_s, y_train)\nprint(r2_score(y_test, model.predict(X_test_s)))\n```\n\nO código roda sem erro de sintaxe, mas há um erro de **lógica**. Qual é?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A divisão em treino e teste deveria vir depois da padronização, para a média e o desvio serem calculados com todos os dados disponíveis e ficarem mais estáveis.",
+          "correct": false,
+          "explanation": "Seria o oposto: padronizar a base inteira antes de dividir faz o teste influenciar a média e o desvio usados no treino (vazamento de dados). A divisão precisa vir primeiro, e o scaler deve ser ajustado só com o treino."
+        },
+        {
+          "id": "b",
+          "text": "O scaler foi ajustado de novo com `fit_transform` nos dados de teste; o certo era `transform`, reaproveitando a média e o desvio do treino.",
+          "correct": true,
+          "explanation": "O teste deve ser padronizado com os parâmetros **aprendidos no treino**. Com `fit_transform(X_test)` o teste usa a própria média e o próprio desvio, ficando em uma escala diferente da que o modelo aprendeu. O teste deve imitar dados novos de produção, que chegam sem estatísticas próprias."
+        },
+        {
+          "id": "c",
+          "text": "O modelo deveria ser treinado com `X_test_s`, pois é no conjunto de teste que se mede o R² e o treino deve usar a mesma base de dados da avaliação.",
+          "correct": false,
+          "explanation": "O modelo deve aprender com o treino e ser avaliado em dados que **não viu**. Treinar com o teste infla o R² e invalida a avaliação (é o erro oposto ao correto)."
+        },
+        {
+          "id": "d",
+          "text": "O `r2_score` deveria receber primeiro as previsões e depois os valores reais, senão o R² sai invertido.",
+          "correct": false,
+          "explanation": "A convenção do scikit-learn é `r2_score(y_real, y_previsto)`, exatamente como está no código. Essa ordem de argumentos está correta; o problema do código está na padronização do teste."
+        }
+      ],
+      "generalExplanation": "**O que o código faz.** (1) Divide a base em treino e teste. (2) Cria o padronizador. (3) Aprende média/desvio do treino e transforma o treino. (4) **Aprende de novo, agora com o teste**, e transforma o teste. (5) Treina com o treino padronizado. (6) Avalia o R² no teste. **Erro de lógica:** o passo 4. Analogia de engenharia de software: o `scaler` é um 'arquivo de configuração' construído a partir do treino; em produção, o dado novo é interpretado com essa configuração, e não com uma configuração recalculada para ele. Regra: **`fit` (aprender) só no treino; `transform` (aplicar) em treino e teste.** Mesmo erro de lógica que aparece em imputação, codificação e PCA."
+    },
+    {
+      "id": "q25",
+      "label": "Gradiente, hiperparâmetros, SQR e baseline",
+      "type": "multiple",
+      "prompt": "Quais das afirmações a seguir, sobre regressão linear e gradiente descendente, são **verdadeiras**? (Selecione todas as corretas.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "A atualização anda no sentido contrário ao do gradiente: se o gradiente de um parâmetro é negativo, o valor do parâmetro aumenta, e vice-versa.",
+          "correct": true,
+          "explanation": "Verdadeiro (slide 35: gradiente negativo aumenta o valor do parâmetro e vice-versa). O gradiente indica para onde o custo cresce; descer significa andar no sentido oposto."
+        },
+        {
+          "id": "b",
+          "text": "Os principais hiperparâmetros do gradiente descendente são a taxa de aprendizagem e o número de iterações, definidos antes do treino.",
+          "correct": true,
+          "explanation": "Verdadeiro (slide 41). Hiperparâmetros são escolhas feitas por quem treina, não aprendidas pelo modelo. Os parâmetros aprendidos são α e β. Taxa e iterações determinam velocidade e se há convergência."
+        },
+        {
+          "id": "c",
+          "text": "A SQR (soma dos quadrados dos resíduos) mede a variação de Y que não é explicada pelo modelo, ou seja, o que sobra de erro depois do ajuste.",
+          "correct": true,
+          "explanation": "Verdadeiro (slide 50). Quanto menor a SQR, menos variação de Y ficou sem explicação. É o numerador do termo SQR/SQT que aparece no R²."
+        },
+        {
+          "id": "d",
+          "text": "A regressão linear não deve servir de ponto de comparação, pois seus resultados são sempre piores e não ajudam a avaliar modelos mais sofisticados.",
+          "correct": false,
+          "explanation": "Falso. O slide 48 diz o contrário: a regressão linear é simples, rápida de treinar, fácil de explicar e a primeira escolha da maioria dos praticantes para construir um **baseline** com o qual comparar soluções mais sofisticadas."
+        }
+      ],
+      "generalExplanation": "**Cenário.** Quatro ideias que se encaixam: (1) o gradiente descendente anda 'morro abaixo', ou seja, contra o gradiente; (2) quem define o tamanho do passo e por quanto tempo andar são os **hiperparâmetros** (taxa e número de iterações), parâmetros de configuração do treino (como o número de tentativas e o timeout de um serviço); (3) a **SQR** é o erro que o modelo não consegue explicar; (4) a regressão linear é o **baseline** natural: antes de colocar um modelo complicado em produção, mostre que ele supera a regressão linear. Slides 35, 41, 48 e 50."
+    }
+  ]
+}

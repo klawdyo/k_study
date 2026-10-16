@@ -1,0 +1,800 @@
+{
+  "schema": "questions/v2",
+  "id": "bloco-2-aula-6",
+  "title": "Aula 6 · Questões de k-NN (k-Nearest Neighbors)",
+  "instructions": "Responda **antes** de ler qualquer explicação. Depois, leia a explicação de **todas** as alternativas, inclusive das que você acertou. As questões não exigem cálculo: pedem leitura de tabelas e curvas, a ordem dos passos e a análise de erros de lógica em trechos curtos de scikit-learn.",
+  "questions": [
+    {
+      "id": "q01",
+      "label": "Premissa fundamental do k-NN",
+      "type": "single",
+      "prompt": "Qual é a suposição conceitual em que o algoritmo k-NN (K-Nearest Neighbors, K vizinhos mais próximos) se apoia para decidir o rótulo de uma amostra nova?",
+      "options": [
+        {
+          "id": "a",
+          "text": "As classes são separáveis por uma fronteira linear, e o algoritmo procura o hiperplano que melhor separa os grupos do treino.",
+          "correct": false,
+          "explanation": "Procurar um hiperplano é o que fazem a regressão logística e o SVM linear. O k-NN não ajusta fronteira nenhuma: ela surge, irregular e não linear, das posições dos vizinhos."
+        },
+        {
+          "id": "b",
+          "text": "Os atributos de treino seguem uma distribuição normal multivariada, e o algoritmo estima a média e a covariância de cada classe.",
+          "correct": false,
+          "explanation": "Isso descreve modelos paramétricos, que assumem uma distribuição e estimam parâmetros. O k-NN é **não paramétrico** (slide 4): não faz exigência sobre a distribuição dos dados e não estima parâmetro nenhum."
+        },
+        {
+          "id": "c",
+          "text": "Exemplos parecidos ficam próximos no espaço de atributos, então os vizinhos de um ponto tendem a ter o mesmo rótulo que ele.",
+          "correct": true,
+          "explanation": "É a ideia central do slide 6: 'coisas semelhantes existem nas proximidades'. Se a proximidade geométrica indica semelhança, o rótulo dos vizinhos é um bom palpite para o rótulo da amostra nova."
+        },
+        {
+          "id": "d",
+          "text": "O alvo é sempre numérico e contínuo, porque a decisão final sempre sai da média dos valores dos vizinhos mais próximos.",
+          "correct": false,
+          "explanation": "O k-NN serve para classificação **e** regressão (slide 4). Em classificação o alvo é uma categoria e a decisão é por votação, não por média."
+        }
+      ],
+      "generalExplanation": "Pense em um sistema de suporte que, ao receber um ticket novo, busca no histórico os tickets **mais parecidos** e copia o tratamento deles. Não há regra escrita nem fórmula: só a suposição de que casos parecidos têm desfecho parecido. É exatamente o k-NN (slide 6). Por isso tudo gira em torno de duas escolhas que o slide 8 destaca: **como medir 'parecido'** (a métrica de distância) e **quantos vizinhos consultar** (o K)."
+    },
+    {
+      "id": "q02",
+      "label": "Algoritmo preguiçoso (lazy) e baseado em instâncias",
+      "type": "single",
+      "prompt": "O k-NN é descrito como algoritmo **preguiçoso (lazy)** e **baseado em instâncias**, que 'não tem fase de treinamento e não produz um modelo' (slides 4, 5 e 20). Na prática, o que isso significa?",
+      "options": [
+        {
+          "id": "a",
+          "text": "`fit()` só guarda a base de treino; o trabalho pesado, calcular distâncias aos exemplos guardados, acontece em cada `predict()`.",
+          "correct": true,
+          "explanation": "Não há coeficiente nem fórmula a ajustar, então não existe 'modelo' além dos próprios dados. O custo sai do treino e vai para a predição: o k-NN é rápido para 'treinar' e lento para consultar em bases grandes."
+        },
+        {
+          "id": "b",
+          "text": "`fit()` descarta a maior parte das instâncias para poupar memória e mantém só um resumo estatístico de cada classe para a predição.",
+          "correct": false,
+          "explanation": "É o contrário: por ser baseado em instâncias, o k-NN precisa **manter os exemplos de treino** para compará-los com cada ponto novo. Resumir por classe (média e desvio) seria outro tipo de modelo."
+        },
+        {
+          "id": "c",
+          "text": "`fit()` executa várias épocas de otimização para ajustar pesos, mas o algoritmo só roda de fato quando há processador ocioso disponível.",
+          "correct": false,
+          "explanation": "'Lazy' é um termo técnico sobre **adiar a generalização** até chegar uma consulta, sem relação com agendamento de CPU. Além disso, o k-NN não ajusta pesos em época nenhuma."
+        },
+        {
+          "id": "d",
+          "text": "O algoritmo só consegue tratar problemas com duas classes, porque a votação entre vizinhos precisa de um desempate simples e direto.",
+          "correct": false,
+          "explanation": "O k-NN é multiclasse de forma natural (slide 18): basta contar os votos de cada classe entre os K vizinhos e escolher a mais votada."
+        }
+      ],
+      "generalExplanation": "Analogia de engenharia de software: o k-NN é um **lazy loading** levado ao extremo. Um modelo comum 'compila' o aprendizado em um artefato pequeno (coeficientes, árvore) e a consulta é barata. O k-NN não compila nada: carrega o dataset inteiro como 'cache' e, **a cada consulta**, faz uma busca completa nele. Vantagem: incluir dado novo é instantâneo (basta acrescentar a linha, slide 17). Desvantagem: o custo de cada previsão cresce com o tamanho da base (slides 19 e 20)."
+    },
+    {
+      "id": "q03",
+      "label": "Por que dividir treino e teste, se não há treinamento",
+      "type": "single",
+      "prompt": "O slide 5 diz que é preciso dividir os dados em treino e teste **mesmo que o k-NN não treine nada**. Qual é a razão?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O conjunto de teste serve para calcular as distâncias entre as classes, que depois viram os pesos dos votos na hora de prever novos casos.",
+          "correct": false,
+          "explanation": "Os pesos (quando existem) vêm da distância entre o ponto consultado e cada vizinho de treino. O teste não alimenta cálculo nenhum do modelo; usá-lo assim seria contaminar a avaliação."
+        },
+        {
+          "id": "b",
+          "text": "Nos mesmos dados guardados e com K = 1, o vizinho de cada ponto é ele mesmo, e os 100% de acerto nada dizem sobre dados novos.",
+          "correct": true,
+          "explanation": "O ponto consultado já está na base, a distância dele a si mesmo é zero e o 'vizinho' devolve o rótulo certo. O resultado é perfeito por construção. Só um conjunto **separado** mede a capacidade de generalizar."
+        },
+        {
+          "id": "c",
+          "text": "O scikit-learn lança erro quando `fit` e `predict` recebem as mesmas linhas, pois detecta a repetição e interrompe a execução do programa.",
+          "correct": false,
+          "explanation": "A biblioteca roda normalmente com os mesmos dados. A divisão não é imposição técnica da ferramenta, é uma necessidade **metodológica** de avaliar com dados que o modelo não viu."
+        },
+        {
+          "id": "d",
+          "text": "O conjunto de teste fornece os valores usados para preencher dados ausentes, antes de o k-NN guardar a base de treino na memória.",
+          "correct": false,
+          "explanation": "Qualquer imputação deve aprender seus parâmetros (média, vizinhos) **só do treino**. Usar o teste para isso é vazamento de dados, o oposto do propósito da divisão."
+        }
+      ],
+      "generalExplanation": "Analogia: rodar a suíte de testes só com os mesmos casos que você usou para escrever o código. No k-NN isso é ainda pior, porque os 'casos de treino' são a própria base de consulta: com K = 1 cada ponto acha a si mesmo e o erro é zero. O teste separado é o ambiente de homologação: dados que o modelo nunca consultou. Sem ele, não dá para saber se o K escolhido generaliza ou apenas decora (slide 5)."
+    },
+    {
+      "id": "q04",
+      "label": "Escolha de K: K pequeno × K grande",
+      "type": "single",
+      "prompt": "Compare dois extremos: K = 1 e K igual ao tamanho de toda a base de treino (N). Qual descrição está correta (slide 13)?",
+      "options": [
+        {
+          "id": "a",
+          "text": "K = 1 desenha uma fronteira muito suavizada que ignora detalhes (underfitting); K = N desenha ilhas minúsculas em torno de cada ponto (overfitting).",
+          "correct": false,
+          "explanation": "Está **invertido**. Com K = 1 cada ponto manda na sua vizinhança, a fronteira fica recortada e acompanha o ruído (overfitting). Com K = N todos votam, a fronteira some e o modelo fica simplista demais (underfitting)."
+        },
+        {
+          "id": "b",
+          "text": "Os dois extremos produzem a mesma fronteira, porque o K muda apenas a velocidade da consulta e não a forma como as classes são separadas.",
+          "correct": false,
+          "explanation": "K muda **o resultado**, não só o tempo. É o principal hiperparâmetro do k-NN e controla o equilíbrio entre decorar o ruído (K pequeno) e simplificar demais (K grande)."
+        },
+        {
+          "id": "c",
+          "text": "K = 1 é o valor mais seguro e preciso, porque consulta só o vizinho mais parecido; K = N apenas acrescenta ruído de pontos muito diferentes.",
+          "correct": false,
+          "explanation": "A primeira metade soa razoável, mas falha: usar um único vizinho é o arranjo **mais frágil** a ruído. E K = N não acrescenta ruído; ele dilui a informação local até restar só a classe majoritária."
+        },
+        {
+          "id": "d",
+          "text": "K = 1 é instável e sensível a outliers, pois um só ponto ruidoso decide a região; K = N suaviza tudo e tende a prever sempre a classe majoritária.",
+          "correct": true,
+          "explanation": "Com K = 1 um outlier rotulado errado contamina toda a região em volta (alta variância, overfitting). Com K = N a votação é a mesma para qualquer ponto novo e vence a classe mais frequente na base (alto viés, underfitting)."
+        }
+      ],
+      "generalExplanation": "Pense em decidir o valor de uma configuração perguntando a pessoas. Ouvir **uma só** (K = 1) é rápido, mas se ela estiver errada, você erra. Ouvir **todas** (K = N) dá sempre a mesma resposta, a da maioria, e ignora o contexto local. O slide 13 resume: K pequeno é sensível a outliers e pode gerar overfitting; K grande é mais resistente a outliers, mas a suavização excessiva gera underfitting e viés para a classe majoritária. O bom K fica no meio e é achado de forma empírica (slide 12)."
+    },
+    {
+      "id": "q05",
+      "label": "Por que K ímpar",
+      "type": "single",
+      "prompt": "Em um problema de classificação com **duas classes**, o slide 13 recomenda K ímpar. Por quê?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Porque a distância Euclidiana só pode ser calculada quando o número de vizinhos considerados for ímpar, por causa da raiz quadrada.",
+          "correct": false,
+          "explanation": "A raiz quadrada é aplicada à soma dos quadrados das **diferenças entre atributos**, e não ao valor de K. A paridade de K não interfere no cálculo da distância."
+        },
+        {
+          "id": "b",
+          "text": "Porque K ímpar seleciona sozinho a distância de Manhattan, enquanto K par seleciona a Euclidiana, menos indicada para a votação.",
+          "correct": false,
+          "explanation": "A métrica é definida à parte (`metric` ou `p`), sem relação com a paridade de K."
+        },
+        {
+          "id": "c",
+          "text": "Para evitar empates na votação: com K par, dois vizinhos de cada classe, por exemplo, deixam a previsão sem maioria clara.",
+          "correct": true,
+          "explanation": "Com duas classes e K ímpar, uma delas sempre tem mais votos (3 a 2 com K = 5, por exemplo). Com K = 4 e votos 2 a 2, o desempate seria arbitrário e a previsão, pouco confiável."
+        },
+        {
+          "id": "d",
+          "text": "Porque o scikit-learn rejeita valores pares de `n_neighbors` e lança uma exceção logo na chamada de `fit()` do classificador.",
+          "correct": false,
+          "explanation": "A biblioteca aceita K par sem reclamar; ela só desempata de forma arbitrária. O motivo da recomendação é de **qualidade da decisão**, não de restrição do software."
+        }
+      ],
+      "generalExplanation": "Equivale a um comitê de revisão: com número par de revisores, 2 a 2 trava a decisão; com ímpar, sai sempre um vencedor. **Ressalva:** isso só garante ausência de empate com **duas** classes. Com três ou mais classes, mesmo K ímpar pode empatar (K = 3 com um voto para cada classe). Nesses casos o desempate é uma regra à parte (por exemplo, o vizinho mais próximo)."
+    },
+    {
+      "id": "q06",
+      "label": "Sensibilidade à escala dos atributos",
+      "type": "single",
+      "prompt": "Uma base de clientes tem **idade** (18 a 70 anos) e **renda anual** (20 mil a 200 mil reais). O k-NN com distância Euclidiana é aplicado direto nos valores brutos, **sem padronizar**. O que acontece?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A renda domina a distância por ter números muito maiores, e a idade quase não influencia quem é considerado vizinho.",
+          "correct": true,
+          "explanation": "As diferenças de renda (milhares) são enormes perto das de idade (dezenas), e a distância soma os quadrados delas. Na prática o k-NN passa a olhar só a renda. O slide 22 resume: a Euclidiana é sensível à escala e **exige padronização**."
+        },
+        {
+          "id": "b",
+          "text": "A idade e a renda pesam igual, porque a distância Euclidiana já ajusta internamente cada atributo pela sua amplitude de valores.",
+          "correct": false,
+          "explanation": "A distância Euclidiana opera sobre os valores como vêm e não normaliza nada. Quem iguala a amplitude dos atributos é o pré-processamento (`StandardScaler`, `MinMaxScaler`), feito por você."
+        },
+        {
+          "id": "c",
+          "text": "O scikit-learn converte sozinho a renda em faixas categóricas antes de calcular as distâncias, evitando o problema de escala.",
+          "correct": false,
+          "explanation": "Nenhuma conversão automática acontece: o algoritmo trata toda coluna numérica como eixo contínuo. Se quiser faixas ou padronização, é preciso pedir explicitamente."
+        },
+        {
+          "id": "d",
+          "text": "A idade domina a distância, pois é a variável com menor dispersão e portanto a que melhor separa pontos vizinhos entre si.",
+          "correct": false,
+          "explanation": "Pelo contrário: uma diferença de milhares de reais é muito maior que uma diferença de dezenas de anos, então é a renda que fica grande na soma. Menor dispersão não dá mais peso, dá menos."
+        }
+      ],
+      "generalExplanation": "Analogia: somar milissegundos e gigabytes em uma só 'nota de desempenho'. Quem tem o número maior decide tudo. O k-NN faz exatamente isso quando os atributos têm unidades diferentes. A correção é padronizar (média 0, desvio 1) ou normalizar (0 a 1), **ajustando o scaler só com o treino**. Esse cuidado vira questão de código mais adiante (slides 20 e 22)."
+    },
+    {
+      "id": "q07",
+      "label": "Euclidiana × Manhattan",
+      "type": "single",
+      "prompt": "Qual é a diferença entre a distância Euclidiana e a de Manhattan (slides 22 e 24)?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A Manhattan é um caso criado para dados de texto, e a Euclidiana é a versão geral usada em dados de imagem e de som.",
+          "correct": false,
+          "explanation": "As duas fazem parte da família de Minkowski (slide 23): Manhattan é p = 1 e Euclidiana é p = 2. Nenhuma é específica de texto, imagem ou som."
+        },
+        {
+          "id": "b",
+          "text": "A Euclidiana só vale para atributos binários, enquanto a Manhattan só vale para atributos contínuos; por isso nunca servem para o mesmo conjunto.",
+          "correct": false,
+          "explanation": "As duas servem para atributos numéricos contínuos. Para vetores binários ou categóricos em one-hot, a opção indicada é a distância de Hamming (slide 25)."
+        },
+        {
+          "id": "c",
+          "text": "A Manhattan eleva as diferenças ao cubo para penalizar desvios grandes, o que a torna mais sensível a outliers do que a Euclidiana.",
+          "correct": false,
+          "explanation": "A Manhattan não eleva a potência nenhuma: usa o valor absoluto simples. Quem penaliza desvios grandes é a Euclidiana (quadrado), então ela é a **mais** sensível a outliers."
+        },
+        {
+          "id": "d",
+          "text": "A Euclidiana soma quadrados das diferenças (linha reta); a Manhattan soma diferenças absolutas (quarteirões) e é menos sensível a outliers.",
+          "correct": true,
+          "explanation": "Ao elevar ao quadrado, a Euclidiana amplifica uma diferença muito grande em um só atributo. A Manhattan soma os módulos e não amplifica, daí o slide 24 indicá-la com dados de muitas dimensões ou para reduzir o peso de outliers."
+        }
+      ],
+      "generalExplanation": "Pense em um mapa de cidade. A Euclidiana é a linha reta no mapa, 'voo de pássaro'. A Manhattan é o trajeto de táxi por ruas em grade: soma dos deslocamentos em cada eixo. Como não eleva ao quadrado, uma diferença enorme em um único atributo pesa menos. Por isso, com dados de muitas dimensões ou com outliers, vale testar Manhattan (slide 24). As duas continuam exigindo atributos na mesma escala."
+    },
+    {
+      "id": "q08",
+      "label": "Minkowski e o parâmetro p do scikit-learn",
+      "type": "single",
+      "prompt": "A distância de Minkowski (slide 23) tem uma constante r (chamada `p` no scikit-learn). Qual valor de `p` faz o `KNeighborsClassifier` usar Manhattan e qual faz usar Euclidiana (slide 33)?",
+      "options": [
+        {
+          "id": "a",
+          "text": "p = 0 equivale à Manhattan e p = 1 à Euclidiana, porque a contagem dos expoentes começa do zero no scikit-learn.",
+          "correct": false,
+          "explanation": "Não há essa defasagem: o valor de `p` é o próprio expoente da fórmula. Com p = 0 a fórmula nem define uma distância válida, pois o expoente 1/p deixaria de existir."
+        },
+        {
+          "id": "b",
+          "text": "p = 1 equivale à Manhattan e p = 2 à Euclidiana; sem informar nada, o scikit-learn usa Minkowski com p = 2.",
+          "correct": true,
+          "explanation": "Com p = 1 soma-se o módulo das diferenças (Manhattan); com p = 2, a raiz da soma dos quadrados (Euclidiana). O padrão (`metric='minkowski'`, `p=2`) resulta na Euclidiana."
+        },
+        {
+          "id": "c",
+          "text": "p = 10 equivale às duas ao mesmo tempo, pois valores altos de p fazem o cálculo convergir para uma média entre as distâncias.",
+          "correct": false,
+          "explanation": "Valores grandes de p aproximam a distância de Chebyshev (a maior diferença entre atributos), que é outra métrica. Nunca produzem uma média entre Manhattan e Euclidiana."
+        },
+        {
+          "id": "d",
+          "text": "p = 2 equivale à Manhattan e p = 1 à Euclidiana, pois quanto maior o expoente, mais simples fica o cálculo da distância.",
+          "correct": false,
+          "explanation": "Os valores estão **trocados**. O expoente 1 deixa só o módulo das diferenças (Manhattan); o expoente 2 acrescenta o quadrado e a raiz (Euclidiana)."
+        }
+      ],
+      "generalExplanation": "Minkowski é a 'função genérica' e Manhattan e Euclidiana são instâncias dela, como uma função com um parâmetro de configuração: p = 1 e p = 2 (slides 23 e 33). Na prova, a pegadinha costuma ser trocar os valores; memorize 'p = 1: Manhattan (um quarteirão por vez); p = 2: Euclidiana (ao quadrado)'. O parâmetro `metric` (slide 34) escolhe a família; `p` ajusta a ordem dentro da Minkowski."
+    },
+    {
+      "id": "q09",
+      "label": "Distância de Hamming",
+      "type": "single",
+      "prompt": "Em que situação o slide 25 recomenda a **distância de Hamming** no k-NN?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Quando os atributos são todos contínuos e aproximadamente gaussianos, pois ela mede quanto cada valor se afasta da média.",
+          "correct": false,
+          "explanation": "Esse não é o papel da Hamming. Para atributos contínuos usam-se Euclidiana, Manhattan ou Mahalanobis. A Hamming nem usa a ideia de magnitude da diferença."
+        },
+        {
+          "id": "b",
+          "text": "Quando as variáveis contínuas têm forte correlação entre si, pois ela usa a matriz de covariância para descontar a redundância.",
+          "correct": false,
+          "explanation": "Usar a covariância é característica da Mahalanobis (slide 26), indicada para variáveis correlacionadas. A Hamming não usa covariância."
+        },
+        {
+          "id": "c",
+          "text": "Quando o valor de K é maior que 100, pois ela escala melhor que as demais métricas com muitos vizinhos consultados.",
+          "correct": false,
+          "explanation": "A métrica é escolhida pelo **tipo dos dados**, não pelo K. Trocar a métrica não altera a quantidade de vizinhos que será consultada."
+        },
+        {
+          "id": "d",
+          "text": "Quando os atributos são vetores binários ou categorias em one-hot, pois ela conta em quantas posições dois vetores diferem.",
+          "correct": true,
+          "explanation": "Em dados categóricos só importa se a categoria é igual ou diferente, e não 'quanto'. A Hamming conta as posições diferentes (slide 25: 'não mede tamanho, mas diferença')."
+        }
+      ],
+      "generalExplanation": "Pense em comparar duas configurações com flags booleanas: a 'distância' é quantas flags estão diferentes, o mesmo que o `diff` entre duas linhas. Se o atributo 'cidade' foi expandido em colunas one-hot, usar Euclidiana trata essas colunas como números com magnitude; a Hamming trata como o que são, igual ou diferente. A escolha da métrica deve acompanhar o **tipo** dos atributos (slide 21)."
+    },
+    {
+      "id": "q10",
+      "label": "Distância de Mahalanobis",
+      "type": "single",
+      "prompt": "O slide 26 apresenta a **distância de Mahalanobis**. Em que cenário ela é preferível à Euclidiana?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Quando os atributos são textos não estruturados, pois ela já converte cada palavra em um vetor numérico antes de medir a distância.",
+          "correct": false,
+          "explanation": "A Mahalanobis não converte texto. Texto exige antes uma vetorização (TF-IDF, embeddings). Ela é uma distância entre vetores numéricos já prontos."
+        },
+        {
+          "id": "b",
+          "text": "Quando se quer zerar o peso de atributos irrelevantes, pois a covariância elimina automaticamente as colunas sem informação.",
+          "correct": false,
+          "explanation": "Zerar coeficientes é a ideia da regularização Lasso em regressão. A Mahalanobis não seleciona atributos; irrelevantes continuam atrapalhando a distância (slide 20)."
+        },
+        {
+          "id": "c",
+          "text": "Quando os atributos são correlacionados entre si, pois ela usa a matriz de covariância e não trata cada eixo como independente.",
+          "correct": true,
+          "explanation": "Com atributos correlacionados, a Euclidiana conta duas vezes a mesma informação. A Mahalanobis desconta isso pela covariância. Com atributos não correlacionados e padronizados, dá o mesmo resultado da Euclidiana (slide 26)."
+        },
+        {
+          "id": "d",
+          "text": "Quando o conjunto de teste não possui rótulos, pois ela estima os rótulos ausentes a partir da média global dos atributos.",
+          "correct": false,
+          "explanation": "Nenhuma métrica de distância estima rótulos. Ela só mede separação entre pontos no espaço de atributos; quem prevê o rótulo é a votação dos vizinhos."
+        }
+      ],
+      "generalExplanation": "Imagine duas colunas, 'peso em kg' e 'peso em libras': praticamente a mesma informação. A Euclidiana soma as duas diferenças e dobra o peso dessa informação na distância. A Mahalanobis percebe a correlação e corrige. Em atributos independentes e padronizados as duas coincidem (slide 26). Por isso a regra: variáveis correlacionadas pedem Mahalanobis."
+    },
+    {
+      "id": "q11",
+      "label": "k-NN com distância ponderada",
+      "type": "single",
+      "prompt": "No `KNeighborsClassifier`, o parâmetro `weights` aceita `'uniform'` e `'distance'` (slides 16 e 34). O que muda ao usar `weights='distance'`?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Cada voto é ponderado pelo inverso da distância ao ponto consultado, então os vizinhos mais próximos influenciam mais.",
+          "correct": true,
+          "explanation": "Com `'uniform'` todos os K votos valem 1. Com `'distance'`, um vizinho muito próximo vale muito mais que um na borda da vizinhança, e isso reduz o efeito de vizinhos distantes que entraram só por completar K."
+        },
+        {
+          "id": "b",
+          "text": "O K cresce sozinho até existirem vizinhos de todas as classes na vizinhança, e só depois os votos são contados normalmente.",
+          "correct": false,
+          "explanation": "O K é fixo (`n_neighbors`). O parâmetro `weights` muda só o **peso de cada voto**, nunca a quantidade de vizinhos consultada."
+        },
+        {
+          "id": "c",
+          "text": "Vizinhos mais distantes passam a pesar mais no voto, para compensar regiões onde os pontos de treino são esparsos.",
+          "correct": false,
+          "explanation": "Está invertido. Compensar esparsidade não é o objetivo; a ponderação por distância dá **mais** peso a quem está **mais perto**, porque proximidade indica semelhança (slide 16)."
+        },
+        {
+          "id": "d",
+          "text": "Os votos continuam iguais, mas o empate passa a ser decidido pelo vizinho que aparece primeiro na lista de treino.",
+          "correct": false,
+          "explanation": "Os votos não continuam iguais: é justamente o peso de cada um que muda. Além disso, a ponderação usa a posição geométrica, não a ordem das linhas na base."
+        }
+      ],
+      "generalExplanation": "Analogia: em um parecer técnico, a opinião de quem trabalhou **no mesmo sistema** pesa mais do que a de quem só conhece de longe. **Divergência a registrar:** o slide 16 fala em ponderar pelo **quadrado do inverso** da distância (1/d²); a documentação do scikit-learn, em `weights='distance'`, usa o **inverso** da distância (1/d). Na prova: se o enunciado citar o slide, responda 1/d²; se citar o scikit-learn, responda 1/d. Se só pedir 'inverso da distância', o conceito é o mesmo: mais perto, mais peso."
+    },
+    {
+      "id": "q12",
+      "label": "Maldição da dimensionalidade",
+      "type": "single",
+      "prompt": "O que acontece com o k-NN quando a base tem centenas ou milhares de atributos (slides 11 e 19)?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Com muitos atributos o algoritmo tem mais informação para comparar, e a acurácia quase sempre cresce junto com o número de colunas.",
+          "correct": false,
+          "explanation": "Mais colunas só ajudam se forem informativas. Em alta dimensão os pontos ficam esparsos e a distância perde contraste, então a acurácia tende a **cair** (slide 19)."
+        },
+        {
+          "id": "b",
+          "text": "Todos os pontos parecem quase equidistantes, então a ideia de 'vizinho mais próximo' perde sentido e a previsão reflete ruído.",
+          "correct": true,
+          "explanation": "É a maldição da dimensionalidade (slide 11): sem contraste entre perto e longe, os K 'vizinhos' deixam de ser realmente parecidos. A causa é geométrica, não um defeito de implementação."
+        },
+        {
+          "id": "c",
+          "text": "A distância Euclidiana deixa de ser calculada, e o scikit-learn passa a usar uma regressão linear sobre os atributos para classificar.",
+          "correct": false,
+          "explanation": "A Euclidiana continua sendo calculada normalmente. O problema é que, em alta dimensão, seus valores ficam parecidos para todos os pares de pontos. A biblioteca não troca de algoritmo."
+        },
+        {
+          "id": "d",
+          "text": "O valor de K é reduzido sozinho até 1, porque com muitos atributos só o vizinho mais próximo ainda é confiável.",
+          "correct": false,
+          "explanation": "K é um hiperparâmetro fixo e não muda sozinho. Reduzir K não resolveria: o problema é que nem o vizinho 'mais próximo' é confiável, já que a distância perde contraste."
+        }
+      ],
+      "generalExplanation": "Analogia: procurar uma pessoa 'parecida' comparando mil campos de um cadastro, dos quais 990 são irrelevantes. As diferenças em campos sem importância dominam e todo mundo fica 'igualmente diferente'. O remédio é reduzir dimensões (selecionar atributos, PCA), coletar mais dados ou usar estruturas de busca adequadas (`ball_tree` para muitas dimensões, slide 31)."
+    },
+    {
+      "id": "q13",
+      "label": "Vizinhança em técnicas não supervisionadas",
+      "type": "multiple",
+      "prompt": "O slide 29 mostra que a lógica de 'vizinhos mais próximos' também aparece em técnicas **sem rótulos**. Marque **todas** as aplicações que usam essa lógica.",
+      "options": [
+        {
+          "id": "a",
+          "text": "Detecção de outliers com LOF (Local Outlier Factor): um ponto muito longe dos seus vizinhos é marcado como anômalo.",
+          "correct": true,
+          "explanation": "A distância aos vizinhos mais próximos mede o quanto o ponto está isolado em relação à densidade local. Nenhum rótulo é preciso, só a geometria."
+        },
+        {
+          "id": "b",
+          "text": "Imputação de valores ausentes com KNNImputer: o valor faltante é preenchido a partir dos K registros mais parecidos.",
+          "correct": true,
+          "explanation": "Em vez da média da coluna inteira, olha-se para as K linhas mais semelhantes à incompleta (slide 29). É vizinhança aplicada sem rótulos."
+        },
+        {
+          "id": "c",
+          "text": "Redução de dimensionalidade com t-SNE e UMAP, que usam vizinhos próximos para preservar a estrutura local em mapas 2D ou 3D.",
+          "correct": true,
+          "explanation": "Essas técnicas mantêm, no mapa, a vizinhança que existia no espaço original, o que ajuda a visualizar agrupamentos ainda desconhecidos (slide 29)."
+        },
+        {
+          "id": "d",
+          "text": "Classificação supervisionada com K-means, que usa os rótulos de treino para decidir a classe do ponto pelo centroide mais próximo.",
+          "correct": false,
+          "explanation": "K-means é uma técnica **não supervisionada** de agrupamento e não usa rótulos para decidir. Também não está entre as aplicações de vizinhança listadas no slide 29."
+        }
+      ],
+      "generalExplanation": "Em supervisionado, o k-NN usa o rótulo dos vizinhos para prever. Sem rótulos, usa só a **estrutura**: quem está perto de quem. Isso gera três famílias úteis: achar pontos isolados (LOF), preencher lacunas olhando semelhantes (KNNImputer) e desenhar mapas que preservam vizinhança (t-SNE, UMAP). Em comum: o conceito de vizinhança é a ferramenta, e o rótulo é opcional."
+    },
+    {
+      "id": "q14",
+      "label": "KD-Tree, Ball Tree e força bruta",
+      "type": "single",
+      "prompt": "No `KNeighborsClassifier`, o parâmetro `algorithm` aceita `'auto'`, `'ball_tree'`, `'kd_tree'` e `'brute'` (slides 31 e 32). Qual é a principal vantagem da **KD-Tree** sobre a força bruta?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Ela mantém a mesma eficiência mesmo com milhares de atributos, enquanto a força bruta degrada rapidamente com mais dimensões.",
+          "correct": false,
+          "explanation": "Em alta dimensão, a KD-Tree perde o benefício e se aproxima da força bruta. Para muitas dimensões, o slide 31 aconselha a `ball_tree`, ainda que com custo computacional maior."
+        },
+        {
+          "id": "b",
+          "text": "Ela organiza os pontos em uma árvore que divide o espaço, e a busca descarta regiões inteiras distantes sem calcular a distância a cada ponto.",
+          "correct": true,
+          "explanation": "Com muitas observações, a força bruta calcula a distância até todos os pontos. A árvore evita boa parte desses cálculos. O slide 32 explica com a ideia 'A longe de B e B perto de C, então A longe de C'. Tecnicamente, essa inferência é a desigualdade triangular, mais típica da Ball Tree; a KD-Tree faz cortes por eixo."
+        },
+        {
+          "id": "c",
+          "text": "Ela dispensa a escolha de K, pois a própria árvore indica quantos vizinhos precisam votar em cada região do espaço de atributos.",
+          "correct": false,
+          "explanation": "K continua sendo hiperparâmetro obrigatório (`n_neighbors`). A estrutura de busca só muda **como** os vizinhos são encontrados, não quantos são pedidos."
+        },
+        {
+          "id": "d",
+          "text": "Ela troca a votação entre vizinhos por uma regressão logística, o que torna a previsão mais rápida em bases muito grandes.",
+          "correct": false,
+          "explanation": "A estrutura de busca não altera o algoritmo de decisão: o k-NN continua votando entre os vizinhos. Ela só acelera o passo de **encontrar** os vizinhos."
+        }
+      ],
+      "generalExplanation": "Analogia: `brute` é um `SELECT` sem índice, que varre a tabela inteira; `kd_tree` e `ball_tree` são índices espaciais, que pulam grandes blocos. KD-Tree funciona bem com muitas linhas e **poucas** dimensões; Ball Tree é indicada para **muitas** dimensões, com custo maior (slide 31); `auto` deixa a biblioteca escolher. Nota: o slide 32 explica o descarte pela ideia da desigualdade triangular; em rigor, ela é o princípio da Ball Tree, e a KD-Tree particiona o espaço por eixos. Na prova, responda conforme o slide: a árvore evita calcular todas as distâncias."
+    },
+    {
+      "id": "q15",
+      "label": "k-NN em regressão (conteúdo complementar)",
+      "type": "single",
+      "prompt": "Os slides dizem que o k-NN serve para **classificação e regressão** (slide 4), mas não detalham a regressão. *Complemento da literatura e do scikit-learn:* como o k-NN prevê um alvo contínuo, como o preço de um imóvel?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Com uma reta de mínimos quadrados ajustada globalmente a todos os imóveis, e os vizinhos servem só para desempatar a previsão.",
+          "correct": false,
+          "explanation": "Ajustar uma reta global é a regressão linear. O k-NN regressor não ajusta função alguma: calcula a previsão **localmente**, a partir dos vizinhos."
+        },
+        {
+          "id": "b",
+          "text": "Ele não pode ser usado em regressão, pois depende de categorias para contar votos entre os vizinhos mais próximos.",
+          "correct": false,
+          "explanation": "O slide 4 afirma que o k-NN aplica-se a classificação e a regressão. Sem categorias, troca-se a contagem de votos pela média dos valores."
+        },
+        {
+          "id": "c",
+          "text": "Com a média, simples ou ponderada pela distância, dos valores do alvo entre os K vizinhos mais próximos do imóvel consultado.",
+          "correct": true,
+          "explanation": "É a versão da regressão: em vez de votar, agrega-se o alvo dos vizinhos (`KNeighborsRegressor`). Conteúdo complementar: o slide 4 só afirma que há regressão; a regra da média vem da literatura."
+        },
+        {
+          "id": "d",
+          "text": "Com a classe mais frequente entre os vizinhos, depois arredondada para o valor numérico mais próximo existente na base de treino.",
+          "correct": false,
+          "explanation": "Classe mais frequente (moda) é a regra da **classificação**. Em regressão o alvo é contínuo e quase nunca se repete, então a moda não faz sentido."
+        }
+      ],
+      "generalExplanation": "Classificação: os vizinhos **votam** e vence a classe mais frequente. Regressão: os vizinhos **opinam um número** e a resposta é a média (ou média ponderada, usando `weights='distance'`). Analogia: estimar o aluguel de um apartamento olhando os aluguéis dos K apartamentos mais parecidos do bairro. **Complemento:** os slides afirmam só que há regressão; o mecanismo da média não está neles. Se aparecer na prova, é a resposta padrão."
+    },
+    {
+      "id": "q16",
+      "label": "Vantagens e desvantagens do k-NN",
+      "type": "multiple",
+      "prompt": "Marque **todas** as afirmações verdadeiras sobre pontos fortes e fracos do k-NN (slides 17 a 20).",
+      "options": [
+        {
+          "id": "a",
+          "text": "Funciona mal quando os atributos explicativos são predominantemente categóricos, pois distâncias geométricas não são naturais para categorias.",
+          "correct": true,
+          "explanation": "Slide 19: baixa performance com variáveis categóricas. Categorias não têm ordem nem magnitude; ajudam a codificação one-hot e a distância de Hamming."
+        },
+        {
+          "id": "b",
+          "text": "Atributos irrelevantes ou redundantes são ignorados pelo algoritmo, e por isso a escala das colunas também não interfere.",
+          "correct": false,
+          "explanation": "Os slides 20 e 22 dizem o contrário: o k-NN é afetado por variáveis irrelevantes ou redundantes e é sensível à escala. Todas as colunas entram na distância."
+        },
+        {
+          "id": "c",
+          "text": "Novos dados podem ser incorporados na hora, pois basta acrescentar a linha à base, sem retreinar um modelo.",
+          "correct": true,
+          "explanation": "Como não há modelo ajustado, a base é o 'modelo' e o slide 17 destaca a inserção instantânea de novos dados."
+        },
+        {
+          "id": "d",
+          "text": "Prever é caro em bases grandes, pois cada previsão compara o ponto novo a todos (ou a muitos) exemplos de treino.",
+          "correct": true,
+          "explanation": "Slides 19 e 20: alto custo de previsão, porque o trabalho foi deixado para a consulta. Estruturas como KD-Tree ajudam, mas não eliminam o custo."
+        }
+      ],
+      "generalExplanation": "Resumo para decorar: **a favor**, simples, sem treino, dados novos entram na hora, serve para classificação e regressão, multiclasse natural, paralelizável, poucos parâmetros (K e métrica). **Contra**, previsão cara, ruim em alta dimensão, ruim com categóricas, sensível à escala e a atributos irrelevantes, sem modelo explícito para interpretar, e escolher K é difícil (slides 17 a 20)."
+    },
+    {
+      "id": "q17",
+      "label": "Ordem · etapas do k-NN",
+      "type": "single",
+      "prompt": "O slide 10 mostra o pseudocódigo do k-NN. Para classificar **um ponto novo**, qual é a ordem correta dos passos?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Calcular as distâncias aos exemplos de treino; ordenar por distância; selecionar os K menores; contar os votos; atribuir a classe mais votada.",
+          "correct": true,
+          "explanation": "Só se sabe quem são os 'mais próximos' depois de calcular e ordenar as distâncias. A votação vem por último e usa apenas os K escolhidos."
+        },
+        {
+          "id": "b",
+          "text": "Calcular as distâncias; contar os votos entre todos os exemplos de treino; ordenar por distância; selecionar os K menores; atribuir a classe mais votada.",
+          "correct": false,
+          "explanation": "Contar votos antes de selecionar os K faz a votação usar a base inteira, e vence sempre a classe majoritária (o caso K = N). A seleção dos K vem antes da contagem."
+        },
+        {
+          "id": "c",
+          "text": "Ordenar os exemplos de treino por distância; calcular as distâncias até o ponto novo; selecionar os K menores; contar os votos; atribuir a classe mais votada.",
+          "correct": false,
+          "explanation": "Não dá para ordenar por distância antes de calculá-la: a ordenação depende dos valores das distâncias. O cálculo precisa vir primeiro."
+        },
+        {
+          "id": "d",
+          "text": "Selecionar os K menores; calcular as distâncias; ordenar os exemplos por distância; contar os votos; atribuir a classe mais votada.",
+          "correct": false,
+          "explanation": "Selecionar os 'K menores' exige ter as distâncias já calculadas e ordenadas. Escolher antes de medir é como pedir o top 10 de uma lista que ainda não foi construída."
+        }
+      ],
+      "generalExplanation": "É um `ORDER BY distancia LIMIT K` seguido de um `GROUP BY classe`: 1) mede a distância até cada exemplo guardado, 2) ordena, 3) pega os K primeiros, 4) conta por classe, 5) devolve a classe com mais votos. Em regressão, o passo 4 vira 'tira a média do alvo'. Isso explica por que o custo cresce com o tamanho da base (um passo 1 completo a cada consulta)."
+    },
+    {
+      "id": "q18",
+      "label": "Tabela · votação com K = 3, 5 e 7",
+      "type": "single",
+      "prompt": "Os sete exemplos de treino mais próximos de um ponto novo, em ordem crescente de distância, são:\n\n| Posição | Distância | Classe |\n| :-- | :-- | :-- |\n| 1 | 0,4 | A |\n| 2 | 0,6 | B |\n| 3 | 0,7 | B |\n| 4 | 0,9 | A |\n| 5 | 1,0 | A |\n| 6 | 1,3 | A |\n| 7 | 1,6 | B |\n\nO k-NN usa votação simples (`weights='uniform'`). Qual é a classe prevista com K = 3, K = 5 e K = 7, nessa ordem?",
+      "options": [
+        {
+          "id": "a",
+          "text": "K = 3: A; K = 5: A; K = 7: A, pois o vizinho mais próximo é da classe A e ele decide sozinho a votação em todos os casos.",
+          "correct": false,
+          "explanation": "O vizinho mais próximo não decide sozinho; com K = 3 ele é só 1 voto contra 2 de B. Com K = 3 a previsão é B."
+        },
+        {
+          "id": "b",
+          "text": "K = 3: B; K = 5: A; K = 7: A, pois a maioria muda de B para A quando mais vizinhos entram na votação.",
+          "correct": true,
+          "explanation": "K = 3: A, B, B, logo B (2 a 1). K = 5: A, B, B, A, A, logo A (3 a 2). K = 7: A, B, B, A, A, A, B, logo A (4 a 3, o exemplo do slide 8). A previsão muda com K, o que mostra a sensibilidade do k-NN à sua escolha."
+        },
+        {
+          "id": "c",
+          "text": "K = 3: B; K = 5: B; K = 7: A, pois os dois vizinhos B próximos do início mantêm a vantagem até o quinto vizinho.",
+          "correct": false,
+          "explanation": "Com K = 5 já há três A (posições 1, 4 e 5) contra dois B (posições 2 e 3), então a classe prevista é A."
+        },
+        {
+          "id": "d",
+          "text": "K = 3: B; K = 5: A; K = 7: B, pois o sétimo vizinho, da classe B, desempata a votação e dá a vitória à classe B.",
+          "correct": false,
+          "explanation": "Com K = 7 não há empate: são quatro A (posições 1, 4, 5 e 6) e três B (2, 3 e 7). O vizinho 7 é um voto como os demais, e a previsão é A."
+        }
+      ],
+      "generalExplanation": "Como ler: a tabela já está ordenada, então escolher K é só 'cortar' a lista na linha K e contar as classes acima do corte. Nada de cálculo: basta contar. O ponto de prova: a mesma amostra pode receber classes diferentes conforme o K, e por isso K precisa ser escolhido com validação (slides 12 e 13). Aqui a decisão oscila entre B e A, sinal de que a fronteira naquela região é incerta."
+    },
+    {
+      "id": "q19",
+      "label": "Tabela · mesmos clientes, escalas diferentes",
+      "type": "single",
+      "prompt": "Um cliente novo (idade 30 anos, renda 5.000 reais por mês) será classificado pelo vizinho **mais próximo** (K = 1). Há dois clientes na base:\n\n| Cliente | Idade | Renda mensal | Classe |\n| :-- | :-- | :-- | :-- |\n| X | 31 anos | 9.000 | Não pagou |\n| Y | 60 anos | 5.200 | Pagou |\n\nNa base inteira, a idade tem desvio padrão de uns 12 anos e a renda, de uns 2.500. Qual afirmação está correta?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Padronizar não altera nenhuma distância, só muda as unidades de medida; assim, o vizinho mais próximo não depende de padronizar.",
+          "correct": false,
+          "explanation": "Padronizar muda a distância relativa entre pares de pontos, porque cada atributo é reescalado por um fator diferente. Por isso o vizinho mais próximo pode mudar."
+        },
+        {
+          "id": "b",
+          "text": "Com ou sem padronização, o vizinho mais próximo é Y, pois a renda dele é quase igual à do cliente novo e isso pesa em qualquer cálculo.",
+          "correct": false,
+          "explanation": "Vale apenas sem padronização. Ao padronizar, a diferença de 30 anos de idade vira cerca de 2,5 desvios e pesa mais que a de renda de X, e a conclusão pode inverter."
+        },
+        {
+          "id": "c",
+          "text": "Com ou sem padronização, o vizinho mais próximo é X, pois a idade dele é quase igual à do cliente novo e isso pesa em qualquer cálculo.",
+          "correct": false,
+          "explanation": "Sem padronizar, a idade não pesa: o que decide é a renda, e nesse eixo Y é muito mais próximo. Idade quase igual só ajuda X depois de padronizar."
+        },
+        {
+          "id": "d",
+          "text": "Sem padronizar, o mais próximo é Y, pois a renda domina; padronizando, a idade passa a contar e X pode virar o mais próximo.",
+          "correct": true,
+          "explanation": "Sem padronizar, a diferença de renda de X (4.000) é enorme perto da de Y (200), e a idade quase não aparece. Padronizado, X difere em cerca de 1,6 desvio de renda e Y em cerca de 2,5 desvios de idade, então X fica mais perto. A classe prevista muda."
+        }
+      ],
+      "generalExplanation": "Leia a tabela como um engenheiro lê um log: sem padronizar, a coluna com números maiores 'grita mais alto'. Quem manda é a renda, em reais; a idade, em anos, é inaudível. Ao padronizar (dividir pelo desvio), cada coluna passa a contar de forma comparável. A mesma consulta pode então mudar de vizinho e de classe. Lembrete: o scaler é ajustado **só com o treino**."
+    },
+    {
+      "id": "q20",
+      "label": "Gráfico · curva K × erro",
+      "type": "single",
+      "prompt": "Um k-NN foi avaliado com vários valores de K. A tabela traz os pontos de duas curvas: o erro no conjunto de **treino** e o erro em um conjunto de **validação** separado, deixando o teste final intocado:\n\n| K | Erro no treino | Erro na validação |\n| :-- | :-- | :-- |\n| 1 | 0,00 | 0,18 |\n| 3 | 0,07 | 0,12 |\n| 5 | 0,09 | 0,10 |\n| 9 | 0,11 | 0,09 |\n| 15 | 0,14 | 0,11 |\n| 31 | 0,20 | 0,17 |\n| 101 | 0,30 | 0,29 |\n\nQual leitura da curva está correta?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O erro de validação é mínimo perto de K = 9; à esquerda há overfitting (treino quase zero e validação alta) e à direita, underfitting (erros altos).",
+          "correct": true,
+          "explanation": "A validação cai até K = 9 e volta a subir, formando um 'U'. K pequeno memoriza o ruído (treino baixo, validação alta); K muito grande suaviza demais e erra em ambos. O K escolhido é o do mínimo da validação."
+        },
+        {
+          "id": "b",
+          "text": "O melhor K é 1, porque ele tem o menor erro de todos (0,00), e o erro cresce com K porque a vizinhança passa a incluir pontos menos parecidos.",
+          "correct": false,
+          "explanation": "O erro 0,00 no treino com K = 1 é artificial: cada ponto é vizinho de si mesmo (slide 5). O que importa é o erro de **validação**, que em K = 1 é alto."
+        },
+        {
+          "id": "c",
+          "text": "O erro no treino mede a qualidade real do modelo, e o de validação só confirma; por isso se escolhe o K de menor erro no treino.",
+          "correct": false,
+          "explanation": "O erro de treino cresce com K quase sempre e favoreceria K = 1, que é o mais sobreajustado. A escolha de K deve usar dados que o modelo não consultou, a validação."
+        },
+        {
+          "id": "d",
+          "text": "O melhor K é 101, porque os erros de treino e de validação ficam quase iguais, o que prova que o modelo generaliza melhor.",
+          "correct": false,
+          "explanation": "Erros iguais mas altos (0,30 e 0,29) indicam underfitting: o modelo é simples demais e erra muito também no treino. Generalizar bem exige erro baixo, não apenas parecido."
+        }
+      ],
+      "generalExplanation": "Como ler o gráfico (slide 15): o eixo horizontal é K e o vertical é o erro. A curva de treino sobe com K (modelo cada vez mais suave); a de validação desce e depois sobe (forma de U). O fundo do U é o K recomendado. Escolher K assim é **empírico** (slide 12), e deve ser feito com validação ou validação cruzada, jamais com o teste final, que só mede o resultado do modelo já escolhido."
+    },
+    {
+      "id": "q21",
+      "label": "Código · padronizar antes de dividir",
+      "type": "single",
+      "prompt": "Analise o trecho (a sintaxe está correta). Ele usa k-NN e relata a acurácia esperada:\n\n```python\nscaler = StandardScaler()\nX_scaled = scaler.fit_transform(X)\nX_train, X_test, y_train, y_test = train_test_split(\n    X_scaled, y, test_size=0.2, random_state=0\n)\nknn = KNeighborsClassifier(n_neighbors=5).fit(X_train, y_train)\nprint(knn.score(X_test, y_test))\n```\n\nQual é o erro de lógica?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O `StandardScaler` não deveria ser usado com o k-NN, pois só faz sentido para algoritmos de regressão linear.",
+          "correct": false,
+          "explanation": "O k-NN é um dos algoritmos que **mais** precisam de padronização, por depender de distâncias (slide 22). O erro está em quando o scaler é ajustado, não em usá-lo."
+        },
+        {
+          "id": "b",
+          "text": "O valor `n_neighbors=5` é pequeno demais para esse código, pois o K deveria ser sempre igual ao número de colunas.",
+          "correct": false,
+          "explanation": "Não existe regra ligando K ao número de colunas. K é hiperparâmetro e deve ser escolhido por validação, mas o enunciado pede o erro de **lógica**, e o vazamento é o problema."
+        },
+        {
+          "id": "c",
+          "text": "O `fit_transform` foi aplicado a todos os dados antes da divisão, então a média e o desvio incluem linhas do teste (vazamento).",
+          "correct": true,
+          "explanation": "O scaler aprendeu média e desvio de **todas** as linhas, inclusive do teste, e a avaliação fica otimista. O correto é dividir primeiro, `fit_transform` no treino e só `transform` no teste (ou usar um `Pipeline`)."
+        },
+        {
+          "id": "d",
+          "text": "Falta chamar `scaler.fit` de novo depois da divisão, para o scaler enxergar os dados de treino e de teste ao mesmo tempo.",
+          "correct": false,
+          "explanation": "Ajustar o scaler com treino e teste juntos é justamente o vazamento que se quer evitar. O scaler deve conhecer apenas o treino."
+        }
+      ],
+      "generalExplanation": "O que o código faz: padroniza todas as colunas, divide em treino e teste, treina o k-NN (que só guarda os dados) e mede a acurácia no teste. O defeito é a ordem: o teste participou do cálculo da média e do desvio. Analogia: é como definir os limites de um alerta olhando também os dados de produção que depois serão usados para avaliá-lo. Ordem certa: 1) dividir, 2) ajustar o scaler no treino, 3) transformar treino e teste, 4) treinar, 5) avaliar. Um `Pipeline` garante essa ordem."
+    },
+    {
+      "id": "q22",
+      "label": "Código · escolher K olhando o teste",
+      "type": "single",
+      "prompt": "Um analista escolhe K e informa a acurácia esperada em produção. Sintaxe correta; ache o erro de lógica:\n\n```python\nmelhor_k, melhor_acc = None, 0\nfor k in [1, 3, 5, 7, 9, 11]:\n    knn = KNeighborsClassifier(n_neighbors=k).fit(X_train, y_train)\n    acc = knn.score(X_test, y_test)\n    if acc > melhor_acc:\n        melhor_k, melhor_acc = k, acc\nprint(\"Acurácia esperada:\", melhor_acc)\n```",
+      "options": [
+        {
+          "id": "a",
+          "text": "O `fit` deveria ser chamado depois do laço, uma única vez, pois o k-NN só pode ser treinado depois de definir o K.",
+          "correct": false,
+          "explanation": "Chamar `fit` dentro do laço é correto, pois cada K gera um modelo diferente. Guardar os dados é barato no k-NN; o problema está em usar o teste para escolher."
+        },
+        {
+          "id": "b",
+          "text": "O teste escolheu o K e também relatou o desempenho, então o resultado fica otimista: K foi ajustado nos dados que deveriam ser inéditos.",
+          "correct": true,
+          "explanation": "Escolher o melhor entre vários K olhando o teste faz o teste virar parte do ajuste. A nota máxima é inflada por seleção. O correto é escolher K com validação (ou validação cruzada) no treino e usar o teste uma única vez, no final."
+        },
+        {
+          "id": "c",
+          "text": "A acurácia deveria ser calculada em `X_train`, que é maior que `X_test` e dá uma estimativa mais estável da qualidade do modelo.",
+          "correct": false,
+          "explanation": "Avaliar no treino é pior ainda: com K = 1 a acurácia é 100% (slide 5) e o laço escolheria sempre o K mais sobreajustado."
+        },
+        {
+          "id": "d",
+          "text": "O `for` deveria testar apenas valores pares de K, porque os ímpares causam empates e distorcem a acurácia medida pelo laço.",
+          "correct": false,
+          "explanation": "É o contrário: ímpares evitam empate em problemas binários (slide 13). E o defeito do trecho não é a lista de valores, é o conjunto usado para decidir."
+        }
+      ],
+      "generalExplanation": "Analogia: ajustar o código até passar nos testes e depois usar esses mesmos testes como prova de que está correto. O teste final precisa ser **intocado** até o fim. Fluxo certo: treino, validação cruzada para escolher K, refazer o `fit` com o melhor K e medir **uma vez** no teste. Em scikit-learn: `GridSearchCV` com `n_neighbors` sobre o treino."
+    },
+    {
+      "id": "q23",
+      "label": "Atributos irrelevantes",
+      "type": "single",
+      "prompt": "Uma equipe tem 4 atributos realmente informativos para prever cancelamento de contrato. Por conveniência, acrescenta ao k-NN mais 40 colunas sem relação com o problema (identificadores, códigos internos, números aleatórios). O que se espera (slide 20)?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O desempenho não muda, pois a padronização torna todas as colunas igualmente informativas e elimina o efeito do ruído.",
+          "correct": false,
+          "explanation": "Padronizar deixa as colunas na mesma escala, mas não cria informação. Em escala igual, o ruído continua pesando tanto quanto as colunas boas e piora a distância."
+        },
+        {
+          "id": "b",
+          "text": "Só o tempo de execução aumenta, pois as colunas extras não afetam as distâncias, que dependem apenas das colunas de maior variância.",
+          "correct": false,
+          "explanation": "O tempo de fato aumenta, mas a distância soma todas as colunas, e não só as de maior variância. Logo a qualidade também é afetada."
+        },
+        {
+          "id": "c",
+          "text": "O desempenho tende a melhorar, porque o algoritmo identifica sozinho as colunas úteis e ignora as demais ao medir distâncias.",
+          "correct": false,
+          "explanation": "O k-NN não seleciona atributos. Ele não tem mecanismo para ignorar colunas inúteis; essa seleção deve ser feita por você antes."
+        },
+        {
+          "id": "d",
+          "text": "O desempenho tende a piorar: as colunas irrelevantes entram na distância e os 'vizinhos' deixam de ser os realmente semelhantes.",
+          "correct": true,
+          "explanation": "O k-NN dá o mesmo direito de voto a toda coluna. 40 colunas de ruído somam muita distância aleatória e abafam as 4 informativas. Por isso se recomenda selecionar atributos ou reduzir dimensões antes."
+        }
+      ],
+      "generalExplanation": "Analogia: avaliar dois candidatos pela diferença em 44 campos de um formulário, 40 dos quais são ruído. A semelhança 'verdadeira' se perde. O slide 20 lista isso entre as desvantagens: o k-NN é afetado por variáveis **irrelevantes ou redundantes** e é sensível à escala. Remédios: seleção de atributos, remoção de colunas inúteis (como ID), PCA, e atenção à dimensionalidade (slide 11)."
+    },
+    {
+      "id": "q24",
+      "label": "Hiperparâmetros no scikit-learn",
+      "type": "single",
+      "prompt": "Observe a criação do modelo (sintaxe correta):\n\n```python\nknn = KNeighborsClassifier(n_neighbors=7, algorithm='auto', weights='distance')\n```\n\nO que cada parâmetro faz (slides 31 e 34)?",
+      "options": [
+        {
+          "id": "a",
+          "text": "`n_neighbors` define o número de classes; `algorithm='auto'` ativa a distância de Manhattan; `weights` escolhe a métrica de distância.",
+          "correct": false,
+          "explanation": "O número de classes vem dos dados. A métrica é definida por `metric` e `p`, e `algorithm` não altera a distância, só a busca."
+        },
+        {
+          "id": "b",
+          "text": "`n_neighbors` é o K (aqui 7); `algorithm` escolhe a estrutura de busca (`'auto'` deixa a biblioteca decidir); `weights` define o peso de cada voto.",
+          "correct": true,
+          "explanation": "`n_neighbors` é o K. `algorithm` não muda o resultado, só **como** os vizinhos são encontrados (`brute`, `kd_tree`, `ball_tree` ou `auto`). `weights='distance'` pondera os votos pela proximidade."
+        },
+        {
+          "id": "c",
+          "text": "`n_neighbors` define a quantidade de atributos usados; `algorithm` escolhe o método de treinamento; `weights` define pesos dos atributos.",
+          "correct": false,
+          "explanation": "`n_neighbors` conta **vizinhos**, não atributos. O k-NN não tem treinamento a escolher, e `weights` pesa os votos dos vizinhos, não as colunas."
+        },
+        {
+          "id": "d",
+          "text": "`n_neighbors` define o K mínimo, que o algoritmo aumenta sozinho; `algorithm` define o ritmo de aprendizado; `weights` reduz overfitting.",
+          "correct": false,
+          "explanation": "O K é fixo. O k-NN não tem ritmo de aprendizado (isso é do gradiente descendente). `weights` não é regularização, só muda a influência de cada vizinho."
+        }
+      ],
+      "generalExplanation": "Leia `KNeighborsClassifier(...)` como um objeto de configuração: **quantos** vizinhos (`n_neighbors`), **como encontrá-los** (`algorithm`: `brute`, `kd_tree`, `ball_tree`, `auto`), **como votam** (`weights`: `uniform`, `distance`, ou uma função) e **como medir a distância** (`metric`, `p`; padrão Minkowski com p = 2). Só `algorithm` não afeta o resultado: afeta a velocidade."
+    }
+  ]
+}

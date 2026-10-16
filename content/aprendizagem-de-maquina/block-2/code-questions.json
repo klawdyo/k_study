@@ -1,0 +1,833 @@
+{
+  "schema": "questions/v2",
+  "id": "bloco-2-codigo",
+  "title": "Bloco 2 · Questões de Leitura de Código (scikit-learn)",
+  "instructions": "Analise cada trecho de código scikit-learn (regressão, k-NN e árvores). O código **roda** (ou o erro de execução é parte da pergunta); o foco é achar o **erro de lógica**: vazamento de dados, **ordem errada das ações**, escolha de hiperparâmetro pelo teste, métrica ou modelo incompatível com a tarefa. Nenhuma questão exige cálculo manual. Responda antes de ler qualquer explicação e depois leia a explicação de **todas** as alternativas. Antes de começar, leia o guia *Como ler um trecho de código no Bloco 2*. As questões marcadas \"complemento\" tratam de assuntos fora dos slides.",
+  "questions": [
+    {
+      "id": "c01",
+      "label": "Vazamento no k-NN",
+      "type": "single",
+      "prompt": "Leia o trecho. Ele padroniza os atributos, divide em treino e teste e avalia um k-NN.\n\n```python\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.neighbors import KNeighborsClassifier\n\nscaler = StandardScaler()\nX_scaled = scaler.fit_transform(X)\n\nX_train, X_test, y_train, y_test = train_test_split(\n    X_scaled, y, test_size=0.3, random_state=42\n)\n\nknn = KNeighborsClassifier(n_neighbors=5)\nknn.fit(X_train, y_train)\nscore = knn.score(X_test, y_test)\n```\n\nQual é o **erro de lógica** desse código?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O `StandardScaler` aprendeu média e desvio com o dataset inteiro antes da divisão, e o teste vazou para o treino (*data leakage*).",
+          "correct": true,
+          "explanation": "Linha `scaler.fit_transform(X)`: o `fit` calcula média e desvio de **todas** as linhas, inclusive das que viram teste. Depois o teste deixa de ser dado inédito, porque o pré-processamento já \"viu\" esses números. O certo é dividir primeiro, dar `fit_transform` só no treino e `transform` no teste."
+        },
+        {
+          "id": "b",
+          "text": "O `random_state=42` foi colocado depois do `StandardScaler`, mas a semente deveria vir antes para a divisão ser reprodutível.",
+          "correct": false,
+          "explanation": "A semente só controla o sorteio do `train_test_split` e não depende da posição do scaler no código. Trocar a ordem não muda nada na reprodutibilidade; o problema verdadeiro é **o que** o scaler enxergou, não a semente."
+        },
+        {
+          "id": "c",
+          "text": "O `score` deveria receber `X_train` e `y_train`, já que o k-NN só conhece os rótulos do conjunto de treino e não os de teste.",
+          "correct": false,
+          "explanation": "O `score` mede a nota nos dados passados; passar o treino devolveria uma nota inflada (cada ponto é vizinho de si mesmo). Medir generalização exige dados que o modelo não viu, isto é, o teste."
+        },
+        {
+          "id": "d",
+          "text": "O `StandardScaler` deveria ter sido ajustado apenas com `X_test`, para que o teste seja avaliado na sua própria escala, sem depender do treino.",
+          "correct": false,
+          "explanation": "Isso seria pior: o modelo treina numa escala e é testado em outra. A regra é aprender os parâmetros no treino e **reaplicar** esses mesmos parâmetros no teste, como uma configuração fixa em produção."
+        }
+      ],
+      "generalExplanation": "**Ideia central:** qualquer transformação que \"aprende\" números dos dados (média, desvio, mínimo, máximo, imputação) deve aprender **só com o treino**. Analogia de engenharia: é como calibrar um ambiente de homologação com dados de produção que você ainda não deveria conhecer.\n\nCódigo corrigido:\n\n```python\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)\nscaler = StandardScaler()\nX_train_s = scaler.fit_transform(X_train)   # aprende no treino\nX_test_s = scaler.transform(X_test)         # só aplica no teste\n```"
+    },
+    {
+      "id": "c02",
+      "label": "fit_transform no teste",
+      "type": "single",
+      "prompt": "Analise a linha 8 do trecho abaixo (os números são só rótulos de linha):\n\n```python\n1: X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)\n2:\n3: scaler = StandardScaler()\n4: X_train_scaled = scaler.fit_transform(X_train)\n5:\n6: knn = KNeighborsClassifier(n_neighbors=3)\n7: knn.fit(X_train_scaled, y_train)\n8: X_test_scaled = scaler.fit_transform(X_test)\n9: print(knn.score(X_test_scaled, y_test))\n```\n\nPor que a linha 8 contém um **erro de lógica**?",
+      "options": [
+        {
+          "id": "a",
+          "text": "`fit_transform` recalcula média e desvio com o teste; o correto é `scaler.transform(X_test)`, reaproveitando o treino.",
+          "correct": true,
+          "explanation": "O modelo foi treinado com dados padronizados pela média e desvio **do treino**. Se o teste é padronizado com os números dele mesmo, os dois conjuntos ficam em réguas diferentes e a nota perde o sentido. Em produção, um único exemplo novo nem teria média e desvio próprios para calcular."
+        },
+        {
+          "id": "b",
+          "text": "`fit_transform` é mais lento que `transform`; a troca só deixaria o código mais rápido, mantendo a nota final igual.",
+          "correct": false,
+          "explanation": "A nota final muda: `fit_transform` redefine média e desvio, então os valores do teste ficam diferentes. Não é questão de velocidade, é de **quais parâmetros** estão sendo usados."
+        },
+        {
+          "id": "c",
+          "text": "A linha 8 deveria vir antes da linha 4, para o scaler conhecer o teste e padronizar os dois conjuntos de uma vez, sem depender do treino.",
+          "correct": false,
+          "explanation": "Ajustar o scaler com treino e teste juntos é justamente o vazamento de dados. O scaler deve conhecer apenas o treino, e o teste só passa por `transform`."
+        },
+        {
+          "id": "d",
+          "text": "A linha 8 deveria passar também `y_test`, como em `fit_transform(X_test, y_test)`, para padronizar o alvo junto.",
+          "correct": false,
+          "explanation": "O scaler atua só nos atributos `X`. Passar `y` é inútil (o argumento é ignorado) e padronizar o alvo não é o objetivo. O defeito está em recalcular os parâmetros no teste."
+        }
+      ],
+      "generalExplanation": "**Regra do scikit-learn:** `fit_transform` no treino; apenas `transform` no teste e em produção. Pense no scaler como um objeto de configuração: você o constrói uma vez com os dados de treino e depois só o aplica."
+    },
+    {
+      "id": "c03",
+      "label": "k-NN sem escala",
+      "type": "single",
+      "prompt": "Um desenvolvedor escreveu o código abaixo.\n\n```python\n# Colunas de X: 'idade' (18 a 65) e 'renda_anual' (30.000 a 500.000)\nX_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)\n\nknn = KNeighborsClassifier(n_neighbors=7, metric='euclidean')\nknn.fit(X_train, y_train)\nprint('Acurácia:', knn.score(X_test, y_test))\n```\n\nQual é o **erro de lógica** de projeto?",
+      "options": [
+        {
+          "id": "a",
+          "text": "As colunas têm escalas muito diferentes e não foram padronizadas: a renda domina a distância e a idade quase não pesa.",
+          "correct": true,
+          "explanation": "O k-NN decide pela distância euclidiana. Uma diferença de 10.000 na renda pesa infinitamente mais que uma diferença de 20 anos de idade, então a idade vira ruído. A cura é padronizar (`StandardScaler`) ou normalizar antes, ajustando o scaler só no treino."
+        },
+        {
+          "id": "b",
+          "text": "Faltou `weights='distance'`: sem ele o k-NN ignora as distâncias e escolhe os vizinhos ao acaso entre os 7 mais próximos.",
+          "correct": false,
+          "explanation": "Com `weights='uniform'` (padrão) as distâncias continuam definindo **quais** são os K vizinhos; só o voto entre eles é igual. Além disso, o peso não corrige o problema da escala."
+        },
+        {
+          "id": "c",
+          "text": "Com `metric='euclidean'`, o k-NN exige `n_neighbors` par; com 7 vizinhos a classificação fica instável nesse caso.",
+          "correct": false,
+          "explanation": "A métrica não tem relação com a paridade de K. Aliás, em classificação binária K ímpar é o recomendado, justamente para evitar empate no voto."
+        },
+        {
+          "id": "d",
+          "text": "A coluna `idade` deveria ser removida, pois atributos com valores pequenos atrapalham qualquer classificador usado.",
+          "correct": false,
+          "explanation": "Valores pequenos não são um defeito; o problema é a **diferença de escala** entre colunas. Padronizando, a idade volta a contribuir. Remover a coluna jogaria informação fora."
+        }
+      ],
+      "generalExplanation": "**Aula 6:** o k-NN é sensível à escala dos dados; padronizar é um passo praticamente obrigatório quando as colunas têm unidades diferentes. Árvores de decisão, ao contrário, não precisam disso (ver questão da árvore com `StandardScaler`)."
+    },
+    {
+      "id": "c04",
+      "label": "Métrica de classificação em regressão",
+      "type": "single",
+      "prompt": "Observe o trecho abaixo.\n\n```python\nfrom sklearn.linear_model import LinearRegression\nfrom sklearn.metrics import accuracy_score\n\nreg = LinearRegression()\nreg.fit(X_train, y_train)   # y_train contém preços contínuos de casas\ny_pred = reg.predict(X_test)\n\nprint('Resultado:', accuracy_score(y_test, y_pred))\n```\n\nO que acontece ao executar a última linha?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Imprime um valor próximo de 0,0, porque as previsões contínuas quase nunca coincidem exatamente com os preços reais, e a função exige igualdade.",
+          "correct": false,
+          "explanation": "Parece lógico, mas não é o que o scikit-learn faz: a biblioteca nem calcula. A função confere o tipo do alvo antes e interrompe com erro. Atenção: só \"quase 0\" seria o caso se o alvo fosse inteiro."
+        },
+        {
+          "id": "b",
+          "text": "Imprime uma acurácia alta, pois a regressão linear de mínimos quadrados acerta a maior parte dos preços exatos.",
+          "correct": false,
+          "explanation": "Mínimos quadrados minimiza o erro médio, mas não acerta valores exatos. E, de qualquer forma, a acurácia nem chega a ser calculada porque o alvo é contínuo."
+        },
+        {
+          "id": "c",
+          "text": "Converte os preços em categorias 0 e 1 automaticamente e calcula a acurácia sobre elas, sem emitir aviso algum.",
+          "correct": false,
+          "explanation": "O scikit-learn não discretiza alvos por conta própria. Fazer isso em silêncio esconderia um erro de modelagem; a biblioteca prefere interromper a execução."
+        },
+        {
+          "id": "d",
+          "text": "Lança `ValueError`: `accuracy_score` é métrica de classificação e não aceita alvo contínuo; preços pedem MAE, MSE ou R².",
+          "correct": true,
+          "explanation": "Verificado no scikit-learn 1.5.1: a mensagem é \"continuous is not supported\". Acurácia compara rótulos **discretos** (acertou ou errou). Para valores contínuos, mede-se o tamanho do erro: MAE, MSE, RMSE, ou o R² do `.score()` do regressor."
+        }
+      ],
+      "generalExplanation": "**Não confunda métricas:** regressão (alvo contínuo) usa MAE, MSE, RMSE e R²; classificação (alvo em classes) usa acurácia, precisão, recall, F1 e matriz de confusão. Em uma prova, o trecho pode nem chegar a rodar; o que importa é reconhecer a incompatibilidade entre tarefa e métrica."
+    },
+    {
+      "id": "c05",
+      "label": "Árvore sem poda: overfitting",
+      "type": "single",
+      "prompt": "Um programador escreveu o script abaixo e o console imprimiu `Acurácia Treino: 1.0` e `Acurácia Teste: 0.61`.\n\n```python\nfrom sklearn.tree import DecisionTreeClassifier\n\ntree = DecisionTreeClassifier()   # nenhum parâmetro de restrição\ntree.fit(X_train, y_train)\n\nprint('Acurácia Treino:', tree.score(X_train, y_train))\nprint('Acurácia Teste:', tree.score(X_test, y_test))\n```\n\nO que aconteceu?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Underfitting: a árvore ficou simples demais e por isso erra muito mesmo em dados parecidos com os que já viu.",
+          "correct": false,
+          "explanation": "Underfitting erra também no treino, porque o modelo é incapaz de capturar o padrão. Aqui o treino é perfeito (1.0), o que descarta modelo simples demais."
+        },
+        {
+          "id": "b",
+          "text": "Overfitting: sem restrição, a árvore cresceu até folhas puras e decorou o treino (100 %), mas generaliza mal (61 %).",
+          "correct": true,
+          "explanation": "Sem `max_depth`, `min_samples_leaf` ou outra pré-poda, a árvore continua dividindo até cada folha ter um só rótulo. Isso decora ruído do treino. A grande distância entre treino e teste é a assinatura do overfitting; a cura é limitar a árvore ou podá-la."
+        },
+        {
+          "id": "c",
+          "text": "Vazamento de dados: o teste foi misturado ao treino, e por isso as duas notas diferem tanto uma da outra.",
+          "correct": false,
+          "explanation": "Vazamento infla a nota de **teste**, aproximando-a do treino. Aqui o teste é baixo e o treino altíssimo, o oposto do que o vazamento produziria."
+        },
+        {
+          "id": "d",
+          "text": "Falta de padronização: sem `StandardScaler`, a árvore compara colunas em escalas distintas e erra bastante no teste que nunca viu.",
+          "correct": false,
+          "explanation": "Árvores comparam cada coluna com um limiar e só dependem da ordem dos valores, então a escala não influencia. Padronizar não resolveria o overfitting."
+        }
+      ],
+      "generalExplanation": "**Aula 8:** árvore sem restrições cresce até a profundidade máxima e decora o treino. Remédios: pré-poda (`max_depth`, `min_samples_split`, `min_samples_leaf`) ou pós-poda. Sempre compare a nota de treino com a de teste."
+    },
+    {
+      "id": "c06",
+      "label": "K=1 avaliado no treino",
+      "type": "single",
+      "prompt": "Um programador treinou um k-NN, viu o resultado abaixo e anunciou: \"modelo perfeito, 100 % de acerto\".\n\n```python\nknn = KNeighborsClassifier(n_neighbors=1)\nknn.fit(X_train, y_train)\n\nprint('Acurácia do modelo:', knn.score(X_train, y_train))   # imprime 1.0\n```\n\nO que está errado na avaliação?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Ele avaliou no treino; com K=1 cada ponto é o próprio vizinho mais próximo (distância zero), logo o 1.0 é garantido.",
+          "correct": true,
+          "explanation": "O k-NN guarda o treino. Ao consultar um ponto que já está guardado, o vizinho mais próximo é ele mesmo, com a mesma classe. Por isso `score(X_train, y_train)` com K=1 dá 1.0 em qualquer base sem duplicatas contraditórias. A nota que importa vem do teste (aqui seria bem menor)."
+        },
+        {
+          "id": "b",
+          "text": "Com K=1 acontecem empates entre classes; o certo seria usar K par para que o desempate corrija o 1.0 artificial que apareceu no resultado.",
+          "correct": false,
+          "explanation": "Com K=1 só existe um voto, então não há empate possível. K par aliás cria empates, em vez de resolvê-los. O 1.0 vem de avaliar no treino, não de desempate."
+        },
+        {
+          "id": "c",
+          "text": "O `score` do k-NN usa acurácia ponderada pela distância, e essa ponderação infla qualquer resultado até 1.0.",
+          "correct": false,
+          "explanation": "O `score` do classificador é a acurácia simples. Não existe ponderação oculta; o valor 1.0 vem de cada ponto ter distância zero até si mesmo."
+        },
+        {
+          "id": "d",
+          "text": "Faltou chamar `knn.predict` antes do `score`; sem a predição explícita o valor impresso é o do treino.",
+          "correct": false,
+          "explanation": "O `score` chama o `predict` por dentro. Não falta etapa nenhuma; o defeito é passar `X_train` e `y_train` onde deveria passar `X_test` e `y_test`."
+        }
+      ],
+      "generalExplanation": "**Aula 6:** o k-NN \"decora\" o treino; K=1 sempre acerta o treino. Toda avaliação séria usa dados que o modelo não viu (teste ou validação cruzada).\n\nCorreção: `knn.score(X_test, y_test)`."
+    },
+    {
+      "id": "c07",
+      "label": "Ridge x Lasso na prática",
+      "type": "single",
+      "prompt": "Uma base tem 50 variáveis, das quais só algumas são realmente úteis. O trecho padroniza dentro de um `Pipeline` e treina Ridge e Lasso com a mesma força (`alpha=1.0`).\n\n```python\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.linear_model import Ridge, Lasso\n\nridge = Pipeline([('scaler', StandardScaler()), ('model', Ridge(alpha=1.0))])\nlasso = Pipeline([('scaler', StandardScaler()), ('model', Lasso(alpha=1.0))])\nridge.fit(X_train, y_train)\nlasso.fit(X_train, y_train)\n\nprint('Ridge zeros:', (ridge.named_steps['model'].coef_ == 0).sum())\nprint('Lasso zeros:', (lasso.named_steps['model'].coef_ == 0).sum())\n```\n\nQual é o resultado esperado dos contadores de zeros?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Ridge com vários zeros, por ser L2 e punir mais forte, e Lasso com 0 zeros, porque a penalidade L1 só encolhe os pesos de forma suave.",
+          "correct": false,
+          "explanation": "Invertido: é o Lasso (L1, soma de módulos) que produz zeros, por causa do formato \"pontudo\" da penalidade. O Ridge (soma de quadrados) encolhe todos os pesos de forma suave sem zerá-los."
+        },
+        {
+          "id": "b",
+          "text": "Os dois têm o mesmo número de zeros, porque L1 e L2 diferem só na fórmula e não na esparsidade da solução.",
+          "correct": false,
+          "explanation": "A diferença entre elas é exatamente a esparsidade: L1 gera soluções esparsas (muitos zeros) e L2 não. É por isso que existem as duas."
+        },
+        {
+          "id": "c",
+          "text": "Ambos zeram os 50 coeficientes, porque `alpha=1.0` é uma penalidade forte demais em qualquer base de dados.",
+          "correct": false,
+          "explanation": "Com as variáveis padronizadas, `alpha=1.0` é moderado: o Lasso manteve as variáveis úteis. Só um alpha muito maior que a escala do alvo zeraria tudo, e o Ridge, mesmo assim, não zera de forma exata."
+        },
+        {
+          "id": "d",
+          "text": "Ridge com 0 zeros (só encolhe os coeficientes) e Lasso com vários zeros, descartando variáveis pouco úteis.",
+          "correct": true,
+          "explanation": "Ridge (L2) reduz os coeficientes mas dificilmente os leva a exatamente zero. Lasso (L1) zera os coeficientes das variáveis irrelevantes, funcionando como seleção de atributos. Em um teste com 50 variáveis (5 úteis), o Lasso zerou 22 e o Ridge, 0."
+        }
+      ],
+      "generalExplanation": "**Aula 5:** Ridge (L2) encolhe coeficientes sem zerá-los; Lasso (L1) zera os irrelevantes. Ambos penalizam o tamanho dos coeficientes, então as variáveis precisam estar na mesma escala (por isso o `StandardScaler` dentro do `Pipeline`, um bom hábito segundo o slide 19). O parâmetro `alpha` regula a força da penalidade."
+    },
+    {
+      "id": "c08",
+      "label": "MAE sem módulo",
+      "type": "single",
+      "prompt": "O modelo erra cerca de 80 unidades em cada amostra, metade para mais e metade para menos. Um estagiário calculou o MAE (erro absoluto médio) assim:\n\n```python\n# MAE calculado \"na mão\"\nerros = y_pred - y_real\nmae = np.mean(erros)\nprint('MAE:', mae)   # imprime um valor muito próximo de 0\n```\n\nPor que o valor impresso é tão enganoso?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O MAE deveria usar `np.median` em vez de `np.mean`, porque a média é sensível aos erros positivos grandes.",
+          "correct": false,
+          "explanation": "Mediana é outra estatística, e nem resolveria o cancelamento de sinais. O defeito é a falta do módulo, não a escolha entre média e mediana."
+        },
+        {
+          "id": "b",
+          "text": "O resultado está correto: MAE próximo de zero indica um bom modelo mesmo que os erros individuais sejam grandes.",
+          "correct": false,
+          "explanation": "Um MAE correto próximo de zero exige erros individuais pequenos. Aqui o valor é artificial, fruto de cancelamento, e esconde um modelo ruim."
+        },
+        {
+          "id": "c",
+          "text": "Sem o valor absoluto, erros positivos e negativos se cancelam; o MAE exige `np.abs(erros)` antes do `np.mean`.",
+          "correct": true,
+          "explanation": "MAE significa média dos erros **absolutos**. Sem `abs`, +80 e -80 somam zero e o modelo parece perfeito. Verificado: com erros alternados de +80 e -80, a média sem `abs` dá 0,0 e com `abs` dá 80,0."
+        },
+        {
+          "id": "d",
+          "text": "A subtração está invertida: o certo seria `y_real - y_pred`, que resultaria em um valor positivo e grande.",
+          "correct": false,
+          "explanation": "Inverter a subtração só troca o sinal de cada erro; a média continuaria perto de zero, porque os erros positivos e negativos seguem se anulando. A ordem não é o defeito."
+        }
+      ],
+      "generalExplanation": "**Aula 5:** o resíduo individual tem sinal; para métricas de erro é preciso eliminar o sinal antes da média (módulo no MAE, quadrado no MSE). Código correto: `mae = np.mean(np.abs(y_pred - y_real))` ou `mean_absolute_error(y_real, y_pred)`."
+    },
+    {
+      "id": "c09",
+      "label": "Codificar categoria nominal como número",
+      "type": "single",
+      "prompt": "Uma coluna de região tem quatro categorias sem ordem natural. O código as transforma em números e treina uma árvore.\n\n```python\nfrom sklearn.preprocessing import LabelEncoder\nfrom sklearn.tree import DecisionTreeClassifier\n\n# df['regiao'] contém: 'Norte', 'Sul', 'Leste', 'Oeste' (sem ordem entre elas)\nle = LabelEncoder()\ndf['regiao_cod'] = le.fit_transform(df['regiao'])   # Leste=0, Norte=1, Oeste=2, Sul=3\n\ntree = DecisionTreeClassifier(max_depth=2, random_state=0)\ntree.fit(df[['regiao_cod']], df['comprou'])\n# regra do nó raiz: regiao_cod <= 1.5\n```\n\nQual é o **erro de lógica** na preparação dos dados?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O `LabelEncoder` foi ajustado só nos dados de treino, e por isso o limite 1,5 vazou informação do teste para dentro da árvore.",
+          "correct": false,
+          "explanation": "Os códigos 0 a 3 dependem só dos nomes das categorias (ordem alfabética), não do alvo, então não há vazamento de rótulos. O problema é o significado numérico que esses números passam a ter."
+        },
+        {
+          "id": "b",
+          "text": "A região é nominal, mas os códigos 0 a 3 criam uma ordem artificial entre as categorias; o adequado é *one-hot*.",
+          "correct": true,
+          "explanation": "`LabelEncoder` atribui números por ordem alfabética (Leste=0, Norte=1, Oeste=2, Sul=3). Cortes como `<= 1.5` agrupam Leste e Norte contra Oeste e Sul por acaso do alfabeto, e um grupo como \"Leste e Oeste\" exigiria vários cortes. One-hot cria uma coluna 0/1 por região e remove a ordem falsa."
+        },
+        {
+          "id": "c",
+          "text": "A árvore não aceita colunas categóricas, então a coluna deveria ser removida da base antes do treino do modelo.",
+          "correct": false,
+          "explanation": "Árvores aceitam bem atributos categóricos **codificados**; remover a coluna perderia informação. O defeito está em como a codificação foi feita."
+        },
+        {
+          "id": "d",
+          "text": "O limite 1,5 é inválido, pois árvores só aceitam limites inteiros, como 1 ou 2, e o scikit-learn arredondou errado.",
+          "correct": false,
+          "explanation": "Limites fracionários são normais: o CART testa pontos médios entre valores vizinhos (aqui entre 1 e 2). O scikit-learn trata tudo como numérico e usa `<=` e `>`."
+        }
+      ],
+      "generalExplanation": "**Aula 3 e 8:** use *one-hot encoding* para categorias **nominais** (sem ordem) e codificação por ordem apenas para **ordinais** (baixo, médio, alto). No scikit-learn, o CART trata tudo como número e faz cortes binários (`<=` e `>`), por isso a codificação importa.\n\nCorreção: `pd.get_dummies(df['regiao'])` ou `OneHotEncoder`."
+    },
+    {
+      "id": "c10",
+      "label": "Poda que não poda",
+      "type": "single",
+      "prompt": "Um programador diz ter configurado pré-poda e mesmo assim ainda vê overfitting. A base é pequena (150 linhas de treino).\n\n```python\nfrom sklearn.tree import DecisionTreeClassifier\n\n# Base pequena: 150 linhas de treino\ntree = DecisionTreeClassifier(max_depth=30, min_samples_leaf=1, random_state=0)\ntree.fit(X_train, y_train)\n\nprint('Treino:', tree.score(X_train, y_train))   # 1.0\nprint('Teste :', tree.score(X_test, y_test))     # 0.70\n```\n\nPor que o overfitting continua?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Os valores não restringem nada: a árvore nem chega a 30 níveis e folhas de 1 amostra são permitidas (padrão).",
+          "correct": true,
+          "explanation": "`min_samples_leaf=1` é o valor padrão, ou seja, não há restrição alguma, e `max_depth=30` é muito maior que a profundidade que a árvore alcançaria sozinha. Resultado: treino 1.0 e teste 0.70. Com `max_depth=4` e `min_samples_leaf=10`, o treino caiu para 0.83 e o teste ficou em 0.70 (menos decoreba, mesma capacidade de generalizar)."
+        },
+        {
+          "id": "b",
+          "text": "O defeito é o `criterion`: o padrão é gini, e só a entropia evita overfitting em bases pequenas como esta.",
+          "correct": false,
+          "explanation": "Gini e entropia produzem árvores muito parecidas, e nenhum deles controla o tamanho da árvore. Quem limita o crescimento são os parâmetros de poda."
+        },
+        {
+          "id": "c",
+          "text": "Pré-poda não funciona em árvores; só a pós-poda reduz overfitting, e o scikit-learn não tem parâmetros para isso.",
+          "correct": false,
+          "explanation": "Pré-poda funciona e é a mais usada: `max_depth`, `min_samples_leaf`, `min_samples_split`, `max_leaf_nodes`. O scikit-learn ainda oferece pós-poda via `ccp_alpha`. O que falha é o valor escolhido."
+        },
+        {
+          "id": "d",
+          "text": "O correto seria aumentar ainda mais o `max_depth`, pois o overfitting vem de a árvore ser rasa demais.",
+          "correct": false,
+          "explanation": "Raso demais causa underfitting, o oposto. Overfitting vem de árvore funda e com folhas minúsculas; aumentar a profundidade só pioraria."
+        }
+      ],
+      "generalExplanation": "**Aula 8:** pré-poda só ajuda se o limite for **efetivo**. Parâmetros que restringem de verdade: `max_depth` baixo, `min_samples_leaf` e `min_samples_split` altos, `max_leaf_nodes` pequeno. Valores iguais ao padrão (`min_samples_leaf=1`, `max_depth=None`) significam \"sem poda\". Compare sempre treino e teste para saber se o ajuste funcionou."
+    },
+    {
+      "id": "c11",
+      "label": "Classificador em alvo contínuo",
+      "type": "single",
+      "prompt": "Um cientista quer prever os dias para entrega de um produto (1,5; 3,2; 4,0...) e escreve o trecho abaixo.\n\n```python\nfrom sklearn.neighbors import KNeighborsClassifier\n\n# y_train = prazo de entrega em dias: 1.5, 3.2, 4.0, ...\nknn = KNeighborsClassifier(n_neighbors=5)\nknn.fit(X_train, y_train)\n```\n\nO que acontece ao executar o `fit` e qual é a correção?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Funciona e o modelo prevê a moda dos prazos entre os vizinhos, perdendo só um pouco de precisão frente ao regressor, que seria a opção ideal.",
+          "correct": false,
+          "explanation": "O `fit` nem termina: o classificador exige rótulos discretos e rejeita alvo contínuo. Não existe \"modo moda\" silencioso para números reais."
+        },
+        {
+          "id": "b",
+          "text": "Funciona, mas arredonda os prazos e só consegue prever os valores inteiros 1, 3 ou 4 dias na saída do modelo.",
+          "correct": false,
+          "explanation": "Também não: o scikit-learn não arredonda nem converte o alvo. Ele interrompe a execução com erro ao reconhecer um alvo contínuo."
+        },
+        {
+          "id": "c",
+          "text": "Lança `ValueError`: o Classifier espera classes discretas; para prazos contínuos usa-se `KNeighborsRegressor` (média dos vizinhos).",
+          "correct": true,
+          "explanation": "Verificado: \"Unknown label type: continuous\". O classificador vota na classe mais frequente entre os K vizinhos; o regressor faz a média dos alvos dos K vizinhos, que é o que serve para prazos contínuos (Aula 6, slide 4: o k-NN atende classificação e regressão)."
+        },
+        {
+          "id": "d",
+          "text": "Falha porque `n_neighbors=5` é grande demais para valores contínuos; a regressão exige K=1 para funcionar.",
+          "correct": false,
+          "explanation": "K=5 é perfeitamente válido em regressão; a média de 5 vizinhos até suaviza o ruído. O erro vem da classe escolhida, não do valor de K."
+        }
+      ],
+      "generalExplanation": "**Aula 6:** classificação prevê a classe mais votada; regressão prevê a média dos vizinhos. No scikit-learn: `KNeighborsClassifier` para alvo discreto, `KNeighborsRegressor` para alvo contínuo. O mesmo vale para árvores (`DecisionTreeClassifier` x `DecisionTreeRegressor`)."
+    },
+    {
+      "id": "c12",
+      "label": "O que o score de LinearRegression mede",
+      "type": "single",
+      "prompt": "Observe o trecho abaixo.\n\n```python\nmodelo = LinearRegression()\nmodelo.fit(X_train, y_train)\n\nprint(modelo.score(X_test, y_test))\n```\n\nQual métrica o `score` calcula aqui, por padrão?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A acurácia, que é a métrica padrão do `score` em todos os estimadores do scikit-learn.",
+          "correct": false,
+          "explanation": "Só os classificadores usam a acurácia. Nos regressores, o `score` devolve outra métrica; acurácia nem faz sentido para valores contínuos."
+        },
+        {
+          "id": "b",
+          "text": "O R² (coeficiente de determinação), padrão do `score` nos regressores, igual ao de `r2_score`.",
+          "correct": true,
+          "explanation": "O `.score()` de qualquer regressor do scikit-learn devolve o R²: quanto da variação do alvo o modelo explica. Valores perto de 1 são bons. Nos slides, o R² aparece como \"sempre entre 0 e 1\"; na prática, no teste, pode ficar negativo quando o modelo é pior que prever a média."
+        },
+        {
+          "id": "c",
+          "text": "O erro quadrático médio (MSE), em que valores menores indicam um modelo melhor ajustado.",
+          "correct": false,
+          "explanation": "O MSE é uma métrica de erro e precisa ser pedida com `mean_squared_error`. Além disso, o `score` segue a convenção de que **maior é melhor**, o contrário do MSE."
+        },
+        {
+          "id": "d",
+          "text": "O MAE com sinal negativo, usado para que \"maior seja melhor\" como no restante do scikit-learn e no `GridSearchCV`.",
+          "correct": false,
+          "explanation": "Existe a pontuação `neg_mean_absolute_error`, mas ela aparece em `cross_val_score` e `GridSearchCV` com `scoring=`. O método `.score()` de um regressor devolve o R²."
+        }
+      ],
+      "generalExplanation": "**Padrão do scikit-learn:** `.score()` de regressor = R²; `.score()` de classificador = acurácia. **Aviso (regra do repositório):** os slides da professora dizem que o R² \"está sempre entre 0 e 1\"; na literatura ele pode ser negativo no teste. Na prova, responda conforme o slide."
+    },
+    {
+      "id": "c13",
+      "label": "StandardScaler antes de uma árvore",
+      "type": "single",
+      "prompt": "O trecho abaixo padroniza os atributos e treina uma árvore.\n\n```python\nscaler = StandardScaler()\nX_train_sc = scaler.fit_transform(X_train)\nX_test_sc = scaler.transform(X_test)\n\ntree = DecisionTreeClassifier(max_depth=3)\ntree.fit(X_train_sc, y_train)\nprint(tree.score(X_test_sc, y_test))\n```\n\nO que se pode afirmar sobre o `StandardScaler` aqui?",
+      "options": [
+        {
+          "id": "a",
+          "text": "É obrigatório: sem ele a árvore escolheria sempre a coluna de maior escala, como acontece no caso do k-NN.",
+          "correct": false,
+          "explanation": "A árvore não calcula distâncias; ela compara cada coluna com um limiar. A escala da coluna não faz diferença na escolha do corte, então a comparação com o k-NN não se aplica."
+        },
+        {
+          "id": "b",
+          "text": "É inútil, mas inofensivo: a árvore só depende da ordem dos valores em cada coluna e prevê igual com ou sem escala.",
+          "correct": true,
+          "explanation": "Padronizar é uma transformação monotônica (preserva a ordem). Os mesmos cortes continuam possíveis, e o ganho de informação de cada divisão é idêntico. Verificado: as previsões da árvore com e sem scaler foram as mesmas. O passo apenas dá trabalho extra (Aula 8, slide 44: árvores dispensam normalização)."
+        },
+        {
+          "id": "c",
+          "text": "Causa vazamento aqui, pois árvores exigem que o teste seja transformado com seu próprio `fit`, e não com o do treino.",
+          "correct": false,
+          "explanation": "O código usa `fit_transform` no treino e `transform` no teste, que é o procedimento correto. Não há vazamento, só redundância."
+        },
+        {
+          "id": "d",
+          "text": "Muda a estrutura da árvore, pois os limiares mudam (de renda <= 3000 para renda <= 0,4) e isso a torna menos interpretável.",
+          "correct": false,
+          "explanation": "Os **valores numéricos** dos limiares mudam, mas a estrutura (qual atributo, quais amostras em cada ramo) permanece idêntica. A única perda real é a leitura direta dos limiares na unidade original."
+        }
+      ],
+      "generalExplanation": "**Aula 8, slide 44:** árvores de decisão são invariantes a transformações monotônicas, por isso não precisam de normalização. Escala importa para k-NN, Ridge/Lasso e gradiente descendente, não para árvores."
+    },
+    {
+      "id": "c14",
+      "label": "Ler intercept_ e coef_",
+      "type": "single",
+      "prompt": "Depois de treinar um modelo de regressão linear simples (uma variável), você imprime os atributos abaixo.\n\n```python\nlr = LinearRegression().fit(X, y)\n\nprint(lr.intercept_)   # 10.5\nprint(lr.coef_)        # [2.0]\n```\n\nQual é a equação da reta aprendida?",
+      "options": [
+        {
+          "id": "a",
+          "text": "y = 2,0 + 10,5 · x, em que `intercept_` é a inclinação e `coef_` é o ponto onde a reta cruza o eixo y do gráfico.",
+          "correct": false,
+          "explanation": "Invertido: `intercept_` é o **intercepto** (termo constante, valor de y quando x = 0) e `coef_` é a inclinação, o coeficiente que multiplica x."
+        },
+        {
+          "id": "b",
+          "text": "y = 10,5 + 2,0 · x, em que `intercept_` é o termo constante e `coef_` é o coeficiente que multiplica x.",
+          "correct": true,
+          "explanation": "É a equação Y = α + β·x dos slides: `intercept_` = α = 10,5 (onde a reta corta o eixo y) e `coef_` = β = 2,0 (quanto y sobe quando x aumenta uma unidade)."
+        },
+        {
+          "id": "c",
+          "text": "y = 10,5 · 2,0 · x, em que os dois valores são multiplicados entre si e o intercepto some da equação.",
+          "correct": false,
+          "explanation": "O intercepto é um termo **somado**, não multiplicado. Multiplicar os dois produziria uma reta que sempre passa pela origem, o que a regressão com intercepto não impõe."
+        },
+        {
+          "id": "d",
+          "text": "y = 10,5 + 2,0 / x, em que o coeficiente divide a variável e o modelo deixa de ser linear na entrada.",
+          "correct": false,
+          "explanation": "Em regressão linear o coeficiente multiplica a variável. Dividir por x criaria uma curva (hipérbole) e deixaria de ser um modelo linear."
+        }
+      ],
+      "generalExplanation": "**Aula 5:** regressão linear simples: Y = α + β·X. No scikit-learn, α é `intercept_` (um número) e β é `coef_` (um vetor, um valor por atributo)."
+    },
+    {
+      "id": "c15",
+      "label": "Vantagem do Pipeline",
+      "type": "single",
+      "prompt": "Leia o trecho abaixo.\n\n```python\nfrom sklearn.pipeline import Pipeline\n\npipe = Pipeline([\n    ('scaler', StandardScaler()),\n    ('knn', KNeighborsClassifier(n_neighbors=5))\n])\npipe.fit(X_train, y_train)\nprint(pipe.score(X_test, y_test))\n```\n\nQual é a principal vantagem do `Pipeline` neste código?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Escolhe automaticamente o melhor K entre 1 e 20 ao chamar `fit`, sem precisar de validação nem de busca em grade de parâmetros.",
+          "correct": false,
+          "explanation": "O `Pipeline` apenas encadeia etapas e mantém os hiperparâmetros que você configurou (K=5 aqui). Escolher K exige busca explícita (por exemplo `GridSearchCV`) com validação."
+        },
+        {
+          "id": "b",
+          "text": "Aplica `fit_transform` também no teste dentro do `score`, para treino e teste terem sempre a mesma média e desvio.",
+          "correct": false,
+          "explanation": "Faria exatamente o vazamento que o Pipeline evita. No `score`, ele chama só `transform` com os parâmetros aprendidos no `fit` do treino."
+        },
+        {
+          "id": "c",
+          "text": "Dispensa a separação em treino e teste, porque cada etapa do Pipeline avalia o dado separadamente do resto.",
+          "correct": false,
+          "explanation": "A separação continua sendo sua responsabilidade e vem **antes** do `fit`. O Pipeline não decide quais linhas são treino e quais são teste."
+        },
+        {
+          "id": "d",
+          "text": "Encadeia escala e modelo: no `fit` o scaler aprende só com o treino e no `score` apenas aplica `transform` ao teste.",
+          "correct": true,
+          "explanation": "O Pipeline guarda a ordem das etapas e garante `fit_transform` no treino e `transform` no teste automaticamente. Funciona como um \"método único\" que encapsula o fluxo, reduz esquecimentos e se combina com validação cruzada sem vazamento."
+        }
+      ],
+      "generalExplanation": "**Boa prática:** use `Pipeline([('scaler', ...), ('modelo', ...)])` sempre que houver pré-processamento que aprende com os dados. Ele é a forma segura de manter a **ordem das ações** correta e de usar validação cruzada sem vazamento."
+    },
+    {
+      "id": "c16",
+      "label": "Auditar um script completo",
+      "type": "multiple",
+      "prompt": "Analise o script abaixo.\n\n```python\n# Objetivo: prever salários em reais (regressão contínua)\nscaler = StandardScaler()\nX_sc = scaler.fit_transform(X)\n\nX_train, X_test, y_train, y_test = train_test_split(X_sc, y, random_state=0)\n\nmodel = KNeighborsRegressor(n_neighbors=4)\nmodel.fit(X_train, y_train)\nresultado = accuracy_score(y_test, model.predict(X_test))\n```\n\nO objetivo do script é prever salários (regressão contínua). Marque **todas** as afirmações verdadeiras sobre o código.",
+      "options": [
+        {
+          "id": "a",
+          "text": "Há vazamento de dados: o `StandardScaler` aprendeu com o dataset inteiro antes da divisão entre treino e teste.",
+          "correct": true,
+          "explanation": "Verdadeiro. O `fit_transform` em `X` usa as linhas que depois viram teste. O certo é dividir primeiro e padronizar com parâmetros do treino."
+        },
+        {
+          "id": "b",
+          "text": "A métrica é incompatível: `accuracy_score` não serve para avaliar a previsão de valores contínuos como salários.",
+          "correct": true,
+          "explanation": "Verdadeiro. Verificado: `accuracy_score` lança `ValueError` com alvo contínuo. Para salários, use MAE, MSE, RMSE ou R² (`r2_score` ou `model.score`)."
+        },
+        {
+          "id": "c",
+          "text": "O valor K=4 é um erro, pois K par causa empate no voto e deveria ser trocado por um ímpar.",
+          "correct": false,
+          "explanation": "Falso aqui. Empate de votos é problema de **classificação**, em que as classes disputam a maioria. Em regressão, o `KNeighborsRegressor` tira a média dos 4 vizinhos e não há empate; K par é aceitável."
+        },
+        {
+          "id": "d",
+          "text": "O modelo está errado: o certo seria `KNeighborsClassifier`, porque os salários são poucos valores repetidos.",
+          "correct": false,
+          "explanation": "Falso. Salário é uma grandeza contínua e a tarefa é regressão; `KNeighborsRegressor` é a escolha certa. Usar o classificador reproduziria o erro do `fit` com alvo contínuo."
+        }
+      ],
+      "generalExplanation": "**Revisão:** no script há duas falhas reais (vazamento no scaler e métrica de classificação em regressão). K=4 e o uso do `KNeighborsRegressor` estão corretos para este problema. Aprenda a separar o que é erro de lógica do que apenas **parece** estranho: antes de marcar, pergunte-se \"o que acontece se eu corrigir isto?\"."
+    },
+    {
+      "id": "c17",
+      "label": "Ler as regras de uma árvore (complemento)",
+      "type": "single",
+      "prompt": "**Complemento (esta função não aparece nos slides; serve para entender melhor o que a árvore aprende).** Para ver as regras aprendidas em texto, no formato de blocos if/else com indentação, o trecho abaixo usa uma função da biblioteca.\n\n```python\nfrom sklearn.tree import DecisionTreeClassifier, export_text, plot_tree\n\ntree = DecisionTreeClassifier(max_depth=2, random_state=0)\ntree.fit(X_train, y_train)\n\nprint(export_text(tree, feature_names=nomes_das_colunas))\n```\n\nQual função do módulo `sklearn.tree` imprime as regras em texto?",
+      "options": [
+        {
+          "id": "a",
+          "text": "`export_text(tree, feature_names=...)`, que imprime as regras em texto indentado.",
+          "correct": true,
+          "explanation": "É a função que devolve as regras como linhas de texto, por exemplo `x3 <= -0.16`, seguidas das classes nas folhas. Isso mostra que a árvore é um modelo \"caixa-branca\", fácil de explicar."
+        },
+        {
+          "id": "b",
+          "text": "`plot_tree(tree)`, que imprime as regras como texto indentado no console do Python.",
+          "correct": false,
+          "explanation": "`plot_tree` existe e é do mesmo módulo, mas **desenha** a árvore num gráfico (matplotlib), em vez de devolver texto. É um bom distrator por ser parecida."
+        },
+        {
+          "id": "c",
+          "text": "`tree.feature_importances_`, que lista as regras if/else na ordem dos nós da árvore.",
+          "correct": false,
+          "explanation": "É um atributo real, mas guarda apenas um número por atributo (a importância relativa), sem mostrar as regras nem os limiares."
+        },
+        {
+          "id": "d",
+          "text": "`tree.get_params()`, que devolve as regras de decisão aprendidas pelo modelo treinado.",
+          "correct": false,
+          "explanation": "`get_params()` devolve os **hiperparâmetros** configurados (como `max_depth`), não o que a árvore aprendeu dos dados."
+        }
+      ],
+      "generalExplanation": "**Interpretabilidade (complemento):** árvores são fáceis de explicar. `export_text` mostra as regras em texto e `plot_tree` as desenha. Para a prova, o essencial é saber ler uma árvore: cada nó testa uma condição (`<=` ou `>`) e cada folha dá a classe ou o valor previsto."
+    },
+    {
+      "id": "c18",
+      "label": "Padrão nos resíduos (complemento)",
+      "type": "single",
+      "prompt": "**Complemento (diagnóstico de resíduos não aparece nos slides da Aula 5, que só definem o resíduo e a SQR).** Depois de ajustar uma regressão linear simples, um analista listou os resíduos ordenados pelo valor previsto:\n\n| Valor previsto | Resíduo (real - previsto) |\n| :-- | :-- |\n| 10 | +8 |\n| 20 | +3 |\n| 30 | -5 |\n| 40 | -9 |\n| 50 | -4 |\n| 60 | +4 |\n| 70 | +9 |\n\nEle afirma: \"a média dos resíduos é quase zero, então o modelo está ótimo\". Qual é o diagnóstico?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Os resíduos mostram overfitting: o modelo decorou o treino e por isso os erros ficam altos em alguns pontos e baixos em outros.",
+          "correct": false,
+          "explanation": "Overfitting aparece quando o erro no treino é muito menor que no teste. Uma reta simples tende ao oposto (underfitting) quando a relação real é curva."
+        },
+        {
+          "id": "b",
+          "text": "O modelo está ótimo: resíduos com média próxima de zero indicam ajuste adequado, qualquer que seja o padrão dos sinais.",
+          "correct": false,
+          "explanation": "Em mínimos quadrados com intercepto, a média dos resíduos é sempre quase zero, mesmo num modelo ruim. O que revela o problema é o **padrão** dos resíduos."
+        },
+        {
+          "id": "c",
+          "text": "Os resíduos indicam multicolinearidade entre os atributos, que deve ser tratada removendo uma das colunas fortemente correlacionadas entre si.",
+          "correct": false,
+          "explanation": "Multicolinearidade aparece em modelos com **vários** atributos correlacionados e afeta a estabilidade dos coeficientes. O padrão de sinais da tabela aponta outro problema: a forma da relação."
+        },
+        {
+          "id": "d",
+          "text": "Os sinais seguem um padrão (+, -, +): a reta erra de modo sistemático porque a relação é curva; média zero não prova bom ajuste.",
+          "correct": true,
+          "explanation": "Num bom ajuste linear, os resíduos parecem aleatórios, sem padrão. Sinais +, +, -, -, -, +, + sugerem uma relação em curva (em forma de U) que a reta não captura. A média perto de zero é comum em mínimos quadrados e não indica ajuste adequado."
+        }
+      ],
+      "generalExplanation": "**Diagnóstico (complemento):** resíduos aleatórios sugerem bom ajuste; resíduos com padrão sugerem que falta algo (termos não lineares, outro modelo). **Aviso:** o slide 51 diz que o R² está \"sempre entre 0 e 1\"; na literatura ele pode ser negativo. Na prova, responda conforme o slide."
+    },
+    {
+      "id": "c19",
+      "label": "K escolhido olhando o teste",
+      "type": "single",
+      "prompt": "O laço abaixo procura o melhor K de um k-NN e divulga a nota como estimativa de desempenho em produção.\n\n```python\nmelhor_k, melhor_nota = None, 0\nfor k in range(1, 31, 2):\n    knn = KNeighborsClassifier(n_neighbors=k)\n    knn.fit(X_train, y_train)\n    nota = knn.score(X_test, y_test)\n    if nota > melhor_nota:\n        melhor_k, melhor_nota = k, nota\n\nprint('Melhor K:', melhor_k)\nprint('Acurácia esperada em produção:', melhor_nota)\n```\n\nQual é o **erro de lógica**?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O K foi escolhido pela nota no teste, então essa nota é otimista; o K deve ser escolhido em validação (ou CV no treino).",
+          "correct": true,
+          "explanation": "Ao testar 15 valores de K no mesmo teste e guardar o melhor, você faz o teste \"fazer parte do treino\" da escolha. A nota 0,84 do melhor K tende a ser maior que a de dados novos. O teste deve ser usado uma única vez, no fim."
+        },
+        {
+          "id": "b",
+          "text": "O laço deveria testar apenas Ks pares, para evitar empates e escolher com mais segurança o melhor valor de K entre os candidatos.",
+          "correct": false,
+          "explanation": "Em classificação binária o recomendado é K ímpar (para evitar empate), então o laço já usa ímpares. E a paridade não tem relação com o erro de metodologia."
+        },
+        {
+          "id": "c",
+          "text": "O `score` deveria usar `X_train` e `y_train`, pois o K precisa ser escolhido no conjunto em que o modelo aprendeu.",
+          "correct": false,
+          "explanation": "No treino, K=1 sempre ganha (nota 1.0), então a escolha seria sem sentido. A escolha precisa de dados que o modelo não usou para ajustar-se, só que **separados** do teste final."
+        },
+        {
+          "id": "d",
+          "text": "O erro é criar um novo `knn` a cada iteração; o correto seria reaproveitar o primeiro e só mudar `n_neighbors`.",
+          "correct": false,
+          "explanation": "Criar um modelo novo por K é o procedimento normal; mudar o parâmetro exigiria refazer o `fit` de qualquer forma. O defeito está nos dados usados para comparar."
+        }
+      ],
+      "generalExplanation": "**Aula 6 e 4:** escolher K (ou qualquer hiperparâmetro) com o teste contamina a avaliação. Divida em treino, validação e teste, ou use validação cruzada no treino (por exemplo, `GridSearchCV`) e reserve o teste para a nota final."
+    },
+    {
+      "id": "c20",
+      "label": "Validação cruzada com scaler fora do Pipeline",
+      "type": "single",
+      "prompt": "O código abaixo padroniza os atributos e depois estima o desempenho do k-NN por validação cruzada com 5 folds.\n\n```python\nfrom sklearn.model_selection import cross_val_score\n\nscaler = StandardScaler()\nX_scaled = scaler.fit_transform(X)\n\nscores = cross_val_score(KNeighborsClassifier(n_neighbors=5), X_scaled, y, cv=5)\nprint('Acurácia média:', scores.mean())\n```\n\nQual é o **erro de lógica**?",
+      "options": [
+        {
+          "id": "a",
+          "text": "`cross_val_score` não aceita dados padronizados; é preciso passar `X` bruto e padronizar o resultado depois da validação.",
+          "correct": false,
+          "explanation": "A função aceita qualquer matriz numérica. O problema não é o tipo dos dados, e sim **quando** a padronização foi aprendida."
+        },
+        {
+          "id": "b",
+          "text": "O scaler foi ajustado com todas as linhas antes da validação; deveria estar num `Pipeline` passado ao `cross_val_score`.",
+          "correct": true,
+          "explanation": "Em cada rodada, 1 fold age como \"teste\", mas a média e o desvio já foram calculados com ele. É o mesmo vazamento do hold-out, repetido nos 5 folds. Com `Pipeline([('scaler', ...), ('knn', ...)])`, o scaler é re-ajustado só com o treino de cada rodada. Aqui o efeito numérico é pequeno (0,71 nos dois casos), mas o procedimento está errado."
+        },
+        {
+          "id": "c",
+          "text": "O defeito é `cv=5`: em k-NN, a validação cruzada só é válida com um número de folds igual a K, o que não ocorre.",
+          "correct": false,
+          "explanation": "Não existe essa relação. O número de folds e o K do k-NN são hiperparâmetros independentes (folds dividem os dados; K conta vizinhos)."
+        },
+        {
+          "id": "d",
+          "text": "A média dos folds está errada; o certo é reportar o maior valor, que representa o melhor desempenho possível.",
+          "correct": false,
+          "explanation": "Reportar o máximo seria otimista. A média (com o desvio) dos folds é a estimativa honesta de desempenho."
+        }
+      ],
+      "generalExplanation": "**Aula 4:** qualquer pré-processamento que aprende com os dados deve ser refeito **dentro** de cada rodada da validação cruzada. Correção:\n\n```python\npipe = Pipeline([('scaler', StandardScaler()), ('knn', KNeighborsClassifier(n_neighbors=5))])\nscores = cross_val_score(pipe, X, y, cv=5)\n```"
+    },
+    {
+      "id": "c21",
+      "label": "Gradiente descendente que explode",
+      "type": "single",
+      "prompt": "Um analista treina uma regressão linear por gradiente descendente (`SGDRegressor`). As colunas têm escalas muito diferentes e o passo é constante. O R² no teste sai absurdo e os coeficientes ficam gigantes.\n\n```python\nfrom sklearn.linear_model import SGDRegressor\nfrom sklearn.metrics import r2_score\n\n# Colunas de X em escalas muito diferentes (de unidades a milhares)\nmodel = SGDRegressor(learning_rate='constant', eta0=0.1, max_iter=1000, random_state=0)\nmodel.fit(X_train, y_train)\n\nprint('R2 no teste:', r2_score(y_test, model.predict(X_test)))   # -5.5e+32\n```\n\nQual é a causa mais provável?",
+      "options": [
+        {
+          "id": "a",
+          "text": "`max_iter=1000` é pouco: com mais iterações o gradiente descendente sempre converge, mesmo com passo grande.",
+          "correct": false,
+          "explanation": "Mais iterações não ajudam quando o passo é grande demais: cada atualização ultrapassa o mínimo e o erro cresce. A convergência exige passo adequado (slide: passos menores perto do ideal)."
+        },
+        {
+          "id": "b",
+          "text": "O gradiente divergiu: com escalas muito distintas e passo alto (`eta0`), o erro explode; padronizar e reduzir `eta0` resolve.",
+          "correct": true,
+          "explanation": "O gradiente depende da escala dos atributos: colunas com valores grandes geram atualizações enormes. Com passo constante de 0,1, o erro cresce a cada iteração (R² da ordem de -10 elevado a 32). Com `StandardScaler` e `eta0` pequeno, o R² do mesmo teste ficou próximo de 1."
+        },
+        {
+          "id": "c",
+          "text": "O `SGDRegressor` só funciona com um único atributo, e os coeficientes enormes vêm de ele ter recebido três colunas de entrada ao mesmo tempo.",
+          "correct": false,
+          "explanation": "O `SGDRegressor` aceita vários atributos normalmente. O estouro vem da combinação de escala e tamanho do passo."
+        },
+        {
+          "id": "d",
+          "text": "O R² negativo mostra que o modelo prevê o contrário do alvo; inverter o sinal de todas as previsões corrige o problema.",
+          "correct": false,
+          "explanation": "R² muito negativo significa que o modelo é **pior** do que prever a média, e aqui os coeficientes explodiram. Inverter o sinal não repararia nada."
+        }
+      ],
+      "generalExplanation": "**Aula 5 (gradiente descendente):** o algoritmo ajusta os coeficientes em passos proporcionais ao gradiente e à **taxa de aprendizado**. Passo grande demais faz o erro oscilar ou explodir; pequeno demais faz a convergência ser lenta. Padronizar os atributos torna o gradiente bem comportado.\n\nCorreção: `Pipeline([('scaler', StandardScaler()), ('sgd', SGDRegressor(eta0=0.01))])`."
+    },
+    {
+      "id": "c22",
+      "label": "k-NN com weights='distance' avaliado no treino",
+      "type": "single",
+      "prompt": "Um analista escolheu K=15 com votos ponderados pela distância e declarou: \"K=15 é grande, então o modelo é suave e o 1.0 no treino mostra que aprendeu tudo sem overfitting\".\n\n```python\nknn = KNeighborsClassifier(n_neighbors=15, weights='distance')\nknn.fit(X_train, y_train)\n\nprint('Treino:', knn.score(X_train, y_train))   # 1.0\nprint('Teste :', knn.score(X_test, y_test))     # 0.8\n```\n\nComo interpretar corretamente os dois resultados?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O 1.0 prova que K=15 suaviza o modelo; como não há overfitting, o teste deveria dar também algo perto de 1.0.",
+          "correct": false,
+          "explanation": "Se não houvesse overfitting, treino e teste seriam próximos, mas aqui são 1.0 e 0.8. O 1.0 no treino é artefato do método de ponderação, não um sinal de qualidade."
+        },
+        {
+          "id": "b",
+          "text": "Com `weights='distance'` os vizinhos mais distantes pesam mais, o que explica o ajuste perfeito no treino obtido.",
+          "correct": false,
+          "explanation": "É o contrário: `distance` dá **maior peso aos vizinhos mais próximos** (inverso da distância). Por isso o próprio ponto (distância zero) domina o voto."
+        },
+        {
+          "id": "c",
+          "text": "O 1.0 é artefato: com `weights='distance'` o próprio ponto (distância zero) domina o voto; só o teste (0.8) mede generalização.",
+          "correct": true,
+          "explanation": "Na Aula 6, `weights='distance'` pondera o voto pelo inverso da distância. Num ponto do treino, o vizinho de distância zero tem peso máximo, então o k-NN acerta o treino qualquer que seja K. A comparação útil é treino x teste (1.0 x 0.8) ou, melhor, só o teste."
+        },
+        {
+          "id": "d",
+          "text": "Isso indica vazamento entre treino e teste, porque `weights='distance'` embaralha as linhas dos dois conjuntos entre si.",
+          "correct": false,
+          "explanation": "`weights` só muda como os votos são somados; não mistura linhas nem cria vazamento. O resultado vem de avaliar no treino com peso por distância."
+        }
+      ],
+      "generalExplanation": "**Aula 6:** `weights='uniform'` dá o mesmo peso a todos os K vizinhos; `weights='distance'` dá mais peso aos mais próximos. Em ambos, avaliar no treino é enganoso. Compare treino e teste e prefira validação cruzada para decidir."
+    },
+    {
+      "id": "c23",
+      "label": "Árvore de regressão não extrapola",
+      "type": "single",
+      "prompt": "Os dados seguem exatamente y = 2x, para x de 0 a 10. Um analista esperava que a árvore de regressão previsse 40 para x = 20, como a reta, mas obteve 20.\n\n```python\nimport numpy as np\nfrom sklearn.tree import DecisionTreeRegressor\nfrom sklearn.linear_model import LinearRegression\n\nx_train = np.arange(0, 11).reshape(-1, 1)   # 0, 1, 2, ..., 10\ny_train = 2 * x_train.ravel()               # y = 2x\n\ntree = DecisionTreeRegressor(random_state=0).fit(x_train, y_train)\nlinear = LinearRegression().fit(x_train, y_train)\n\nprint(tree.predict([[20]]), linear.predict([[20]]))   # [20.] [40.]\n```\n\nPor que a árvore prevê 20?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O `DecisionTreeRegressor` está sem `max_depth`; com profundidade limitada ele preveria 40 para x = 20, como a reta.",
+          "correct": false,
+          "explanation": "Limitar a profundidade deixaria a árvore ainda mais grosseira. Nenhuma profundidade faz a árvore sair dos valores de y vistos no treino."
+        },
+        {
+          "id": "b",
+          "text": "A árvore prevê a média da folha; x = 20 cai na última folha (x = 10, y = 20), e ela não extrapola, ao contrário da reta.",
+          "correct": true,
+          "explanation": "A árvore de regressão divide o espaço em regiões e prevê o valor médio do alvo em cada folha (Aula 8, slides sobre MSE e média na folha). Qualquer x acima de 10 cai na folha mais à direita e recebe 20. A reta, por ter fórmula contínua, continua subindo e dá 40."
+        },
+        {
+          "id": "c",
+          "text": "A árvore ficou em underfitting: precisaria de mais folhas para conseguir prever 40 em x = 20, como faz a reta de regressão.",
+          "correct": false,
+          "explanation": "No treino a árvore acerta tudo (cada x tem sua folha). O limite não é a capacidade, e sim o fato de só poder repetir valores observados."
+        },
+        {
+          "id": "d",
+          "text": "A árvore usa a mediana global do alvo para pontos fora do intervalo de treino, o que daria 10 e não 20.",
+          "correct": false,
+          "explanation": "Não existe esse comportamento, e a mediana global seria 10, não 20. O valor impresso, 20, vem da folha mais à direita."
+        }
+      ],
+      "generalExplanation": "**Aula 8:** a árvore de regressão prediz a média do alvo na folha; por isso gera previsões em degraus e **não extrapola**. Modelos como a regressão linear continuam a tendência além do intervalo observado. Escolha o modelo conforme a necessidade (por exemplo, prever fora da faixa dos dados)."
+    },
+    {
+      "id": "c24",
+      "label": "Ordem das ações: split, scaler, fit, predict, métrica",
+      "type": "single",
+      "prompt": "Os cinco passos abaixo estão **embaralhados** (os números são só etiquetas). Cada um depende do que foi criado nos anteriores e o objetivo é avaliar um k-NN sem vazamento.\n\n```python\n(1) y_pred = knn.predict(scaler.transform(X_test))\n(2) knn = KNeighborsClassifier().fit(X_train_s, y_train)\n(3) scaler = StandardScaler(); X_train_s = scaler.fit_transform(X_train)\n(4) X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)\n(5) print(accuracy_score(y_test, y_pred))\n```\n\nQual sequência executa os passos na ordem correta?",
+      "options": [
+        {
+          "id": "a",
+          "text": "3 → 4 → 2 → 1 → 5 (scaler ajustado antes de dividir os dados em treino e teste)",
+          "correct": false,
+          "explanation": "Ajustar o scaler antes de dividir é o vazamento clássico: a média e o desvio vêm de todas as linhas. Além disso, o passo 3 usaria `X_train`, que ainda nem existe."
+        },
+        {
+          "id": "b",
+          "text": "4 → 2 → 3 → 1 → 5 (modelo treinado antes de padronizar os dados)",
+          "correct": false,
+          "explanation": "O passo 2 usa `X_train_s`, que só é criado no passo 3; o código quebraria. A ordem lógica é preparar os dados antes de treinar."
+        },
+        {
+          "id": "c",
+          "text": "4 → 3 → 1 → 2 → 5 (previsão feita antes de treinar o modelo)",
+          "correct": false,
+          "explanation": "O passo 1 usa o `knn`, que só é criado e treinado no passo 2. Prever antes de treinar não é possível."
+        },
+        {
+          "id": "d",
+          "text": "4 → 3 → 2 → 1 → 5 (split, scaler no treino, fit, predict, métrica)",
+          "correct": true,
+          "explanation": "Primeiro dividir (4); depois ajustar o scaler **só no treino** (3); treinar o modelo com os dados padronizados (2); prever aplicando `transform` ao teste (1); por fim, medir (5). Executado, esse fluxo funciona e dá acurácia 0,74 no exemplo."
+        }
+      ],
+      "generalExplanation": "**Ordem das ações:** 1) dividir treino e teste, 2) ajustar o pré-processamento só no treino, 3) treinar (`fit`), 4) prever no teste (com `transform`, nunca `fit`), 5) medir. Sempre que a ordem coloca o aprendizado de estatísticas **antes** do split, há vazamento."
+    },
+    {
+      "id": "c25",
+      "label": "Ordem das ações: treinar antes de padronizar",
+      "type": "single",
+      "prompt": "O código abaixo roda sem erro de sintaxe, mas o R² no teste é absurdo (muito negativo).\n\n```python\nX_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)\n\nmodel = LinearRegression()\nmodel.fit(X_train, y_train)\n\nscaler = StandardScaler()\nX_train_s = scaler.fit_transform(X_train)\nX_test_s = scaler.transform(X_test)\n\ny_pred = model.predict(X_test_s)\nprint(r2_score(y_test, y_pred))   # -39.6\n```\n\nQual é o **erro de lógica** na ordem das ações?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O `scaler` deveria ser ajustado com `X_test`, já que a previsão é feita sobre os dados de teste padronizados.",
+          "correct": false,
+          "explanation": "Ajustar o scaler no teste é vazamento e deixaria o treino e o teste em réguas diferentes. O modelo é que precisa ver a mesma escala no treino e na previsão."
+        },
+        {
+          "id": "b",
+          "text": "O modelo foi treinado na escala original, mas prevê com dados padronizados; o scaler deve vir antes do `fit`.",
+          "correct": true,
+          "explanation": "`model.fit(X_train, ...)` aprende coeficientes para a escala original. Depois, `predict(X_test_s)` recebe valores padronizados (média 0), e a conta não faz mais sentido; o R² foi -39,6. A ordem certa: split, scaler no treino, `fit` com `X_train_s`, `predict` com `X_test_s`."
+        },
+        {
+          "id": "c",
+          "text": "O `train_test_split` deveria ser feito depois do `scaler`, para treino e teste herdarem a mesma escala desde o início.",
+          "correct": false,
+          "explanation": "Isso é vazamento. O split vem primeiro justamente para que o teste fique de fora do cálculo de média e desvio."
+        },
+        {
+          "id": "d",
+          "text": "O `r2_score` recebe os argumentos na ordem errada; com `(y_pred, y_test)` o resultado ficaria positivo.",
+          "correct": false,
+          "explanation": "A ordem dos argumentos (real primeiro, previsto depois) está correta, e trocá-la não transformaria -39,6 num bom resultado. O defeito vem de treino e previsão em escalas diferentes."
+        }
+      ],
+      "generalExplanation": "**Ordem das ações:** o modelo deve ser treinado e usado **sobre a mesma representação** dos dados. Em qualquer fluxo com pré-processamento, defina-o antes do `fit`. Um `Pipeline` resolve isso automaticamente.\n\nCorreção:\n\n```python\npipe = Pipeline([('scaler', StandardScaler()), ('reg', LinearRegression())])\npipe.fit(X_train, y_train)\nprint(r2_score(y_test, pipe.predict(X_test)))\n```"
+    }
+  ]
+}

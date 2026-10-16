@@ -1,0 +1,1370 @@
+{
+  "schema": "questions/v2",
+  "id": "lesson-11-questions",
+  "title": "Questões · Aula 11: Máquinas de Vetores de Suporte (SVM)",
+  "description": "Questões sobre hiperplano e margem, vetores de suporte, margem rígida e suave, folgas, parâmetros C e gamma, kernel trick, dual, multiclasse, vantagens e desvantagens, com gráficos e tabelas lidos em texto, ordem das ações e trechos de código scikit-learn com erro de lógica. Cobre os 31 slides da Aula 11.",
+  "questions": [
+    {
+      "id": "l11-q01",
+      "label": "Hiperplano ótimo e margem",
+      "type": "single",
+      "prompt": "Em um problema com duas classes **linearmente separáveis**, existem infinitos hiperplanos (em duas dimensões, retas) que separam sem erro os pontos azuis dos pontos rosa. Qual critério a SVM usa para escolher **um** deles? (Slides 3, 4 e 13)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Escolhe o hiperplano que passa mais perto da classe com mais exemplos, para que ela seja classificada com o menor erro possível no treino.",
+          "correct": false,
+          "explanation": "Colar numa classe tira a folga dela e dá folga demais à outra: é justamente a assimetria que o slide 4 evita. Além disso, todos os candidatos já separam sem erro, então erro de treino não desempata."
+        },
+        {
+          "id": "b",
+          "text": "Escolhe o hiperplano que passa pela origem do espaço de atributos, porque assim o termo de deslocamento β0 se anula e o modelo fica mais simples.",
+          "correct": false,
+          "explanation": "O termo β0 existe para deslocar o hiperplano em relação à origem (slide 5); a SVM o ajusta livremente. Forçar passagem pela origem limitaria as retas possíveis e não tem relação com a margem."
+        },
+        {
+          "id": "c",
+          "text": "Escolhe o hiperplano que erra o menor número de pontos de treino, aceitando que ele fique encostado em alguns exemplos de uma das classes.",
+          "correct": false,
+          "explanation": "Em dados separáveis todos os candidatos têm zero erro de treino, então esse critério não distingue nenhum. A SVM desempata pela margem, não pela contagem de erros."
+        },
+        {
+          "id": "d",
+          "text": "Escolhe o hiperplano que fica à mesma distância dos pontos mais próximos de cada classe, deixando o corredor entre elas o mais largo possível.",
+          "correct": true,
+          "explanation": "É o critério do slide 4 e do slide 13: o hiperplano no ponto médio, com simetria (distância d para cada lado), maximiza a largura do corredor. Quanto mais folga dos dois lados, menor a chance de errar em pontos novos."
+        }
+      ],
+      "generalExplanation": "Imagine dois times que dividem um terreno e precisam erguer uma cerca. A cerca mais segura fica no meio, a mesma distância do imóvel mais próximo de cada lado: se alguém construir um pouco além do previsto, ainda há folga. A SVM faz o mesmo com os dados: entre as infinitas cercas (hiperplanos) que separam as classes, escolhe a que deixa o maior corredor livre, a margem. É como definir um *timeout* com folga igual para os dois lados, em vez de colado em um deles."
+    },
+    {
+      "id": "l11-q02",
+      "label": "Vetores de suporte e esparsidade",
+      "type": "single",
+      "prompt": "Uma SVM linear foi treinada com 10.000 amostras e terminou com exatamente 8 **vetores de suporte** (os pontos mais próximos do hiperplano, slide 6). Depois, o time acrescentou 5.000 amostras novas, todas bem **longe da margem**, no meio do território de suas classes, e retreinou. O que acontece com a fronteira de decisão?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A fronteira continua igual, porque ela é definida só pelos vetores de suporte e os pontos novos não tocam nem violam o corredor da margem.",
+          "correct": true,
+          "explanation": "Os vetores de suporte são os únicos pontos que sustentam o modelo (slide 6). Pontos longe da margem têm folga zero e não entram nas restrições ativas, então não mexem no hiperplano."
+        },
+        {
+          "id": "b",
+          "text": "A fronteira muda um pouco, porque cada ponto novo entra na soma de erros que a SVM minimiza, ainda que com peso pequeno.",
+          "correct": false,
+          "explanation": "Só entram na função de custo os pontos com folga positiva, ou seja, os que violam a margem. Pontos corretos e fora da margem contribuem com zero, e não com um peso pequeno."
+        },
+        {
+          "id": "c",
+          "text": "A fronteira se desloca para o lado da classe que recebeu mais pontos novos, porque o modelo passa a ter mais evidência sobre essa classe e reequilibra a margem.",
+          "correct": false,
+          "explanation": "Vale para modelos que usam todos os pontos, como médias ou k-NN. Na SVM o volume de dados longe da margem não pesa: só quem está na margem ou a viola influencia a posição do hiperplano."
+        },
+        {
+          "id": "d",
+          "text": "A margem fica mais estreita, porque com mais pontos no treino o corredor precisa se espremer para acomodar todos eles com folga.",
+          "correct": false,
+          "explanation": "A largura do corredor depende dos pontos mais próximos do hiperplano, que continuam os mesmos. Pontos novos mais distantes não obrigam o corredor a encolher."
+        }
+      ],
+      "generalExplanation": "Pense no índice de um livro: poucas entradas sustentam a localização de todo o conteúdo. Os vetores de suporte são essas entradas decisivas: se você acrescentar mil páginas de texto que não mudam nenhuma delas, o índice continua o mesmo. Em engenharia de software, é como um teste de regressão que só quebra por causa de poucos casos de borda; milhares de casos fáceis a mais não mudam o resultado."
+    },
+    {
+      "id": "l11-q03",
+      "label": "Margem rígida (hard margin)",
+      "type": "single",
+      "prompt": "O classificador de máxima margem usa **margem rígida** (hard margin): nenhum ponto pode ficar dentro da margem (slide 13). Por que essa versão raramente serve diretamente para dados reais?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Porque só funciona com duas classes de tamanhos iguais, e bases reais quase sempre têm uma classe bem maior que a outra.",
+          "correct": false,
+          "explanation": "O equilíbrio entre classes não é requisito da margem rígida. O que ela exige é que as classes sejam linearmente separáveis, sem ruído nem sobreposição."
+        },
+        {
+          "id": "b",
+          "text": "Porque maximiza a margem sem nenhuma restrição, e com muitos atributos a fronteira fica instável e o treino passa a oscilar entre soluções muito diferentes.",
+          "correct": false,
+          "explanation": "Ao contrário: o slide 13 diz que é um problema de otimização **com restrições** (todos os pontos fora da margem). A dificuldade vem dessas restrições rígidas, não da falta delas."
+        },
+        {
+          "id": "c",
+          "text": "Porque exige classes perfeitamente separáveis por um hiperplano: basta um ponto ruidoso do lado errado para o problema de otimização ficar sem solução.",
+          "correct": true,
+          "explanation": "A margem rígida é um problema de otimização com restrições que obriga todos os pontos a ficarem fora do corredor e no lado certo. Com um único outlier ou com sobreposição de classes, nenhuma solução satisfaz as restrições."
+        },
+        {
+          "id": "d",
+          "text": "Porque só aceita hiperplanos que passam pela origem, e dados reais raramente estão centrados nela, o que torna o ajuste muito ruim.",
+          "correct": false,
+          "explanation": "O hiperplano tem o termo de deslocamento β0 e pode ficar em qualquer posição. O limite da margem rígida é outro: exigir separação perfeita, sem nenhuma exceção."
+        }
+      ],
+      "generalExplanation": "Margem rígida é como um contrato sem nenhuma tolerância: o *build* só passa se 100 % dos testes passarem. Em produção, onde sempre existe um dado sujo, o contrato nunca fecha. A solução (slides 14 e 15) é a margem suave: aceitar algumas violações pagando uma multa, controlada pelo parâmetro C."
+    },
+    {
+      "id": "l11-q04",
+      "label": "Variável de folga entre 0 e 1",
+      "type": "single",
+      "prompt": "No classificador de vetores de suporte (margem suave, slide 15), cada observação recebe uma **variável de folga** εᵢ. Uma amostra com **0 < εᵢ ≤ 1** está em qual situação?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Está exatamente sobre a borda da margem, com folga zero, comportamento típico de um vetor de suporte sem violação.",
+          "correct": false,
+          "explanation": "Estar exatamente sobre a borda corresponde a εᵢ = 0. A folga positiva indica que o ponto passou da borda e entrou no corredor, um caso diferente."
+        },
+        {
+          "id": "b",
+          "text": "Está dentro do corredor da margem, mas ainda do lado certo do hiperplano: violou a margem sem errar a classe.",
+          "correct": true,
+          "explanation": "É a definição do slide 15 (lado errado da margem, mas não do hiperplano). A folga é positiva porque o ponto invadiu o corredor, e menor ou igual a 1 porque ainda não cruzou a fronteira."
+        },
+        {
+          "id": "c",
+          "text": "Está do lado errado do hiperplano, perto da fronteira, e por isso foi classificada como se fosse da outra classe.",
+          "correct": false,
+          "explanation": "Cruzar o hiperplano e ser classificado errado corresponde a εᵢ > 1. Entre 0 e 1 o ponto ainda está do lado correto, só que dentro da margem."
+        },
+        {
+          "id": "d",
+          "text": "Está longe da margem, bem dentro do território da sua classe, e por isso o algoritmo o ignora no treino.",
+          "correct": false,
+          "explanation": "Pontos bem dentro do próprio território têm εᵢ = 0. A folga só passa de zero quando há violação da margem."
+        }
+      ],
+      "generalExplanation": "A folga é como um relatório de desvio em um SLA: zero significa dentro do contrato; entre 0 e 1, atrasou mas ainda entregou do lado certo; acima de 1, falhou de vez. A SVM de margem suave soma esses desvios e tenta mantê-los pequenos, ponderados por C."
+    },
+    {
+      "id": "l11-q05",
+      "label": "Quando εᵢ indica erro",
+      "type": "single",
+      "prompt": "Ainda sobre as variáveis de folga εᵢ da margem suave (slide 15): para qual valor de εᵢ podemos afirmar que a observação i foi **classificada de forma incorreta**?",
+      "options": [
+        {
+          "id": "a",
+          "text": "εᵢ > 1: o ponto atravessou o hiperplano e está do lado da outra classe.",
+          "correct": true,
+          "explanation": "Segundo o slide 15, εᵢ > 1 significa lado errado do hiperplano. Só nesse caso o sinal de f(x) contradiz o rótulo, ou seja, há erro de classificação."
+        },
+        {
+          "id": "b",
+          "text": "εᵢ < 0: a folga fica negativa quando o ponto passa do hiperplano, indicando a magnitude do erro cometido.",
+          "correct": false,
+          "explanation": "Na formulação do slide 15 a folga é sempre maior ou igual a zero (εᵢ ≥ 0). Valores negativos não existem; o erro é medido por folgas maiores que 1."
+        },
+        {
+          "id": "c",
+          "text": "0 < εᵢ ≤ 1: o ponto invadiu o corredor da margem, e qualquer ponto dentro da margem já conta como erro de classificação.",
+          "correct": false,
+          "explanation": "Dentro da margem não é sinônimo de erro: se ainda está do lado certo do hiperplano, a classe prevista está correta. Esse é o intervalo de violação da margem, sem erro."
+        },
+        {
+          "id": "d",
+          "text": "εᵢ = 0: o ponto está do lado certo da margem, sem nenhuma violação, e por isso é o caso mais seguro de todos.",
+          "correct": false,
+          "explanation": "Folga zero é exatamente o caso sem violação e sem erro: o ponto está no lado correto, fora do corredor ou sobre sua borda."
+        }
+      ],
+      "generalExplanation": "Pense numa escala de severidade de incidentes: 0 é nenhum problema, entre 0 e 1 é alerta (a requisição ainda deu certo), acima de 1 é falha de fato. Só a terceira faixa conta como erro de classificação."
+    },
+    {
+      "id": "l11-q06",
+      "label": "C grande",
+      "type": "single",
+      "prompt": "No scikit-learn (slides 21 e 22) o parâmetro C funciona como o **inverso da força de regularização**. Um cientista de dados define `C = 10000` em um SVC. O que muda no modelo e qual é o risco?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O treino fica mais rápido, porque com penalidade alta o otimizador converge logo e a fronteira resultante é mais simples.",
+          "correct": false,
+          "explanation": "O slide 22 diz o contrário: C alto gera fronteiras muito complexas e pode demandar muito tempo de treinamento."
+        },
+        {
+          "id": "b",
+          "text": "Cada violação de margem é penalizada pouco: o modelo tolera erros no treino, alarga a margem e simplifica a fronteira, com risco de underfitting e de perder acerto no treino.",
+          "correct": false,
+          "explanation": "É a descrição de C pequeno. Quem confunde os sentidos costuma estar usando a convenção de orçamento de folga (slide 15) em vez da de penalidade (slide 21)."
+        },
+        {
+          "id": "c",
+          "text": "Cada violação de margem é penalizada com força: o modelo tenta acertar todo o treino, estreita a margem, recorta a fronteira e corre risco de overfitting.",
+          "correct": true,
+          "explanation": "Slide 21: C grande significa penalidade altíssima por errar. O slide 22 completa: o algoritmo busca separar tudo, gera fronteiras complexas, demora mais para treinar e pode sofrer overfitting."
+        },
+        {
+          "id": "d",
+          "text": "Cada ponto passa a influenciar uma região mais ampla, a fronteira fica mais suave e o número de vetores de suporte diminui bastante.",
+          "correct": false,
+          "explanation": "Raio de influência de cada ponto é papel do gamma (slides 23 e 24), não de C. C controla a tolerância a erros de classificação."
+        }
+      ],
+      "generalExplanation": "C funciona como o rigor de um *code review*. Com C enorme, o revisor reprova qualquer desvio e o time passa semanas contornando casos raros no código (overfitting). Com C minúsculo, aprova quase tudo e o código fica genérico demais (underfitting). A convenção do scikit-learn (slide 21) é essa: C grande, muita penalidade."
+    },
+    {
+      "id": "l11-q07",
+      "label": "C pequeno",
+      "type": "single",
+      "prompt": "Qual o efeito de configurar um valor **muito baixo** de C (por exemplo `C = 0.001`) em uma SVM, segundo o slide 22?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O modelo exige separação completa das classes, a margem fica mínima e há risco de overfitting por falta de tolerância a erros.",
+          "correct": false,
+          "explanation": "Esse é o comportamento de C grande (slide 22). Com C pequeno a tolerância é alta."
+        },
+        {
+          "id": "b",
+          "text": "A penalidade por errar é pequena: o modelo tolera violações (soft margin), a margem fica larga e a fronteira simples, com risco de underfitting.",
+          "correct": true,
+          "explanation": "Slide 22: baixos valores de C flexibilizam o treino e permitem fronteiras com erros, o que pode levar a underfitting. A margem larga vem da pouca punição às violações."
+        },
+        {
+          "id": "c",
+          "text": "Os vetores de suporte são descartados e a fronteira passa a ser a reta que liga os centros das duas classes, como num classificador de centroides.",
+          "correct": false,
+          "explanation": "Com C pequeno há mais violações de margem e, em geral, mais vetores de suporte, não menos. A fronteira continua sendo calculada por eles."
+        },
+        {
+          "id": "d",
+          "text": "Cada ponto passa a ter influência local mínima, formando ilhas isoladas em torno do treino e levando o modelo a decorar os dados.",
+          "correct": false,
+          "explanation": "Ilhas ao redor de cada ponto são o efeito de gamma muito alto (slide 24), com overfitting. C pequeno faz o oposto: simplifica."
+        }
+      ],
+      "generalExplanation": "C pequeno é um *code review* permissivo: o merge passa com algumas ressalvas, a base de código fica flexível e pouco específica. Aplicado à SVM, a margem fica larga e a fronteira simples, às vezes simples demais."
+    },
+    {
+      "id": "l11-q08",
+      "label": "Truque do kernel",
+      "type": "single",
+      "prompt": "Quando as classes **não são linearmente separáveis**, a SVM usa o *kernel trick* (slides 18 e 19). Qual descrição está de acordo com o slide 19?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Uma função remove os atributos não lineares e reduz a dimensão dos dados, até que as classes possam ser separadas por um hiperplano no próprio espaço original, sem nenhuma transformação.",
+          "correct": false,
+          "explanation": "O kernel faz o contrário de reduzir: leva a um espaço de dimensão maior. Descartar atributos também não cria fronteira curva, apenas reta."
+        },
+        {
+          "id": "b",
+          "text": "O espaço é dividido em regiões e uma reta diferente é ajustada em cada uma, juntando os pedaços em uma fronteira curva por partes.",
+          "correct": false,
+          "explanation": "É a ideia de modelos locais ou de árvores com cortes. A SVM com kernel usa **um** hiperplano único, mas em outro espaço."
+        },
+        {
+          "id": "c",
+          "text": "A reta é trocada por uma curva ajustada diretamente no espaço original, sem mudar de espaço, como em uma regressão polinomial simples.",
+          "correct": false,
+          "explanation": "O ponto central é justamente a mudança de espaço: o hiperplano é reto no espaço transformado. A curva só aparece quando se volta ao espaço original."
+        },
+        {
+          "id": "d",
+          "text": "Uma função não linear leva os dados a um espaço de dimensão maior, onde um hiperplano separa as classes; ao voltar ao espaço original, a fronteira aparece não linear.",
+          "correct": true,
+          "explanation": "Texto do slide 19: transformação não linear para um espaço de maior dimensão onde se obtém o hiperplano; ao retornar ao espaço original, a fronteira é não linear. A figura mostra isso com o disco central que vira um morro em 3D."
+        }
+      ],
+      "generalExplanation": "É como resolver um problema de roteamento ganhando uma dimensão extra: no mapa 2D os pontos estão embaralhados, mas se você levanta cada ponto por uma altura (por exemplo, sua distância ao centro), um plano passa a separá-los. Visto de cima, esse plano vira uma curva. O truque do kernel faz isso sem você precisar construir as novas coordenadas."
+    },
+    {
+      "id": "l11-q09",
+      "label": "Escolha do kernel em alta dimensão",
+      "type": "single",
+      "prompt": "Você precisa classificar documentos jurídicos representados por uma **matriz esparsa** (muitos zeros) com 40.000 termos como atributos e 5.000 documentos. Considerando as vantagens da SVM (slide 30), qual é uma boa **primeira** escolha de kernel? (Complemento: a regra do kernel linear não aparece nos slides.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Nenhum: a SVM não suporta tantas dimensões, então é preciso reduzir antes para menos de cem atributos com PCA.",
+          "correct": false,
+          "explanation": "O slide 30 afirma o oposto: a SVM é efetiva em problemas de alta dimensionalidade e lida bem com dados esparsos."
+        },
+        {
+          "id": "b",
+          "text": "Kernel RBF com gamma alto, para capturar relações locais entre documentos muito parecidos e dar fronteiras bem detalhadas, aproveitando o vocabulário específico da área jurídica.",
+          "correct": false,
+          "explanation": "Gamma alto recorta ilhas em volta dos pontos (slide 24) e com 40.000 atributos esparsos tende a memorizar o treino. É uma escolha de maior risco de overfitting, não de ponto de partida."
+        },
+        {
+          "id": "c",
+          "text": "Kernel linear: com tantos atributos as classes costumam já ser separáveis por um hiperplano, e o treino é bem mais rápido do que com kernels não lineares.",
+          "correct": true,
+          "explanation": "O slide 30 destaca que a SVM funciona bem com dados esparsos e alta dimensionalidade. Como complemento (regra prática, fora dos slides), nesses cenários o kernel linear costuma bastar, e é mais barato de treinar."
+        },
+        {
+          "id": "d",
+          "text": "Kernel polinomial de grau alto, para modelar todas as combinações possíveis entre termos e aproveitar ao máximo o espaço de atributos.",
+          "correct": false,
+          "explanation": "Combinar 40.000 termos em graus altos cria um espaço gigantesco, caro e sujeito a overfitting. Com dimensão já alta, esse esforço extra não é necessário."
+        }
+      ],
+      "generalExplanation": "Quando há muito mais atributos do que exemplos, como em texto, o espaço já é tão espaçoso que sobra lugar para um hiperplano reto. Usar um kernel sofisticado nesse caso é como alugar um servidor enorme para um serviço que cabe em uma máquina pequena: gasta mais e arrisca overfitting."
+    },
+    {
+      "id": "l11-q10",
+      "label": "Gamma alto",
+      "type": "single",
+      "prompt": "Em uma SVM com kernel **RBF**, o parâmetro **gamma** controla o raio de influência de cada ponto (slides 23 e 24). Se `gamma = 100`, qual o efeito na fronteira e o risco?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A influência de cada ponto fica estreita: a fronteira forma ilhas recortadas em volta dos pontos de treino, o modelo decora os dados e sofre overfitting.",
+          "correct": true,
+          "explanation": "Slide 24: aumentar gamma desconsidera pontos distantes e leva a fronteiras restritas e complexas (overfitting). A figura com gamma = 100 mostra exatamente as manchas fechadas em torno dos pontos vermelhos."
+        },
+        {
+          "id": "b",
+          "text": "A margem fica mais larga e o modelo passa a tolerar mais erros de treino, como acontece quando C é pequeno, deixando a fronteira mais suave e simples do que antes.",
+          "correct": false,
+          "explanation": "Tolerância a erros e largura da margem são controladas por C (slides 21 e 22). Gamma atua na forma da fronteira, por meio do alcance de cada ponto."
+        },
+        {
+          "id": "c",
+          "text": "A influência de cada ponto cobre uma região muito ampla: a fronteira fica quase reta e o modelo sofre underfitting.",
+          "correct": false,
+          "explanation": "Esse é o efeito de gamma muito baixo (slide 24). Quem inverte o sentido costuma confundir raio de influência com tamanho do raio de decisão."
+        },
+        {
+          "id": "d",
+          "text": "O número de vetores de suporte cai a quase zero, porque só os pontos mais distantes do centro passam a contar para a fronteira.",
+          "correct": false,
+          "explanation": "No gamma alto são os pontos **distantes** que deixam de contar, e quase todos os pontos tendem a virar vetores de suporte, não o contrário."
+        }
+      ],
+      "generalExplanation": "Gamma é o alcance de um *cache* local: se cada entrada só vale para pedidos quase idênticos, a taxa de acerto no que já foi visto é excelente, mas qualquer pedido novo falha. Assim é o gamma alto: cada ponto de treino manda só na sua vizinhança estreita e o modelo vira uma tabela de consulta do treino."
+    },
+    {
+      "id": "l11-q11",
+      "label": "Gamma baixo",
+      "type": "single",
+      "prompt": "E se `gamma = 0.00001` em uma SVM com kernel RBF? O que a fronteira de decisão passa a ser, segundo o slide 24?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A penalidade por erros de treino fica muito pequena, a margem se alarga e o modelo tolera muitas violações, como acontece com C pequeno.",
+          "correct": false,
+          "explanation": "Penalidade por erro é função de C. Gamma muda o alcance de cada ponto, não a multa por violações da margem."
+        },
+        {
+          "id": "b",
+          "text": "A influência de cada ponto se espalha por uma região ampla: a fronteira fica muito suave, quase linear, ignora detalhes locais e pode sofrer underfitting.",
+          "correct": true,
+          "explanation": "Slide 24: valores menores de gamma aumentam a influência dos pontos mais distantes, flexibilizam a região de separação, permitem erros e podem levar a underfitting."
+        },
+        {
+          "id": "c",
+          "text": "A influência de cada ponto fica estreita, a fronteira vira ilhas ao redor do treino e o modelo memoriza os dados, com ótimo desempenho no treino e queda nos dados novos.",
+          "correct": false,
+          "explanation": "É o efeito de gamma alto. Aqui o raio é enorme, não minúsculo, então não há ilhas locais."
+        },
+        {
+          "id": "d",
+          "text": "O modelo passa a funcionar como um k-NN com k = 1, classificando cada ponto novo pela classe do vizinho mais próximo.",
+          "correct": false,
+          "explanation": "O comportamento tipo 1-NN, com cada ponto mandando só na sua vizinhança, seria o de gamma muito **alto**. Com gamma baixo a influência é global."
+        }
+      ],
+      "generalExplanation": "Gamma baixo é como um cache global compartilhado por todos: cada entrada afeta quase todos os pedidos, a resposta fica uniforme e perde nuances. A fronteira resultante é suave, simples e, se for simples demais, subajusta."
+    },
+    {
+      "id": "l11-q12",
+      "label": "Multiclasse: um contra um",
+      "type": "single",
+      "prompt": "A SVM é binária por natureza. Para um problema de **4 classes** (A, B, C, D) usando a estratégia **um contra um** (one-vs-one, slide 28), como a classificação é feita?",
+      "options": [
+        {
+          "id": "a",
+          "text": "São treinados 12 classificadores, um para cada par ordenado (A contra B e também B contra A), com votação ponderada pelas margens de cada classificador.",
+          "correct": false,
+          "explanation": "O par (A,B) e o par (B,A) são o mesmo problema binário, treinado uma única vez. Contar os dois duplicaria o trabalho sem acrescentar informação."
+        },
+        {
+          "id": "b",
+          "text": "São treinados 3 classificadores em sequência, eliminando uma classe a cada rodada até sobrar apenas uma.",
+          "correct": false,
+          "explanation": "A eliminação sequencial não é uma das estratégias dos slides. No um contra um todos os pares são treinados e a decisão vem da votação final."
+        },
+        {
+          "id": "c",
+          "text": "São treinados 4 classificadores, cada classe contra o conjunto das outras três, e vence a classe cuja resposta tiver maior confiança.",
+          "correct": false,
+          "explanation": "Descreve o um contra todos (slide 29). No um contra um cada classificador vê só duas classes de cada vez."
+        },
+        {
+          "id": "d",
+          "text": "São treinados 6 classificadores, um para cada par de classes ((A,B), (A,C), (A,D), (B,C), (B,D), (C,D)), e vence a classe com mais votos.",
+          "correct": true,
+          "explanation": "Slide 28: um contra um separa a situação em classificações binárias de pares de classes diferentes e decide pela maioria dos votos. Listar os pares de 4 classes dá 6 combinações."
+        }
+      ],
+      "generalExplanation": "Um contra um é um torneio de pontos corridos: todo time enfrenta todos os outros em jogos de dois, e quem somar mais vitórias leva. Com K times, são K(K−1)/2 jogos (6 jogos para 4 times). Não precisa fazer a conta, basta listar os confrontos."
+    },
+    {
+      "id": "l11-q13",
+      "label": "Multiclasse: um contra todos",
+      "type": "single",
+      "prompt": "Para as mesmas 4 classes (A, B, C, D), como funciona a estratégia **um contra todos** (one-vs-all ou one-vs-rest, slide 29)?",
+      "options": [
+        {
+          "id": "a",
+          "text": "São treinados 4 classificadores, cada classe contra todas as outras reunidas (A contra o resto, B contra o resto etc.), e vence a classe que ganha do resto.",
+          "correct": true,
+          "explanation": "Slide 29: compara cada classe com todo o resto. Para K classes há K classificadores, e a classe que ganha do resto é a escolhida."
+        },
+        {
+          "id": "b",
+          "text": "São treinados 4 classificadores, cada um usando só os exemplos de uma classe, e depois as saídas são comparadas entre si.",
+          "correct": false,
+          "explanation": "Um classificador treinado só com exemplos de uma classe não tem como aprender uma fronteira. Cada um precisa ver também o resto dos exemplos, rotulados como a outra classe."
+        },
+        {
+          "id": "c",
+          "text": "É treinado 1 classificador com saída contínua de 1 a 4, e a classe é obtida arredondando essa saída.",
+          "correct": false,
+          "explanation": "Isso trata as classes como uma escala numérica ordenada, o que não existe em classes nominais. A SVM continua binária: o problema é quebrado em vários."
+        },
+        {
+          "id": "d",
+          "text": "São treinados 6 classificadores, um por par de classes, e vence a classe que obtiver mais votos entre os pares, com empate decidido pela classe de mais exemplos.",
+          "correct": false,
+          "explanation": "Descreve o um contra um (slide 28). No um contra todos as classes restantes são fundidas em um único grupo."
+        }
+      ],
+      "generalExplanation": "Um contra todos é uma triagem: para cada especialidade, uma pergunta de sim ou não ('é cardiologia ou qualquer outra coisa?'). Ao final, vence a especialidade em que a resposta foi mais convicta."
+    },
+    {
+      "id": "l11-q14",
+      "label": "Atributos em escalas diferentes",
+      "type": "single",
+      "prompt": "Um engenheiro treinou `SVC()` com dois atributos numéricos: `idade` (de 18 a 70) e `renda_anual` (de 20.000 a 500.000). O modelo foi muito mal e previu quase sempre a mesma classe. Qual foi o erro clássico? (Complemento: os slides não tratam de escala.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Deveria ter removido a `idade`: atributos inteiros de valores pequenos atrapalham a SVM, que trabalha melhor com valores contínuos e grandes, como a renda anual.",
+          "correct": false,
+          "explanation": "A SVM não exige atributos grandes; ao contrário, escalas muito diferentes atrapalham. Descartar a idade só perderia informação."
+        },
+        {
+          "id": "b",
+          "text": "Não padronizou os atributos: a renda, na casa dos milhares, domina as distâncias e a margem, e a idade quase não influencia; falta um `StandardScaler` ajustado no treino.",
+          "correct": true,
+          "explanation": "A SVM trabalha com distâncias e margens geométricas, então atributos em escalas muito diferentes distorcem o espaço. Padronizar (média 0, desvio 1) devolve peso comparável aos atributos."
+        },
+        {
+          "id": "c",
+          "text": "Usou o kernel padrão `rbf`; com apenas dois atributos esse kernel não funciona e seria obrigatório usar o kernel linear.",
+          "correct": false,
+          "explanation": "O kernel RBF funciona com qualquer número de atributos. O defeito está nas escalas, que distorcem as distâncias em qualquer kernel."
+        },
+        {
+          "id": "d",
+          "text": "Deveria ter aplicado PCA antes, já que a SVM só aceita atributos descorrelacionados entre si.",
+          "correct": false,
+          "explanation": "Não existe esse requisito: a SVM aceita atributos correlacionados. O PCA é outra técnica e não corrige a diferença de escala entre idade e renda."
+        }
+      ],
+      "generalExplanation": "Misturar idade e renda sem padronizar é como somar segundos e quilômetros numa mesma métrica de latência: o número maior engole o menor. A padronização leva todos os atributos à mesma régua antes de a SVM medir distâncias."
+    },
+    {
+      "id": "l11-q15",
+      "label": "Desvantagem: lentidão",
+      "type": "single",
+      "prompt": "O slide 31 lista como desvantagem que a SVM é **lenta** comparada a outros classificadores e deve ser evitada em datasets gigantes. Qual é a razão? (O detalhe da complexidade é complemento.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "O treino percorre todas as amostras a cada época e atualiza pesos por gradiente, como numa rede neural, e precisa de muitas épocas para convergir em bases grandes.",
+          "correct": false,
+          "explanation": "A SVM clássica não treina por épocas de gradiente: ela resolve um problema de otimização quadrática. Essa descrição vale para redes neurais (Aula 10)."
+        },
+        {
+          "id": "b",
+          "text": "O modelo só aceita bases pequenas porque exige que todos os pontos caibam em um único hiperplano de poucas dimensões.",
+          "correct": false,
+          "explanation": "A SVM aceita muitas dimensões (slide 30). O limite está no custo de treinar com muitas amostras, não no número de dimensões do hiperplano."
+        },
+        {
+          "id": "c",
+          "text": "Cada previsão compara o ponto novo com todas as amostras de treino, como no k-NN, e o custo explode quando há milhões de linhas.",
+          "correct": false,
+          "explanation": "Na previsão a SVM usa só os vetores de suporte, que costumam ser poucos. O gargalo é o treino, não a previsão por comparação com todos os dados."
+        },
+        {
+          "id": "d",
+          "text": "O treino resolve um problema de otimização cujo custo cresce entre o quadrático e o cúbico com o número de amostras, o que inviabiliza milhões de linhas.",
+          "correct": true,
+          "explanation": "O slide 31 afirma a lentidão e a recomendação de evitar bases gigantes; a faixa de custo entre N² e N³ é o complemento que explica o porquê. Para bases enormes, alternativas lineares ou de árvores são preferíveis."
+        }
+      ],
+      "generalExplanation": "A SVM é como um planejador que compara cada tarefa com todas as outras para achar a melhor fronteira: com 100 tarefas é rápido, com 10 milhões vira um fim de semana inteiro. Em bases gigantes, prefira modelos cujo treino cresce de forma mais suave."
+    },
+    {
+      "id": "l11-q16",
+      "label": "Afirmações sobre a SVM",
+      "type": "multiple",
+      "prompt": "Com base na Aula 11 sobre SVM, marque **todas** as afirmações verdadeiras. (A afirmação sobre padronização é complemento aos slides.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "A SVM com kernel RBF é um modelo transparente: os coeficientes mostram o peso de cada atributo, mesmo com muitas dimensões.",
+          "correct": false,
+          "explanation": "O slide 31 aponta o contrário: é um modelo caixa-preta, cuja interpretação e visualização é muito difícil, principalmente em alta dimensão."
+        },
+        {
+          "id": "b",
+          "text": "A SVM é robusta a ruídos e a pontos distantes da margem, porque sua fronteira depende dos vetores de suporte, os pontos mais próximos do hiperplano.",
+          "correct": true,
+          "explanation": "Slide 30: robusto a outliers porque a otimização usa os vetores de suporte. Pontos longe da margem não alteram a fronteira."
+        },
+        {
+          "id": "c",
+          "text": "A SVM lida bem com dados esparsos, com muitos zeros, e é efetiva em problemas de alta dimensionalidade.",
+          "correct": true,
+          "explanation": "Duas vantagens do slide 30, usadas por exemplo em classificação de texto."
+        },
+        {
+          "id": "d",
+          "text": "Aumentar C estreita a margem e deixa o modelo mais rígido, enquanto aumentar gamma no kernel RBF estreita o raio de influência de cada ponto.",
+          "correct": true,
+          "explanation": "Slides 21 a 24: C alto penaliza violações, com margem mais estreita e risco de overfitting; gamma alto reduz o alcance de cada ponto, com fronteiras complexas e risco de overfitting."
+        },
+        {
+          "id": "e",
+          "text": "Uma SVM com kernel linear consegue separar bem pontos organizados em anéis concêntricos, sem nenhuma transformação dos atributos.",
+          "correct": false,
+          "explanation": "Nenhuma reta separa um disco de um anel (slide 17 mostra que o limite linear pode falhar). Seria preciso um kernel não linear, como o RBF."
+        },
+        {
+          "id": "f",
+          "text": "Padronizar os atributos antes de treinar é uma prática recomendada, porque a margem depende de distâncias e atributos de escala maior dominam o cálculo.",
+          "correct": true,
+          "explanation": "Complemento aos slides: a SVM é geométrica, então escalas diferentes distorcem a margem. Padronizar, ajustando só no treino, é a prática padrão."
+        }
+      ],
+      "generalExplanation": "Reveja o que a SVM é no dia a dia: um modelo que depende de poucos pontos de borda, que tem dois botões (C e gamma) que mexem diretamente em over e underfitting, funciona bem com texto e muitos atributos, mas exige atributos na mesma escala e vira caixa-preta com kernels não lineares."
+    },
+    {
+      "id": "l11-q17",
+      "label": "Gráfico: qual reta tem a maior margem",
+      "type": "single",
+      "prompt": "O slide 4 mostra retas candidatas (H1 a H4) para separar pontos de duas classes. Abaixo, uma tabela **de exemplo nosso** (valores ilustrativos, cinco retas) com as distâncias do ponto mais próximo de cada classe até cada reta. Qual reta o classificador de máxima margem escolhe?\n\n| Reta | Distância ao ponto mais próximo da classe + | Distância ao ponto mais próximo da classe − | Separa todos os pontos? |\n| :-- | :-- | :-- | :-- |\n| H1 | 2,0 | 2,0 | sim |\n| H2 | 0,5 | 3,5 | sim |\n| H3 | 3,5 | 0,5 | sim |\n| H4 | 2,5 | 1,0 | sim |\n| H5 | 1,8 | 1,8 | não (dois pontos ficam do lado errado) |",
+      "options": [
+        {
+          "id": "a",
+          "text": "H5: tem distâncias iguais dos dois lados (1,8), que é a simetria ideal, então deve ser a escolhida.",
+          "correct": false,
+          "explanation": "A simetria só vale entre retas que separam as classes. H5 deixa dois pontos do lado errado e, no classificador de máxima margem (margem rígida, slide 13), isso a elimina."
+        },
+        {
+          "id": "b",
+          "text": "H2: tem o ponto da classe − mais afastado (3,5), então é a que dá a maior distância a algum ponto.",
+          "correct": false,
+          "explanation": "A margem é limitada pelo ponto mais **próximo**: em H2 a classe + está a só 0,5. Olhar a maior distância isolada ignora que o corredor é definido pela menor."
+        },
+        {
+          "id": "c",
+          "text": "H1: separa todos os pontos e a menor distância dela (2,0) é a maior entre as retas que separam, com simetria entre as classes.",
+          "correct": true,
+          "explanation": "A margem de uma reta é a menor distância aos pontos de cada classe. Entre as retas que separam sem erro, H1 tem margem 2,0 (H4 tem 1,0; H2 e H3 têm 0,5). É o hiperplano no ponto médio do slide 4."
+        },
+        {
+          "id": "d",
+          "text": "H4: o ponto da classe + fica a 2,5 dela, folga maior que a de H1 nesse lado, o que dá mais segurança à classe + e deixa o corredor mais largo no lado positivo.",
+          "correct": false,
+          "explanation": "A margem é limitada pelo pior lado: em H4 o ponto da classe − está a só 1,0, menos que os 2,0 de H1. Ter uma folga maior de um lado não compensa a menor do outro."
+        }
+      ],
+      "generalExplanation": "Escolher o hiperplano é como escolher onde colocar a faixa de pedestres entre dois prédios: não vale ficar longe de um e colada no outro. O que importa é a menor folga, e a melhor reta é a que maximiza essa menor folga. A reta que nem separa os pontos (H5) é descartada antes de qualquer comparação de margem."
+    },
+    {
+      "id": "l11-q18",
+      "label": "Tabela: quais pontos são vetores de suporte",
+      "type": "single",
+      "prompt": "Uma SVM linear foi treinada com margem praticamente rígida (C muito alto) em 8 pontos. Na escala **canônica** (slides 11 e 13), os pontos exatamente sobre as bordas da margem têm f(x) = +1 ou f(x) = −1. A tabela traz o valor de f(x) = β0 + β1x1 + β2x2 de cada ponto. Quais são os vetores de suporte?\n\n| Ponto | x1 | x2 | Classe | f(x) |\n| :-- | :-- | :-- | :-- | :-- |\n| P1 | 1 | 1 | − | −2,36 |\n| P2 | 2 | 1 | − | −1,72 |\n| P3 | 1 | 3 | − | −1,40 |\n| P4 | 2 | 2,5 | − | −1,00 |\n| P5 | 4 | 4 | + | +1,00 |\n| P6 | 5 | 4 | + | +1,64 |\n| P7 | 6 | 3 | + | +1,80 |\n| P8 | 3 | 0,5 | − | −1,32 |",
+      "options": [
+        {
+          "id": "a",
+          "text": "P4, P5 e P6: todos os pontos com |f(x)| entre 1,00 e 1,64, por estarem relativamente perto do hiperplano.",
+          "correct": false,
+          "explanation": "Perto, no sentido do slide 6, é estar sobre a borda da margem (|f| = 1). P6 tem 1,64, folga evidente, e retirá-lo não altera o hiperplano."
+        },
+        {
+          "id": "b",
+          "text": "P1 e P7: são os pontos com maior |f(x)| em cada classe, ou seja, os que a SVM classifica com mais confiança.",
+          "correct": false,
+          "explanation": "Confiança alta é o oposto de ser suporte: pontos muito longe do hiperplano não influenciam a fronteira (slide 6). Os suportes são os mais próximos, e não os mais extremos."
+        },
+        {
+          "id": "c",
+          "text": "P5, P6 e P7: toda a classe +, porque ela é a menos numerosa (3 pontos contra 5) e por isso sustenta a fronteira.",
+          "correct": false,
+          "explanation": "O número de amostras de cada classe não define quem é suporte. P6 e P7 têm |f| maior que 1 e, portanto, não tocam a margem."
+        },
+        {
+          "id": "d",
+          "text": "P4 e P5: são os únicos com |f(x)| = 1, ou seja, exatamente sobre as bordas da margem, um de cada classe.",
+          "correct": true,
+          "explanation": "Vetores de suporte são os pontos mais próximos do hiperplano (slide 6). Na escala canônica, isso significa |f| = 1. P4 e P5 definem o corredor; todos os outros têm |f| > 1, com folga."
+        }
+      ],
+      "generalExplanation": "Os vetores de suporte são como as vigas que sustentam uma ponte entre dois lados: só as que encostam no vão importam para a estrutura, enquanto o resto do terreno pode crescer sem mudar nada. Para achar quem encosta, basta olhar quem tem |f(x)| igual a 1 na escala canônica. (A tabela é um exemplo nosso, gerado com scikit-learn e arredondado.)"
+    },
+    {
+      "id": "l11-q19",
+      "label": "Equação do hiperplano: β e β0",
+      "type": "multiple",
+      "prompt": "Os slides 5, 8 e 9 apresentam o hiperplano f(x) = β0 + β1x1 + … + βpxp = 0. Marque **todas** as afirmações verdadeiras.",
+      "options": [
+        {
+          "id": "a",
+          "text": "Com dois atributos o hiperplano é um plano; a reta só aparece quando se trabalha com três atributos.",
+          "correct": false,
+          "explanation": "Em dois atributos o hiperplano é uma reta; em três, um plano; em mais, um hiperplano. A dimensão dele é sempre uma a menos que a do espaço."
+        },
+        {
+          "id": "b",
+          "text": "O termo β0 desloca o hiperplano em relação à origem; com β0 = 0, o hiperplano passa pela origem.",
+          "correct": true,
+          "explanation": "Slide 5: β0 é uma constante que desloca o hiperplano em relação à origem. Com β0 = 0, f(0) = 0 e a origem pertence ao hiperplano."
+        },
+        {
+          "id": "c",
+          "text": "Todo ponto x que pertence ao hiperplano satisfaz f(x) = 0, e pontos com f(x) > 0 ficam do lado oposto aos com f(x) < 0.",
+          "correct": true,
+          "explanation": "Slides 8 e 9: o hiperplano é o conjunto de f(x) = 0, e o sinal de f indica de que lado o ponto está."
+        },
+        {
+          "id": "d",
+          "text": "Mudar β0 e manter β fixo gira o hiperplano até outra orientação, pois β0 controla o ângulo da fronteira.",
+          "correct": false,
+          "explanation": "Girar é papel de β. Mudar só β0 desloca o hiperplano paralelamente a si mesmo, sem alterar sua orientação."
+        },
+        {
+          "id": "e",
+          "text": "O vetor β é perpendicular ao hiperplano e define sua orientação no espaço.",
+          "correct": true,
+          "explanation": "Slide 5: β é o vetor normal, perpendicular ao hiperplano, e determina para onde ele aponta. Girar β gira o hiperplano."
+        }
+      ],
+      "generalExplanation": "β e β0 são como orientação e posição de uma régua sobre a mesa: β diz para que lado a régua aponta (e a linha perpendicular a ela é o vetor normal), enquanto β0 a empurra paralelamente. Em código, é o par `coef_` e `intercept_` de um modelo linear do scikit-learn."
+    },
+    {
+      "id": "l11-q20",
+      "label": "Tabela: sinal de f(x) e o rótulo",
+      "type": "single",
+      "prompt": "Nos slides 9 e 10, os pontos azuis são codificados como y = +1 e os rosa como y = −1. Quando todos os pontos estão do lado certo, yᵢ · f(xᵢ) > 0 para todo i. A tabela mostra cinco pontos e o valor de f(x) para um hiperplano candidato. Qual ponto **viola** essa condição, ou seja, está do lado errado?\n\n| Ponto | y | f(x) |\n| :-- | :-- | :-- |\n| P1 | +1 | +2,3 |\n| P2 | −1 | −0,7 |\n| P3 | +1 | −1,1 |\n| P4 | −1 | −3,0 |\n| P5 | +1 | +0,4 |",
+      "options": [
+        {
+          "id": "a",
+          "text": "P3: o rótulo é +1, mas f(x) é negativo, então o produto yᵢ · f(xᵢ) é negativo e o ponto está do lado errado.",
+          "correct": true,
+          "explanation": "Pelo slide 10, ponto do lado certo tem y e f(x) com o mesmo sinal. Em P3 os sinais são opostos (+1 com −1,1): produto negativo, ponto classificado errado."
+        },
+        {
+          "id": "b",
+          "text": "P4: tem classe −1 e é o f(x) mais negativo de todos, longe demais do hiperplano para ser confiável.",
+          "correct": false,
+          "explanation": "Ser mais negativo, com y = −1, significa estar bem no fundo do território correto da classe −1. Nenhuma violação."
+        },
+        {
+          "id": "c",
+          "text": "P2: o valor |f(x)| = 0,7 é menor que 1, o que o coloca dentro da margem, e portanto do lado errado do hiperplano.",
+          "correct": false,
+          "explanation": "Estar dentro da margem não é estar do lado errado. P2 tem y = −1 e f = −0,7: mesmo sinal, produto positivo, lado certo (só com folga pequena)."
+        },
+        {
+          "id": "d",
+          "text": "P5: f(x) = +0,4 é o valor positivo mais próximo de zero, então está perto demais da fronteira para ser classificado corretamente.",
+          "correct": false,
+          "explanation": "Perto da fronteira não é erro: P5 tem y = +1 e f positivo, produto positivo. Está do lado certo e, no máximo, dentro da margem."
+        }
+      ],
+      "generalExplanation": "É a mesma ideia de um *assert* com sinal: o rótulo (+1 ou −1) e a saída do modelo precisam concordar. Se multiplicados dão positivo, o teste passa; se dão negativo, o ponto foi classificado errado. Não precisa calcular: basta comparar os sinais."
+    },
+    {
+      "id": "l11-q21",
+      "label": "As três abordagens até a SVM",
+      "type": "single",
+      "prompt": "O slide 7 apresenta três abordagens para chegar na SVM: classificador de máxima margem, classificador de vetores de suporte e máquinas de vetores de suporte. Qual associação entre a abordagem e o que ela acrescenta está **correta**?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Máxima margem: aceita violações por folgas. Vetores de suporte: exige separação perfeita. SVM: acrescenta kernels para fronteiras não lineares, mas só em problemas de duas classes, sem ruído nos rótulos.",
+          "correct": false,
+          "explanation": "Troca os dois primeiros: a folga é o que diferencia o classificador de vetores de suporte, e a exigência de separação perfeita é a margem rígida do primeiro."
+        },
+        {
+          "id": "b",
+          "text": "Máxima margem: usa kernels para fronteiras não lineares. Vetores de suporte: margem rígida. SVM: aceita folgas controladas por C.",
+          "correct": false,
+          "explanation": "Inverte a ordem cronológica e conceitual: o kernel é a última camada, só faz sentido depois que a margem suave está resolvida."
+        },
+        {
+          "id": "c",
+          "text": "Máxima margem: separa dados separáveis com margem rígida. Vetores de suporte: aceita violações da margem por meio de folgas controladas por C. SVM: acrescenta kernels para fronteiras não lineares.",
+          "correct": true,
+          "explanation": "É a progressão dos slides 8 a 20: margem rígida (slide 13), margem suave com folga e C (slides 14 e 15) e, por fim, o kernel para limites não lineares (slides 17 a 19)."
+        },
+        {
+          "id": "d",
+          "text": "Máxima margem: trata várias classes de uma vez. Vetores de suporte: aceita folgas. SVM: só funciona com dados esparsos.",
+          "correct": false,
+          "explanation": "Multiclasse não é característica de nenhuma das três, é resolvida por um contra um ou um contra todos (slides 27 a 29), e a SVM funciona bem com dados esparsos, sem se restringir a eles."
+        }
+      ],
+      "generalExplanation": "É a evolução de um produto em três versões: a v1 faz o caso ideal (dados perfeitamente separáveis); a v2 trata o mundo real com tolerância a erros (folga e C); a v3 aceita problemas que não são lineares (kernel). Cada versão acrescenta uma capacidade sobre a anterior."
+    },
+    {
+      "id": "l11-q22",
+      "label": "Margem canônica e minimização de ‖β‖",
+      "type": "multiple",
+      "prompt": "Nos slides 11 e 13, a margem rígida aparece em forma canônica: yᵢ(βᵀxᵢ + β0) ≥ 1 e Max M = 2/‖β‖ = Min ‖β‖²/2. Marque **todas** as afirmações verdadeiras. (A leitura direta das equações dos slides não exige cálculo.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "No hiperplano canônico, os vetores de suporte satisfazem yᵢ(βᵀxᵢ + β0) = 1, e os demais pontos satisfazem a desigualdade com valor maior que 1.",
+          "correct": true,
+          "explanation": "A restrição é ≥ 1 para todos; a igualdade vale só para quem está sobre a borda da margem, que são os vetores de suporte."
+        },
+        {
+          "id": "b",
+          "text": "Para obter uma margem maior é preciso aumentar ‖β‖, pois o comprimento de β mede diretamente a largura do corredor.",
+          "correct": false,
+          "explanation": "É o inverso: a margem é 2/‖β‖. Aumentar ‖β‖ estreita o corredor."
+        },
+        {
+          "id": "c",
+          "text": "No classificador de vetores de suporte, o objetivo passa a minimizar somente C · Σεᵢ, sem o termo ‖β‖²/2.",
+          "correct": false,
+          "explanation": "O slide 21 traz Minimizar ½‖β‖² + C Σεᵢ: o termo da margem continua e a ele soma-se a penalização das folgas."
+        },
+        {
+          "id": "d",
+          "text": "A largura da margem é 2/‖β‖, então uma margem maior corresponde a um ‖β‖ menor.",
+          "correct": true,
+          "explanation": "Max M = 2/‖β‖ (slide 13): é uma fração, então quanto menor o denominador ‖β‖, maior a margem."
+        },
+        {
+          "id": "e",
+          "text": "Maximizar a margem equivale a minimizar ‖β‖²/2 sujeito às restrições yᵢ(βᵀxᵢ + β0) ≥ 1, um problema de otimização com restrições.",
+          "correct": true,
+          "explanation": "É a equivalência escrita no slide 13: Max M = Min ‖β‖²/2, com as restrições de que todos os pontos fiquem fora da margem e do lado certo."
+        }
+      ],
+      "generalExplanation": "A SVM é um problema de otimização que parece um *linter* com duas regras: 'o corredor deve ser o mais largo possível' (minimizar ‖β‖²/2) e 'ninguém pode violar a regra' (as restrições). Na versão suave, entra uma terceira parcela, a multa C·Σε pelas violações."
+    },
+    {
+      "id": "l11-q23",
+      "label": "Tabela: leitura das folgas",
+      "type": "multiple",
+      "prompt": "Seis pontos de treino de uma SVM de margem suave têm as folgas abaixo (valores de exemplo nosso). Pelo slide 15, marque **todas** as afirmações verdadeiras.\n\n| Ponto | εᵢ |\n| :-- | :-- |\n| P1 | 0 |\n| P2 | 0 |\n| P3 | 0,4 |\n| P4 | 1,8 |\n| P5 | 0 |\n| P6 | 0,8 |",
+      "options": [
+        {
+          "id": "a",
+          "text": "P4 foi classificado de forma incorreta, pois sua folga é maior que 1: atravessou o hiperplano.",
+          "correct": true,
+          "explanation": "Pelo slide 15, ε > 1 indica o lado errado do hiperplano. P4, com ε = 1,8, foi mal classificado."
+        },
+        {
+          "id": "b",
+          "text": "P3 e P6 foram classificados incorretamente, porque qualquer folga positiva indica que o ponto errou a classe.",
+          "correct": false,
+          "explanation": "Folga positiva indica violação da margem, não erro. Só ε > 1 representa classificação incorreta."
+        },
+        {
+          "id": "c",
+          "text": "P1, P2 e P5 não violam a margem: estão do lado certo e fora do corredor (ou, no máximo, sobre sua borda).",
+          "correct": true,
+          "explanation": "ε = 0 significa que a observação está no lado correto da margem (slide 15), sem nenhuma violação."
+        },
+        {
+          "id": "d",
+          "text": "Só P4 influencia o treino, porque o otimizador ignora pontos com folga menor que 1 e conta apenas os maiores.",
+          "correct": false,
+          "explanation": "A função de custo soma todas as folgas (C · Σεᵢ). P3 e P6 também pesam, com contribuições menores."
+        },
+        {
+          "id": "e",
+          "text": "P3 e P6 estão dentro da margem, mas do lado certo do hiperplano: foram classificados corretamente.",
+          "correct": true,
+          "explanation": "0 < ε ≤ 1 é o intervalo de violação da margem sem cruzar o hiperplano (slide 15). A classe prevista está certa."
+        }
+      ],
+      "generalExplanation": "As folgas são como um *log* de desvios por requisição: zero é perfeito, entre 0 e 1 é atraso aceitável, acima de 1 é falha. Para saber se o modelo errou, olhe só o último grupo; para saber o custo total que o treino tenta reduzir, some todos."
+    },
+    {
+      "id": "l11-q24",
+      "label": "Dois sentidos de C nos slides",
+      "type": "single",
+      "prompt": "O slide 15 escreve a restrição Σεᵢ ≤ C e diz que C 'decide o quanto aceitamos errar'. Já os slides 21 e 22, sobre o scikit-learn, dizem que C é o inverso da regularização (C grande, penalidade altíssima). Como conciliar os dois?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O slide 15 vale para a margem rígida e o slide 21 para a margem suave, e por isso C tem sentidos diferentes em cada caso.",
+          "correct": false,
+          "explanation": "O slide 15 já trata da margem suave (variáveis de folga), e a margem rígida nem tem parâmetro C. A diferença vem da parametrização, não do tipo de margem."
+        },
+        {
+          "id": "b",
+          "text": "São convenções opostas do mesmo controle: no slide 15, C é um orçamento de folga (maior C tolera mais erro); no scikit-learn, C pesa a penalização (maior C tolera menos). Vale a do slide 21.",
+          "correct": true,
+          "explanation": "A formulação com orçamento (Σε ≤ C) é a do slide 15, e a figura do slide 16 com quatro painéis segue essa mesma ideia; a do scikit-learn, usada em código (slides 21 e 22), inverte o sentido. Se perguntarem na prova sobre C no scikit-learn: C grande = penalidade alta = risco de overfitting (slide 22)."
+        },
+        {
+          "id": "c",
+          "text": "Os slides se contradizem por engano, e o slide 15 deve ser tratado como erro: apenas o slide 21 está correto em qualquer biblioteca, e a figura do slide 16 deve ser ignorada.",
+          "correct": false,
+          "explanation": "O slide 15 está correto na formulação com orçamento de folga. O que muda é a convenção; não há erro, apenas duas parametrizações opostas."
+        },
+        {
+          "id": "d",
+          "text": "Ambos usam a mesma convenção: C grande significa tolerar mais erro em toda biblioteca, e o slide 21 apenas redigiu o texto de forma invertida.",
+          "correct": false,
+          "explanation": "O slide 21 é explícito: por convenção, C é o inverso da força de regularização, com penalidade altíssima para C grande. Não é inversão de redação."
+        }
+      ],
+      "generalExplanation": "É como duas APIs com o mesmo nome de parâmetro e semânticas opostas, uma que recebe `tolerancia` e outra que recebe `rigor`. Antes de usar, leia a documentação. Na prova, quando o enunciado falar de scikit-learn ou de penalidade, use a convenção do slide 21."
+    },
+    {
+      "id": "l11-q25",
+      "label": "Tabela: efeito de C (RBF)",
+      "type": "single",
+      "prompt": "O slide 22 mostra quatro fronteiras de uma SVM com kernel RBF para C = 1, 10, 1000 e 10000. Uma tabela **de exemplo nosso** (valores ilustrativos) resume o que se observa. Qual leitura está correta?\n\n| C | Acurácia no treino | Acurácia na validação | Aspecto da fronteira |\n| :-- | :-- | :-- | :-- |\n| 1 | 0,84 | 0,82 | suave, com vários erros |\n| 10 | 0,88 | 0,85 | curva moderada |\n| 1000 | 0,95 | 0,81 | recortada |\n| 10000 | 0,99 | 0,76 | quase em quadrantes |",
+      "options": [
+        {
+          "id": "a",
+          "text": "Subir C reduz o erro de treino, mas a validação piora a partir de C = 10: sinal de overfitting; o melhor equilíbrio está em C = 10.",
+          "correct": true,
+          "explanation": "A escolha deve se basear na validação, e a melhor nota (0,85) é a de C = 10. O treino que continua subindo enquanto a validação cai é a assinatura do overfitting descrita no slide 22."
+        },
+        {
+          "id": "b",
+          "text": "O melhor é C = 10000, que tem o menor erro de treino e a fronteira mais próxima da separação perfeita das classes.",
+          "correct": false,
+          "explanation": "Erro de treino baixo não escolhe modelo: o modelo de C = 10000 é o que pior generaliza (0,76 na validação), como alerta o slide 22."
+        },
+        {
+          "id": "c",
+          "text": "C = 10000 mostra underfitting, pois a fronteira quase em quadrantes é simples demais para os dados, e o certo seria trocar por um kernel linear.",
+          "correct": false,
+          "explanation": "Underfitting teria erro alto também no treino. Com 0,99 de acurácia no treino e queda na validação, o diagnóstico é overfitting."
+        },
+        {
+          "id": "d",
+          "text": "O melhor é C = 1, porque tem a menor diferença entre treino e validação, o que garante o melhor modelo.",
+          "correct": false,
+          "explanation": "A diferença pequena indica estabilidade, mas aqui vem com desempenho mais baixo em ambos. O critério final é a acurácia na validação, e C = 10 supera C = 1."
+        }
+      ],
+      "generalExplanation": "É a curva clássica de qualquer *tuning*: aumentar o rigor melhora a nota no ambiente de homologação (treino) até certo ponto, depois só decora os casos de teste e piora em produção. O hiperparâmetro se escolhe pela validação, nunca pelo treino."
+    },
+    {
+      "id": "l11-q26",
+      "label": "Tabela: efeito de gamma (RBF)",
+      "type": "single",
+      "prompt": "O slide 24 compara três fronteiras de uma SVM com kernel RBF, com gamma = 0,01, 1 e 100. A tabela abaixo (exemplo nosso, valores ilustrativos) resume o que se vê. Qual diagnóstico está correto?\n\n| gamma | Acurácia no treino | Acurácia na validação | Aspecto da fronteira |\n| :-- | :-- | :-- | :-- |\n| 0,01 | 0,74 | 0,73 | quase reta |\n| 1 | 0,92 | 0,86 | curva suave, duas regiões |\n| 100 | 0,995 | 0,79 | ilhas ao redor dos pontos |",
+      "options": [
+        {
+          "id": "a",
+          "text": "Gamma 100 é o melhor, pois chega a quase 100 % no treino, o que mostra que o modelo aprendeu o padrão com precisão.",
+          "correct": false,
+          "explanation": "Acurácia de treino altíssima com queda na validação é decoreba, e não precisão. O modelo ideal é o de melhor validação, que é gamma 1."
+        },
+        {
+          "id": "b",
+          "text": "Os três valores apresentam underfitting, porque nenhum atinge 95 % de acurácia nos dois conjuntos ao mesmo tempo, e a solução seria reduzir ainda mais o gamma.",
+          "correct": false,
+          "explanation": "Não existe um limite fixo de 95 % para declarar underfitting. Gamma 100 tem 99,5 % no treino, e o problema dele é a validação mais baixa, ou seja, overfitting."
+        },
+        {
+          "id": "c",
+          "text": "Gamma 0,01 sofre underfitting (nota baixa nos dois), gamma 100 sofre overfitting (treino quase perfeito, validação pior) e gamma 1 é o melhor equilíbrio.",
+          "correct": true,
+          "explanation": "Slide 24: gamma menor aumenta a influência de pontos distantes e leva a underfitting; gamma maior gera fronteiras restritas e complexas, com overfitting. A tabela confirma pelo padrão treino versus validação."
+        },
+        {
+          "id": "d",
+          "text": "Gamma 0,01 sofre overfitting, por dar raio de influência amplo, e gamma 100 sofre underfitting, por ignorar vizinhos; gamma 1 é o melhor.",
+          "correct": false,
+          "explanation": "Inverte os diagnósticos. Gamma 0,01 tem nota baixa nos dois conjuntos (underfitting), e gamma 100 acerta quase tudo no treino e piora na validação (overfitting)."
+        }
+      ],
+      "generalExplanation": "Gamma funciona como o alcance de cada cache local: pequeno demais e todo mundo é tratado igual (o sistema não discrimina nada); grande demais e cada entrada só atende a si mesma (não generaliza). O ponto bom fica no meio, e a validação é quem aponta o meio."
+    },
+    {
+      "id": "l11-q27",
+      "label": "Código: gamma com kernel linear",
+      "type": "single",
+      "prompt": "Um engenheiro quer ajustar o raio de influência dos pontos e roda esta busca. Os quatro valores de gamma deram **exatamente a mesma acurácia média**. Qual é o erro de lógica?\n\n```python\nparam_grid = {\"gamma\": [0.001, 0.1, 10, 1000]}\nbusca = GridSearchCV(SVC(kernel=\"linear\"), param_grid, cv=5)\nbusca.fit(X_train, y_train)\nprint(busca.best_params_)\n```",
+      "options": [
+        {
+          "id": "a",
+          "text": "A faixa de gamma é grande demais: de 0,001 a 1000 satura e produz acurácia idêntica em qualquer kernel, inclusive o RBF.",
+          "correct": false,
+          "explanation": "Com o kernel RBF, valores tão diferentes de gamma produzem fronteiras e notas bem diferentes (slide 24). A igualdade aparece só porque o kernel é linear."
+        },
+        {
+          "id": "b",
+          "text": "O gamma só atua em kernels não lineares (RBF, polinomial, sigmoide): com kernel linear a busca varia um parâmetro sem efeito. Para ajustar gamma use `rbf`; no linear, ajuste C.",
+          "correct": true,
+          "explanation": "O slide 23 diz que o gamma é introduzido somente no SVM não linear, através das funções de kernel. Num kernel linear não há raio de influência a ajustar; por isso as quatro notas são idênticas. (Confirmado ao rodar o código.)"
+        },
+        {
+          "id": "c",
+          "text": "O gamma só é aceito com o kernel sigmoide, então a busca deveria ter lançado erro, e o resultado igual indica defeito da biblioteca ou dos dados usados no ajuste.",
+          "correct": false,
+          "explanation": "O gamma vale para RBF, polinomial e sigmoide (slide 23). O scikit-learn aceita o parâmetro com kernel linear, mas o ignora, sem erro, o que torna o defeito silencioso."
+        },
+        {
+          "id": "d",
+          "text": "O `cv=5` está errado: com validação cruzada de 5 partes o gamma não consegue alterar a acurácia, e seria preciso usar `cv=1`.",
+          "correct": false,
+          "explanation": "A validação cruzada só mede o desempenho; ela não anula hiperparâmetros. `cv=1` nem é válido para esse uso."
+        }
+      ],
+      "generalExplanation": "É como passar um parâmetro de `timeout` para uma função que nunca lê esse parâmetro: nenhum erro, nenhum efeito, e a *dashboard* mostra tudo igual. Antes de buscar um hiperparâmetro, confira se o kernel escolhido o usa."
+    },
+    {
+      "id": "l11-q28",
+      "label": "Código: kernel linear em dados circulares",
+      "type": "single",
+      "prompt": "Os pontos da classe 0 formam um disco no centro, e os da classe 1 formam um anel em volta, como na figura do slide 19. Veja o código e os resultados:\n\n```python\nmodelo = SVC(kernel=\"linear\", C=1.0)\nmodelo.fit(X_train, y_train)\nprint(modelo.score(X_train, y_train))   # 0.50\nprint(modelo.score(X_test, y_test))     # 0.49\n```\n\nQual o diagnóstico e a correção correta?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Faltou padronizar os atributos: com as escalas iguais, uma reta passaria a separar o disco do anel.",
+          "correct": false,
+          "explanation": "Padronizar ajusta a escala, mas não muda a geometria: um disco cercado por um anel continua não sendo separável por uma reta."
+        },
+        {
+          "id": "b",
+          "text": "O valor de C está baixo demais: com C = 1000000 a margem se torna rígida e o modelo consegue separar perfeitamente as classes.",
+          "correct": false,
+          "explanation": "Aumentar C só faz o modelo tentar errar menos com a mesma reta. Como nenhuma reta separa as classes, o desempenho continuaria ruim."
+        },
+        {
+          "id": "c",
+          "text": "Overfitting: a nota de 0,50 mostra que o modelo decorou o treino, e reduzir C para 0,01 deixaria a fronteira mais suave e melhoraria a nota no teste.",
+          "correct": false,
+          "explanation": "Overfitting aparece com treino alto e teste baixo. Aqui os dois estão em torno de 0,50: o modelo não aprendeu nada, o que é underfitting."
+        },
+        {
+          "id": "d",
+          "text": "Underfitting causado pelo kernel: nenhuma reta separa disco de anel. A correção é usar um kernel não linear, como `rbf`; aumentar C não resolveria.",
+          "correct": true,
+          "explanation": "A acurácia de 0,50 já no treino é o sinal de que a fronteira não tem capacidade. O slide 19 mostra que um kernel leva os pontos a um espaço onde um hiperplano separa. (Com `rbf` o mesmo conjunto chegou a 1,00 ao rodar.)"
+        }
+      ],
+      "generalExplanation": "Tentar separar um disco de um anel com uma reta é como querer resolver uma busca em grafo com uma única consulta SQL de igualdade: o formato do problema não cabe na ferramenta. Em vez de afinar parâmetros, troque a ferramenta (o kernel)."
+    },
+    {
+      "id": "l11-q29",
+      "label": "Kernel: qual atributo extra separa",
+      "type": "single",
+      "prompt": "Os pontos da classe + ficam a menos de 1 de distância da origem e os da classe − ficam a mais de 2 (um disco cercado por um anel, como no slide 19). Nenhuma reta separa as duas classes. Ao mapear os dados para uma dimensão maior (slide 19), qual atributo extra permitiria separar as classes por um **hiperplano** no espaço ampliado?",
+      "options": [
+        {
+          "id": "a",
+          "text": "x1 − x2: a diferença entre coordenadas, que distingue pontos acima e abaixo da diagonal, e por isso parece capaz de isolar o miolo do anel.",
+          "correct": false,
+          "explanation": "Distingue lados de uma diagonal, o que continua sendo um corte reto no plano original. O anel está dos dois lados dessa diagonal, e não ajuda."
+        },
+        {
+          "id": "b",
+          "text": "x1 · x2: o produto das coordenadas, que muda de sinal conforme o quadrante do ponto.",
+          "correct": false,
+          "explanation": "O sinal do produto separa quadrantes, não centro de borda. O anel passa pelos quatro quadrantes, e o resultado seria aleatório (cerca de 0,5)."
+        },
+        {
+          "id": "c",
+          "text": "x1² + x2²: o quadrado da distância à origem; um valor de corte nesse atributo separa o miolo do anel.",
+          "correct": true,
+          "explanation": "Esse atributo é a altura do 'morro' do slide 19: pontos do disco ficam baixos, e os do anel ficam altos. Um plano horizontal os separa; de volta ao plano original, o corte vira um círculo. (Confirmado ao rodar: acurácia 1,00.)"
+        },
+        {
+          "id": "d",
+          "text": "x1 + x2: a soma das coordenadas, que cresce quando o ponto se afasta para qualquer direção.",
+          "correct": false,
+          "explanation": "A soma pode ser negativa ou nula em pontos distantes (por exemplo, x1 = −3 e x2 = 3), então não ordena os pontos por distância. Ao rodar, a acurácia ficou em cerca de 0,5."
+        }
+      ],
+      "generalExplanation": "É a mesma ideia de adicionar uma coluna calculada no seu *schema* para que uma consulta simples funcione. Um atributo bem escolhido (a distância ao centro) transforma um problema redondo num corte reto. O kernel faz esse mapeamento sem você escrever a nova coluna."
+    },
+    {
+      "id": "l11-q30",
+      "label": "Problema dual e produto interno",
+      "type": "multiple",
+      "prompt": "Os slides 25 e 26 mostram a função Lagrangeana e o problema dual, em que aparece o produto interno e a função kernel K(xᵢ, xⱼ). Marque **todas** as afirmações verdadeiras. (A afirmação sobre os multiplicadores αᵢ é complemento aos slides.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Complemento: no dual, apenas os pontos com multiplicador αᵢ diferente de zero (os vetores de suporte) pesam na decisão final.",
+          "correct": true,
+          "explanation": "Fora dos slides, mas coerente com o slide 6: só os vetores de suporte têm multiplicador não nulo, por isso o modelo é esparso."
+        },
+        {
+          "id": "b",
+          "text": "No problema dual, os dados entram apenas por meio de K(xᵢ, xⱼ); por isso o kernel pode ser trocado sem alterar o resto da formulação.",
+          "correct": true,
+          "explanation": "A expressão do slide 26 é Max Σαᵢ − ½ΣΣ αᵢαⱼyᵢyⱼ K(xᵢ, xⱼ). O kernel aparece só dentro de K, que substitui o produto interno."
+        },
+        {
+          "id": "c",
+          "text": "O kernel RBF é e^(−γ‖xᵢ − xⱼ‖²): quanto maior o gamma, mais rápido a similaridade cai com a distância.",
+          "correct": true,
+          "explanation": "Slide 26 traz a fórmula do RBF. Gamma maior faz o termo cair mais rápido, ou seja, cada ponto só influencia a vizinhança próxima (slide 24)."
+        },
+        {
+          "id": "d",
+          "text": "A função Lagrangeana serve para escolher o valor de C por validação cruzada, buscando automaticamente o melhor hiperparâmetro.",
+          "correct": false,
+          "explanation": "Ela é uma ferramenta matemática de otimização com restrições, parte do treino, e não faz busca de hiperparâmetros."
+        },
+        {
+          "id": "e",
+          "text": "O problema dual exige calcular explicitamente as coordenadas de cada ponto no espaço de dimensão maior antes de qualquer cálculo.",
+          "correct": false,
+          "explanation": "O ganho do dual é o contrário: basta o kernel K(xᵢ, xⱼ), sem construir as novas coordenadas."
+        }
+      ],
+      "generalExplanation": "O dual é como uma API que só aceita 'similaridade entre pares de itens', sem nunca mostrar os itens por dentro. Se você trocar a função de similaridade (o kernel), o resto da implementação continua igual. Como o modelo só olha pares, o espaço de dimensão maior nunca precisa ser construído."
+    },
+    {
+      "id": "l11-q31",
+      "label": "Votação um contra um",
+      "type": "single",
+      "prompt": "Em um problema com 4 classes (A, B, C, D), a SVM com a estratégia **um contra um** (slide 28) produziu os seguintes resultados nos 6 classificadores de pares. Qual é a classe prevista?\n\n| Classificador | Vencedor |\n| :-- | :-- |\n| (A, B) | A |\n| (A, C) | C |\n| (A, D) | A |\n| (B, C) | C |\n| (B, D) | B |\n| (C, D) | C |",
+      "options": [
+        {
+          "id": "a",
+          "text": "C: recebeu 3 votos (nos pares com A, B e D), contra 2 de A, 1 de B e nenhum de D.",
+          "correct": true,
+          "explanation": "Conta-se a votação como no exemplo do slide 28: (A,A,C) elegeu A. Aqui C venceu três confrontos, contra dois de A; é a maioria."
+        },
+        {
+          "id": "b",
+          "text": "B: é a única classe que venceu o adversário D, e a classe D foi o pior desempenho, então B fica com a vitória.",
+          "correct": false,
+          "explanation": "Vencer D não decide: o que conta é o total de votos. B tem apenas 1 voto, o menor entre as classes que ganharam algo."
+        },
+        {
+          "id": "c",
+          "text": "A: venceu os confrontos contra B e D e só perdeu para C, então fica com a vitória por ter sofrido poucas derrotas.",
+          "correct": false,
+          "explanation": "A venceu só dois confrontos e perdeu o outro para C. Com 2 votos, fica atrás de C, que tem 3 e não perdeu nenhum confronto."
+        },
+        {
+          "id": "d",
+          "text": "Empate entre A e C, porque ambas aparecem com vitórias em confrontos diretos entre elas e não há desempate possível.",
+          "correct": false,
+          "explanation": "Não houve empate: C tem 3 votos e A tem 2. No confronto direto (A, C), C venceu. Mesmo que houvesse empate, as implementações têm regra de desempate."
+        }
+      ],
+      "generalExplanation": "É a apuração de um torneio de pontos corridos: some as vitórias de cada time. Quem tem mais pontos leva o título; o saldo contra um adversário específico só importa em caso de empate."
+    },
+    {
+      "id": "l11-q32",
+      "label": "Votação um contra todos",
+      "type": "single",
+      "prompt": "Com 3 classes (A, B, C), a estratégia **um contra todos** (slide 29) treinou 3 classificadores. Cada um respondeu assim para um ponto novo:\n\n| Classificador | Resposta |\n| :-- | :-- |\n| A contra (B + C) | B + C |\n| B contra (A + C) | B |\n| C contra (A + B) | A + B |\n\nQual é a classe prevista?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A: a resposta 'A + B' do último classificador mostra que A é uma das classes possíveis, e como não foi eliminada pelos demais, deve ser a escolhida.",
+          "correct": false,
+          "explanation": "'A + B' significa que o classificador de C decidiu 'não é C', sem escolher entre A e B. Isso não elege A."
+        },
+        {
+          "id": "b",
+          "text": "B: é a única classe cujo classificador respondeu 'sou eu' (ganhou do resto); os outros dois responderam 'não é a minha classe'.",
+          "correct": true,
+          "explanation": "No slide 29 a classe escolhida é a que ganha do resto. Só o classificador de B escolheu a própria classe; A e C perderam para o resto."
+        },
+        {
+          "id": "c",
+          "text": "C: o classificador de C foi o único que reconheceu um grupo maior (A + B), então C tem a resposta mais confiante.",
+          "correct": false,
+          "explanation": "Ele respondeu que o ponto está no grupo A + B, ou seja, que o ponto **não é** C. Perder para o resto elimina C."
+        },
+        {
+          "id": "d",
+          "text": "Nenhuma: como os classificadores discordam, é preciso treinar de novo com mais dados antes de classificar.",
+          "correct": false,
+          "explanation": "Não há necessidade de retreinar: a regra de decisão já resolve o caso, pois exatamente um classificador escolheu a própria classe."
+        }
+      ],
+      "generalExplanation": "É uma triagem por especialidade: pergunte a cada especialista 'é seu caso ou de qualquer outra especialidade?'. Se só o especialista B diz 'é meu', o paciente vai para B. (No scikit-learn, o SVC usa um contra um por padrão; um contra todos exige configuração.)"
+    },
+    {
+      "id": "l11-q33",
+      "label": "O que mexe na fronteira",
+      "type": "multiple",
+      "prompt": "Uma SVM linear de margem suave foi treinada e depois houve mudanças nos dados. Pelo que os slides 6 e 30 dizem sobre vetores de suporte e robustez, marque **todas** as afirmações verdadeiras.",
+      "options": [
+        {
+          "id": "a",
+          "text": "Remover metade dos pontos que estão longe da margem altera o hiperplano, pois a SVM usa todos os pontos igualmente.",
+          "correct": false,
+          "explanation": "A SVM não usa todos os pontos igualmente: pontos longe da margem não pesam na fronteira, e retirá-los não a altera."
+        },
+        {
+          "id": "b",
+          "text": "A robustez a outliers vale para qualquer outlier: mesmo um ponto da classe errada colado no meio da outra classe não muda a fronteira.",
+          "correct": false,
+          "explanation": "A robustez do slide 30 vale para ruídos distantes da margem. Um ponto da outra classe invadindo o território vira vetor de suporte, e com C alto pode deformar bastante a fronteira."
+        },
+        {
+          "id": "c",
+          "text": "Um ponto novo que cai dentro da margem ou do lado errado passa a ser vetor de suporte e pode deslocar o hiperplano.",
+          "correct": true,
+          "explanation": "A influência vem de quem está na margem ou a viola. Um ponto novo nessas posições entra na formulação e pode mudar a fronteira."
+        },
+        {
+          "id": "d",
+          "text": "Acrescentar pontos novos longe da margem, do lado correto, não altera o hiperplano.",
+          "correct": true,
+          "explanation": "Esses pontos têm folga zero e não são vetores de suporte, então não entram no que define a fronteira (slides 6 e 30)."
+        },
+        {
+          "id": "e",
+          "text": "Remover um dos vetores de suporte pode alterar o hiperplano, porque ele era um dos pontos que sustentavam a fronteira.",
+          "correct": true,
+          "explanation": "Os vetores de suporte são o que define o modelo (slide 6). Retirar um deles pode mudar a posição ou o tamanho da margem."
+        }
+      ],
+      "generalExplanation": "Pense num teste de integração que só falha quando se mexe nos casos de borda: adicionar ou tirar milhares de casos centrais não muda nada, mas mexer em um caso de borda reconfigura a conclusão. Só a borda é decisiva."
+    },
+    {
+      "id": "l11-q34",
+      "label": "Adequação: interpretabilidade e escala",
+      "type": "single",
+      "prompt": "Uma instituição financeira precisa de um classificador de aprovação de crédito para 8 milhões de registros, e a regra de negócio exige **justificar cada decisão** ao cliente. Considerando as desvantagens do slide 31, qual conclusão é a mais adequada?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Um k-NN é a escolha mais indicada, pois guarda todos os exemplos e permite apontar os vizinhos mais parecidos para justificar cada decisão.",
+          "correct": false,
+          "explanation": "Com 8 milhões de registros, o k-NN também é muito pesado na hora de prever, e 'se parece com estes vizinhos' não é uma justificativa de crédito aceitável como regra."
+        },
+        {
+          "id": "b",
+          "text": "A SVM com C muito alto resolve, pois classifica o treino quase sem erro, o que garante decisões consistentes e defensáveis.",
+          "correct": false,
+          "explanation": "C alto leva a overfitting e treino lento (slide 22), e continua sendo um modelo opaco. Acertar o treino não é justificativa de decisão."
+        },
+        {
+          "id": "c",
+          "text": "A SVM com kernel RBF é ideal, pois é robusta a outliers e funciona em alta dimensionalidade, e os vetores de suporte já servem como justificativa para cada decisão do modelo.",
+          "correct": false,
+          "explanation": "As vantagens do slide 30 são reais, mas não resolvem as duas restrições do problema. Os vetores de suporte não explicam a decisão para o cliente em linguagem de negócio."
+        },
+        {
+          "id": "d",
+          "text": "Uma SVM com kernel RBF não é a melhor primeira escolha: é caixa-preta e lenta em bases gigantes. Árvore de decisão ou regressão logística dão explicação direta e escalam melhor.",
+          "correct": true,
+          "explanation": "Slide 31: interpretação e visualização muito complexas, lentidão e recomendação de evitar datasets gigantes. As duas restrições do enunciado batem exatamente nessas desvantagens."
+        }
+      ],
+      "generalExplanation": "É a diferença entre um sistema com logs claros e um com decisão em caixa-preta: quando o auditor pergunta 'por quê?', você precisa de uma resposta que caiba num documento. Escolher o modelo é tanto sobre desempenho quanto sobre os requisitos não funcionais: explicabilidade e custo de treino."
+    },
+    {
+      "id": "l11-q35",
+      "label": "Ordem das ações com SVM",
+      "type": "single",
+      "prompt": "Você vai treinar uma SVM com kernel RBF em uma base com atributos em escalas diferentes e quer estimar o desempenho futuro de forma honesta. Qual é a **ordem correta** das ações?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Dividir treino e teste; ajustar o padronizador só no treino e aplicá-lo ao teste; escolher kernel, C e gamma por validação no treino; treinar o modelo final; prever e avaliar no teste.",
+          "correct": true,
+          "explanation": "Cada decisão que aprende com os dados (padronizar, escolher hiperparâmetros, ajustar o modelo) usa só o treino. O teste fica intocado até a avaliação final, assim a nota estima o desempenho futuro."
+        },
+        {
+          "id": "b",
+          "text": "Dividir treino e teste; padronizar o treino; treinar com valores iniciais de C e gamma; testar várias combinações no teste; escolher a melhor e reportar a nota dela.",
+          "correct": false,
+          "explanation": "Escolher hiperparâmetros no teste faz o teste virar parte do treino: a nota da melhor combinação é otimista e já não estima o desempenho futuro."
+        },
+        {
+          "id": "c",
+          "text": "Dividir treino e teste; escolher kernel, C e gamma por validação no treino; treinar o modelo final; prever e avaliar no teste; só então padronizar os atributos, para a produção.",
+          "correct": false,
+          "explanation": "Padronizar só depois de avaliar significa que o modelo foi treinado e testado com atributos em escalas diferentes, o que gera o problema que a padronização deveria evitar."
+        },
+        {
+          "id": "d",
+          "text": "Padronizar a base inteira; dividir treino e teste; escolher kernel, C e gamma por validação no treino; treinar o modelo final; prever e avaliar no teste.",
+          "correct": false,
+          "explanation": "Padronizar antes de dividir calcula média e desvio com os dados do teste, vazando informação para o treino. A nota fica ligeiramente otimista."
+        }
+      ],
+      "generalExplanation": "É o pipeline de CI: o teste final é o ambiente de produção simulado e só roda uma vez, no fim. Tudo o que aprende com dados (média, desvio, melhor C, melhor gamma) é configurado em homologação (treino). Se o teste participa de qualquer decisão, o resultado deixa de ser uma estimativa honesta."
+    },
+    {
+      "id": "l11-q36",
+      "label": "Código: C e gamma escolhidos no teste",
+      "type": "single",
+      "prompt": "Veja a busca de hiperparâmetros de uma SVM e o relatório final. Qual é o erro de **lógica**?\n\n```python\nmelhor, melhor_acc = None, 0\nfor C in [0.1, 1, 10, 100]:\n    for g in [0.01, 0.1, 1]:\n        m = SVC(kernel=\"rbf\", C=C, gamma=g).fit(X_train, y_train)\n        acc = accuracy_score(y_test, m.predict(X_test))\n        if acc > melhor_acc:\n            melhor, melhor_acc = (C, g), acc\nprint(\"Melhor:\", melhor, \"acurácia esperada:\", melhor_acc)\n```",
+      "options": [
+        {
+          "id": "a",
+          "text": "O erro é usar `accuracy_score` sobre as previsões; para uma SVM seria obrigatório calcular o erro de treino, que é mais confiável.",
+          "correct": false,
+          "explanation": "A acurácia no teste é a métrica adequada; o erro de treino não mede generalização. O defeito está em usar o teste para escolher."
+        },
+        {
+          "id": "b",
+          "text": "A combinação de C e gamma foi escolhida com a nota do teste; o teste participou da decisão, e a acurácia relatada é otimista. Deveria escolher por validação cruzada no treino.",
+          "correct": true,
+          "explanation": "O conjunto de teste deve servir só para avaliar o modelo final. Quando a combinação com a maior nota nele é selecionada, a nota sofre viés (slide 31 alerta sobre a escolha de C e gamma). Use `GridSearchCV` no treino."
+        },
+        {
+          "id": "c",
+          "text": "O `fit` deveria usar o conjunto de teste e o `predict` o de treino, para a SVM ser avaliada em dados que já viu.",
+          "correct": false,
+          "explanation": "Avaliar em dados já vistos mede só memorização. A ordem treino-ajuste e teste-avaliação está correta no código."
+        },
+        {
+          "id": "d",
+          "text": "O laço percorre as 12 combinações, o que é demais: SVM com RBF deveria testar um só valor de C e um de gamma por vez, para evitar overfitting e custo de treino alto.",
+          "correct": false,
+          "explanation": "Testar várias combinações é o procedimento correto (slide 31 diz que são necessários vários testes). O problema não é o número de combinações, e sim onde são avaliadas."
+        }
+      ],
+      "generalExplanation": "É o equivalente a ajustar o código até os testes de aceitação passarem e depois dizer 'passa em todos os testes de aceitação'. Os testes viraram parte do desenvolvimento. Para ter uma nota honesta, a escolha de hiperparâmetros usa validação dentro do treino, e o teste fica trancado até o fim."
+    },
+    {
+      "id": "l11-q37",
+      "label": "Código: padronizador ajustado no teste",
+      "type": "single",
+      "prompt": "O código padroniza os atributos antes de treinar uma SVM. Qual é o erro de **lógica**?\n\n```python\nscaler = StandardScaler()\nX_train_s = scaler.fit_transform(X_train)\nX_test_s = scaler.fit_transform(X_test)\nmodelo = SVC(kernel=\"rbf\").fit(X_train_s, y_train)\nprint(modelo.score(X_test_s, y_test))\n```",
+      "options": [
+        {
+          "id": "a",
+          "text": "O erro é usar o kernel RBF, que não aceita atributos padronizados e exige os valores originais.",
+          "correct": false,
+          "explanation": "O RBF funciona bem com atributos padronizados, e a escala comparável até ajuda o parâmetro gamma. A falha está em reajustar o padronizador no teste."
+        },
+        {
+          "id": "b",
+          "text": "O erro é treinar no conjunto padronizado e avaliar também em dados padronizados; a avaliação deveria ser feita nos dados originais.",
+          "correct": false,
+          "explanation": "O modelo foi treinado em dados padronizados, então os dados de avaliação precisam passar pela mesma transformação. Avaliar nos originais reintroduziria a diferença de escala."
+        },
+        {
+          "id": "c",
+          "text": "O erro é padronizar o treino: a SVM funciona melhor com atributos em escalas originais, e a padronização distorce a margem e as distâncias entre os pontos de treino.",
+          "correct": false,
+          "explanation": "O contrário: a SVM mede distâncias e margens, então escalas desiguais distorcem. Padronizar o treino é recomendável (complemento aos slides)."
+        },
+        {
+          "id": "d",
+          "text": "O padronizador foi ajustado de novo no teste com `fit_transform`: o teste usa a própria média e desvio, e não os do treino, mudando a régua do modelo. Deve usar `transform`.",
+          "correct": true,
+          "explanation": "O modelo foi treinado numa régua (a do treino). Reajustar no teste usa outra média e outro desvio, deslocando os pontos em relação ao que a SVM aprendeu. Como lógica de pipeline, ajusta-se só no treino e aplica-se com `transform` no teste."
+        }
+      ],
+      "generalExplanation": "É como gerar duas versões diferentes do mesmo arquivo de configuração para treino e para produção: o modelo aprendeu com uma, mas recebe a outra. O correto é versionar a transformação uma vez (no treino) e reutilizá-la tal e qual (`transform`) em todo dado novo."
+    },
+    {
+      "id": "l11-q38",
+      "label": "Código: padronizar antes da validação cruzada",
+      "type": "single",
+      "prompt": "Veja a avaliação de uma SVM por validação cruzada. Qual é o erro de **lógica**?\n\n```python\nX_s = StandardScaler().fit_transform(X)\nscores = cross_val_score(SVC(kernel=\"rbf\"), X_s, y, cv=5)\nprint(scores.mean())\n```",
+      "options": [
+        {
+          "id": "a",
+          "text": "O erro é usar `cv=5`: com SVM a validação cruzada só funciona com `cv=10`, e com poucas partes a nota fica instável e otimista demais em qualquer base.",
+          "correct": false,
+          "explanation": "Não há exigência de 10 partes para a SVM. Cinco partes são uma escolha comum; o defeito é de ordem das operações, não do número de partes."
+        },
+        {
+          "id": "b",
+          "text": "O erro é padronizar: com validação cruzada, os atributos devem ficar em escalas originais, já que cada rodada reescala os dados sozinha.",
+          "correct": false,
+          "explanation": "A validação cruzada não reescala nada automaticamente. A padronização continua sendo necessária; o problema é o momento em que ela é ajustada."
+        },
+        {
+          "id": "c",
+          "text": "O padronizador foi ajustado em todos os dados antes da validação cruzada, então a parte de validação vaza para o treino. Deve estar num `Pipeline`, ajustado em cada rodada.",
+          "correct": true,
+          "explanation": "Em cada rodada, a parte de validação deveria ser desconhecida. Com o padronizador ajustado antes, ela já influenciou a régua do treino (vazamento). Com `Pipeline([('sc', StandardScaler()), ('svm', SVC())])` o ajuste é refeito por rodada."
+        },
+        {
+          "id": "d",
+          "text": "O erro é passar `SVC(kernel='rbf')` ao `cross_val_score`, que só aceita modelos lineares.",
+          "correct": false,
+          "explanation": "O `cross_val_score` aceita qualquer estimador do scikit-learn. O kernel RBF funciona normalmente."
+        }
+      ],
+      "generalExplanation": "É o mesmo vazamento do teste, só que repetido em cada rodada: preparar os dados com tudo antes de dividir faz cada parte 'espiar' as outras. Colocar a padronização dentro do Pipeline garante que, em cada rodada, ela seja aprendida só com a parte de treino daquela rodada."
+    },
+    {
+      "id": "l11-q39",
+      "label": "Escopo da SVM",
+      "type": "single",
+      "prompt": "O slide 3 apresenta a SVM como um algoritmo de aprendizagem de máquina. Qual afirmação sobre seu escopo e sua teoria básica está de acordo com os slides 3 e 18?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Funciona apenas com dados linearmente separáveis, porque a teoria assume essa separabilidade e não existe extensão para o caso contrário.",
+          "correct": false,
+          "explanation": "O slide 18 diz que a teoria se baseia em dados separáveis, mas isso não limita o uso: kernel e hiperparâmetros tratam problemas mais complexos."
+        },
+        {
+          "id": "b",
+          "text": "Serve para classificação e regressão, mas só com atributos categóricos, porque os hiperplanos são definidos sobre rótulos de classe.",
+          "correct": false,
+          "explanation": "O hiperplano é definido no espaço dos atributos numéricos. O slide 3 não impõe restrição a atributos categóricos; atributos categóricos costumam ser codificados antes."
+        },
+        {
+          "id": "c",
+          "text": "Serve só para classificação binária; regressão e problemas com mais de duas classes exigem outros algoritmos, porque a teoria da SVM não os contempla de nenhuma forma.",
+          "correct": false,
+          "explanation": "O slide 3 diz que serve a classificação e regressão, e os slides 27 a 29 mostram como lidar com várias classes, quebrando o problema em vários binários."
+        },
+        {
+          "id": "d",
+          "text": "Serve para classificação e regressão; a teoria básica parte de classes linearmente separáveis, e o SVM não linear estende o uso com o truque do kernel e hiperparâmetros.",
+          "correct": true,
+          "explanation": "Slide 3: classificação e regressão, com foco na melhor fronteira para classes separáveis. Slide 18: a teoria não limita o uso a problemas lineares, graças ao kernel e aos hiperparâmetros."
+        }
+      ],
+      "generalExplanation": "É como ler a descrição de uma biblioteca: o *README* diz que serve para dois tipos de tarefa e que nasceu para um caso ideal (dados separáveis), mas que o projeto evoluiu com extensões (kernel, hiperparâmetros) para o mundo real. Saber isso evita rejeitar a ferramenta por ter lido só a primeira linha."
+    },
+    {
+      "id": "l11-q40",
+      "label": "Quando o kernel não basta",
+      "type": "single",
+      "prompt": "Depois de aplicar o kernel RBF, ainda restam alguns pontos das duas classes que se misturam de forma irredutível (por exemplo, rótulos ruidosos). O slide 20 diz que, nesses casos, os hiperparâmetros acrescentam versatilidade. Qual é a conduta correta?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Manter o kernel e usar uma margem suave (C moderado), tolerando que alguns pontos sejam classificados errado, em vez de forçar uma separação perfeita.",
+          "correct": true,
+          "explanation": "Slide 20: quando não dá para separar perfeitamente nem após o kernel, os hiperparâmetros permitem tolerar erros (soft margin). Forçar separação perfeita (hard margin) tende a gerar overfitting."
+        },
+        {
+          "id": "b",
+          "text": "Remover do conjunto de teste os pontos que se misturam, para que a avaliação reflita só os casos que o modelo consegue separar.",
+          "correct": false,
+          "explanation": "Retirar pontos difíceis do teste infla a nota e não representa o uso real. O ajuste deve ser feito no modelo (C), sem alterar o teste."
+        },
+        {
+          "id": "c",
+          "text": "Trocar para margem rígida, aumentando C ao máximo: assim o modelo é obrigado a separar tudo e a generalização melhora.",
+          "correct": false,
+          "explanation": "Margem rígida com dados que se misturam gera fronteiras complexas que decoram o ruído (slide 22). Isso piora a generalização."
+        },
+        {
+          "id": "d",
+          "text": "Aumentar gamma até o modelo separar todos os pontos de treino, pois fronteiras mais detalhadas resolvem a sobreposição e levam a um treino sem nenhum erro.",
+          "correct": false,
+          "explanation": "Gamma alto cria ilhas em volta dos pontos (slide 24), memorizando o ruído. O treino fica perfeito, mas o modelo generaliza mal."
+        }
+      ],
+      "generalExplanation": "Quando o domínio tem ruído irredutível (rótulos errados, sensores com defeito), a resposta de engenharia é tolerância, não rigor extremo: um SLA realista aceita alguma falha. A margem suave faz o mesmo, aceitando um preço por alguns erros para não deformar toda a fronteira."
+    }
+  ]
+}

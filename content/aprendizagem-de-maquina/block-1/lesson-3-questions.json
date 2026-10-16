@@ -1,0 +1,597 @@
+{
+  "schema": "questions/v2",
+  "id": "bloco-1-aula-3",
+  "title": "Aula 3 · Questões (Pré-processamento)",
+  "instructions": "Responda **antes** de ler qualquer explicação. Depois de responder, leia a explicação de **todas** as alternativas, inclusive das que você acertou: é nelas que está o conteúdo. Se errar, volte à seção indicada em *Leitura: Aula 3 do zero*. Atenção especial às questões com código: o erro quase sempre é de **lógica** (ordem, treino × teste), não de sintaxe.",
+  "questions": [
+    {
+      "id": "q01",
+      "label": "Integração de bases",
+      "type": "single",
+      "prompt": "Duas bases da secretaria (A e B) foram **juntadas numa única tabela** para treinar um modelo. Veja o que aconteceu com uma aluna:\n\n| Origem | aluno | sexo | altura |\n| :-- | :-- | :-- | :-- |\n| Base A | Ana Souza | F | 1,65 |\n| Base B | ANA SOUZA | Feminino | 165 |\n\nQual diagnóstico descreve melhor o problema, segundo o que a aula diz sobre integração?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Há **inconsistência** (o mesmo dado escrito de formas diferentes e em unidades diferentes) e provável **redundância** (a mesma pessoa em duas linhas).",
+          "correct": true,
+          "explanation": "Correto. O slide 4 avisa que integrar bases pode gerar **inconsistências e redundâncias**. Aqui: `F` × `Feminino` e `1,65` (metros) × `165` (centímetros) são o mesmo dado com formato/unidade diferente (inconsistência); e Ana aparecer em duas linhas é repetição (redundância)."
+        },
+        {
+          "id": "b",
+          "text": "Há apenas redundância; as diferenças de escrita são só estética e o algoritmo as ignora.",
+          "correct": false,
+          "explanation": "Errado. Para o algoritmo, `F` e `Feminino` são **categorias diferentes**, e 1,65 e 165 são números que diferem em 100 vezes. Isso não é estética: é inconsistência, e distorce qualquer média ou distância."
+        },
+        {
+          "id": "c",
+          "text": "Há apenas inconsistência; duplicar a pessoa é bom, pois aumenta o tamanho da base.",
+          "correct": false,
+          "explanation": "Errado. Linhas repetidas não trazem informação nova e podem fazer o modelo dar peso excessivo àquele caso. Duplicar por acidente é **redundância**, e é um dos riscos que o slide cita."
+        },
+        {
+          "id": "d",
+          "text": "Não há problema: como ambas as fontes são oficiais, a integração garante dados consistentes.",
+          "correct": false,
+          "explanation": "Errado. Fonte oficial não garante padronização entre sistemas. Cada sistema tem seus formatos e unidades; é justamente na integração que as divergências aparecem."
+        }
+      ],
+      "generalExplanation": "**Ideia central (slide 4):** juntar bases é como fazer um `JOIN` entre dois sistemas legados. Os dois riscos que a professora cita são **inconsistência** (valores/formatos/unidades diferentes para o mesmo dado) e **redundância** (dados repetidos). Os exemplos são ilustrações, mas os conceitos são os do slide."
+    },
+    {
+      "id": "q02",
+      "label": "As 6 tarefas",
+      "type": "multiple",
+      "prompt": "O slide 5 lista as **principais tarefas de pré-processamento de dados**. Marque **todas** as alternativas que são tarefas de pré-processamento.",
+      "options": [
+        {
+          "id": "a",
+          "text": "Ajustar os hiperparâmetros do modelo (por exemplo, a taxa de aprendizado).",
+          "correct": false,
+          "explanation": "Errada. Ajustar hiperparâmetros é a etapa **6** do processo de AM (depois de treinar e avaliar), não pré-processamento. Pré-processamento é a etapa 2: preparar os **dados** antes do modelo."
+        },
+        {
+          "id": "b",
+          "text": "Mudança de escala (normalização).",
+          "correct": true,
+          "explanation": "Correta. Colocar atributos numéricos em escalas comparáveis (min-max ou padronização) é a terceira tarefa do slide."
+        },
+        {
+          "id": "c",
+          "text": "Tratar os dados faltantes.",
+          "correct": true,
+          "explanation": "Correta. É a primeira da lista do slide 5: decidir o que fazer com células vazias (eliminar, preencher com média/moda etc.)."
+        },
+        {
+          "id": "d",
+          "text": "Balanceamento da base.",
+          "correct": true,
+          "explanation": "Correta. Equilibrar a quantidade de exemplos por classe (oversampling/undersampling) é a sexta tarefa do slide."
+        },
+        {
+          "id": "e",
+          "text": "Redução de dimensionalidade.",
+          "correct": true,
+          "explanation": "Correta. Ter menos atributos (por seleção ou agregação, como o PCA) é a quinta tarefa do slide."
+        },
+        {
+          "id": "f",
+          "text": "Calcular a acurácia do modelo no conjunto de teste.",
+          "correct": false,
+          "explanation": "Errada. Calcular a acurácia é **avaliação** do modelo, que ocorre depois do treinamento. Pré-processar é mexer nos dados antes de treinar."
+        }
+      ],
+      "generalExplanation": "As seis tarefas do slide 5: **faltantes, outliers, escala, tipo, dimensionalidade, balanceamento**. Tudo que envolve treinar, tunar ou medir o modelo vem **depois** e não é pré-processamento."
+    },
+    {
+      "id": "q03",
+      "label": "Diagnóstico de faltantes",
+      "type": "single",
+      "prompt": "Uma base de **1.000 pacientes** (alvo: `diagnostico`) tem estas colunas com dados faltantes:\n\n| Coluna | Tipo | % de vazios | Observação |\n| :-- | :-- | :-- | :-- |\n| `plano_antigo` | texto | 92% | plano de saúde descontinuado, sem relação com o diagnóstico |\n| `idade` | numérica | 2% | |\n| `fumante` | sim/não | 3% | |\n| `renda` | numérica | 35% | quem não informa renda costuma ter um perfil próprio; **a ausência em si é informativa** |\n\nQual conjunto de decisões é o **mais razoável**, segundo as alternativas do slide 6?",
+      "options": [
+        {
+          "id": "a",
+          "text": "`plano_antigo`: preencher os 92% com a moda; `idade`: eliminar a coluna; `fumante`: eliminar a coluna; `renda`: preencher com a média.",
+          "correct": false,
+          "explanation": "Errado nos quatro itens. Preencher 92% com a moda **inventa** a coluna quase inteira; `idade` e `fumante` têm pouquíssimos vazios e provavelmente são úteis, então jogar a coluna fora perde informação; e a `renda`, com ausência informativa, perde essa informação ao virar a média."
+        },
+        {
+          "id": "b",
+          "text": "`plano_antigo`: eliminar a coluna; `idade`: preencher com a média; `fumante`: preencher com a moda; `renda`: preencher com um valor que indique ausência de informação.",
+          "correct": true,
+          "explanation": "Correto. Coluna 92% vazia e irrelevante: **eliminar o atributo**. Poucos vazios numéricos: **média**. Poucos vazios simbólicos: **moda**. Quando a falta de resposta é informativa: **valor que indica ausência**. Lembre que média e moda devem ser calculadas **só no treino**."
+        },
+        {
+          "id": "c",
+          "text": "Eliminar toda linha que tenha qualquer valor vazio, em todas as colunas.",
+          "correct": false,
+          "explanation": "Errado. Com 92% de vazios em `plano_antigo`, praticamente **toda linha** seria eliminada, e o dataset sumiria. Eliminar exemplos só serve quando **poucas linhas** são afetadas e sobra muita base."
+        },
+        {
+          "id": "d",
+          "text": "Preencher manualmente todos os vazios de todas as colunas.",
+          "correct": false,
+          "explanation": "Errado. Preencher manualmente é o mais fiel, mas **não escala**; além disso, ninguém sabe o plano antigo de 920 pacientes. É uma alternativa válida só para poucos casos verificáveis."
+        }
+      ],
+      "generalExplanation": "O slide 6 oferece sete alternativas (eliminar coluna, eliminar linha, manual, heurística, valor indicador de ausência, média/moda, algoritmo de AM). A escolha depende da **proporção de vazios**, da **relevância da coluna** e de a ausência ser ou não informativa."
+    },
+    {
+      "id": "q04",
+      "label": "Riscos ao tratar faltantes",
+      "type": "multiple",
+      "prompt": "Sobre o tratamento de dados faltantes, marque **todas** as afirmações **verdadeiras**.",
+      "options": [
+        {
+          "id": "a",
+          "text": "A média (ou a moda) usada no preenchimento deve ser calculada com o conjunto de **treino** e depois aplicada ao teste.",
+          "correct": true,
+          "explanation": "Verdadeira. Calcular com a base toda faz informação do teste vazar para o pré-processamento (vazamento de dados). Aprende-se no treino, aplica-se nos dois."
+        },
+        {
+          "id": "b",
+          "text": "Para uma coluna **simbólica** (como `fumante`), o preenchimento adequado é a **média** do atributo.",
+          "correct": false,
+          "explanation": "Falsa. Não existe média de 'sim' e 'não'. Para atributos simbólicos usa-se a **moda** (o valor mais frequente); a média é para numéricos."
+        },
+        {
+          "id": "c",
+          "text": "Eliminar as linhas com vazios pode **enviesar** a amostra quando os vazios não ocorrem ao acaso, além de reduzir a base.",
+          "correct": true,
+          "explanation": "Verdadeira. Se, por exemplo, só os pacientes mais graves deixam um campo vazio, apagar essas linhas faz o modelo nunca ver esse perfil. E, mesmo sem viés, a base encolhe."
+        },
+        {
+          "id": "d",
+          "text": "Preencher com um valor indicador de ausência, como `-1`, é sempre seguro para algoritmos numéricos, pois esse valor não afeta o cálculo.",
+          "correct": false,
+          "explanation": "Falsa. Para um algoritmo numérico, `-1` é um número como outro qualquer e entra nas contas de distância e de média, podendo distorcer o modelo. Esse risco é uma desvantagem dessa alternativa."
+        },
+        {
+          "id": "e",
+          "text": "Ao usar um algoritmo de AM para estimar o valor faltante, o atributo com vazios passa a ser o **atributo alvo** desse modelo estimador.",
+          "correct": true,
+          "explanation": "Verdadeira. É a sétima alternativa do slide 6 (que cita exatamente 'atributo alvo'): treina-se um modelo com as linhas em que a coluna está preenchida e usa-se para prever os vazios."
+        },
+        {
+          "id": "f",
+          "text": "Preencher todos os vazios com a média faz esses exemplos ficarem **idênticos** naquele atributo e **reduz a variabilidade** dos dados.",
+          "correct": true,
+          "explanation": "Verdadeira. É a limitação da alternativa 'média ou moda': todos os vazios viram o mesmo valor, ignorando que cada exemplo é diferente."
+        }
+      ],
+      "generalExplanation": "Toda alternativa de preenchimento tem custo: eliminar perde dados (e pode enviesar), média/moda achata a variabilidade, valor indicador pode distorcer algoritmos numéricos, manual não escala. E os valores usados no preenchimento vêm **do treino**."
+    },
+    {
+      "id": "q05",
+      "label": "Ruído, outlier e Z-score",
+      "type": "single",
+      "prompt": "Num atributo cujos dados seguem aproximadamente uma **distribuição normal**, um valor tem **Z-score = −3,6**. Segundo a aula, o que se pode concluir?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O valor está a mais de 3 desvios padrão **abaixo** da média; pela regra do slide é um **outlier** e um indicador de possível ruído, mas ainda é preciso avaliar se é erro ou dado raro.",
+          "correct": true,
+          "explanation": "Correto. A regra do slide 9 é Z > 3 **ou** Z < −3. Na normal, 99,7% dos dados ficam entre Z = −3 e Z = 3, então ir além disso é raro. O slide chama o outlier de **indicador** de possível ruído, não de prova de erro."
+        },
+        {
+          "id": "b",
+          "text": "Não é outlier, porque o Z-score é negativo e só valores positivos podem ser outliers.",
+          "correct": false,
+          "explanation": "Errado. O sinal só indica o **lado** da média. Valores muito abaixo (Z < −3) são outliers tanto quanto os muito acima (Z > 3)."
+        },
+        {
+          "id": "c",
+          "text": "É outlier, mas somente porque o corte do slide é 2 desvios padrão.",
+          "correct": false,
+          "explanation": "Errado. O corte do slide é **3**, não 2. Com corte 2 você marcaria cerca de 5% dos dados normais como outliers, pois 95% ficam entre Z = −2 e 2."
+        },
+        {
+          "id": "d",
+          "text": "É necessariamente um erro de medição e deve ser removido da base.",
+          "correct": false,
+          "explanation": "Errado. Outlier **indica** possível ruído, mas pode ser um dado legítimo e raro (a fraude, o cliente VIP). A decisão entre remover, winsorizar ou manter exige análise."
+        }
+      ],
+      "generalExplanation": "**Z-score** = quantos desvios padrão o valor está da média. Regra 68-95-99,7 para ±1, ±2, ±3; **outlier se |Z| > 3**. Outlier é **indicador** de possível ruído, não sentença de erro."
+    },
+    {
+      "id": "q06",
+      "label": "Lendo histograma e boxplot",
+      "type": "multiple",
+      "prompt": "O gráfico mostra o histograma e o boxplot do **salário** de uma base de funcionários.\n\n![Histograma e boxplot do salário](../figures/f06_outliers.png)\n\nDados da base: **média ≈ R$ 3.666**; **mediana ≈ R$ 3.035**; limite superior pela regra 1,5 × IQR ≈ **R$ 5.983**; o IQR marcou **16** valores como outliers e o Z-score (corte |Z| > 3) marcou **6**.\n\nMarque **todas** as afirmações **corretas**.",
+      "options": [
+        {
+          "id": "a",
+          "text": "A média é maior que a mediana porque os poucos salários muito altos **puxam a média para cima**.",
+          "correct": true,
+          "explanation": "Correta. A média usa todos os valores, então os cinco pontos acima de R$ 30 mil a arrastam; a mediana (valor do meio) quase não se mexe. Essa diferença é sintoma de distribuição assimétrica com extremos."
+        },
+        {
+          "id": "b",
+          "text": "A distribuição é **assimétrica**, com uma cauda longa para a direita.",
+          "correct": true,
+          "explanation": "Correta. O histograma tem uma massa grande perto de R$ 2-5 mil e barras isoladas lá na frente. Não tem forma de sino simétrica."
+        },
+        {
+          "id": "c",
+          "text": "O Z-score marcou menos outliers que o IQR porque os valores extremos **inflam a média e o desvio padrão**, o que 'esconde' parte deles.",
+          "correct": true,
+          "explanation": "Correta. É a fraqueza do Z-score (slide 12): ele usa média e desvio, que são arrastados pelos extremos. O IQR usa quartis, que não são. Por isso 6 × 16."
+        },
+        {
+          "id": "d",
+          "text": "Como a distribuição é assimétrica, o **IQR** é mais indicado que o Z-score para detectar outliers nesses dados.",
+          "correct": true,
+          "explanation": "Correta. Pelo slide 12: IQR quando os dados são assimétricos ou a distribuição é desconhecida; Z-score quando seguem a normal."
+        },
+        {
+          "id": "e",
+          "text": "Como os dados têm forma de sino, o Z-score é o método mais indicado.",
+          "correct": false,
+          "explanation": "Falsa. Os dados **não** têm forma de sino (cauda longa à direita). O Z-score é indicado para distribuições normais/simétricas."
+        },
+        {
+          "id": "f",
+          "text": "A caixa do boxplot vai do menor ao maior salário da base, e os círculos são a mediana.",
+          "correct": false,
+          "explanation": "Falsa. A caixa vai de **Q1 a Q3** (os 50% centrais), a linha dentro dela é a **mediana**, os bigodes vão até os limites da regra 1,5×IQR e os **círculos** são os outliers."
+        }
+      ],
+      "generalExplanation": "Gráfico com cauda para um lado + média muito maior que a mediana = distribuição assimétrica com valores extremos. Nesse caso, prefira o **IQR** (robusto) ao Z-score (sensível porque depende da média e do desvio)."
+    },
+    {
+      "id": "q07",
+      "label": "Código: winsorização",
+      "type": "single",
+      "prompt": "Um colega trata os outliers do salário por winsorização e depois divide a base:\n\n```python\nq1 = df[\"salario\"].quantile(0.25)\nq3 = df[\"salario\"].quantile(0.75)\niqr = q3 - q1\nlimite_sup = q3 + 1.5 * iqr\n\n# achata os valores extremos para o limite\ndf[\"salario\"] = df[\"salario\"].clip(upper=limite_sup)\n\nX_train, X_test, y_train, y_test = train_test_split(\n    df.drop(columns=\"inadimplente\"), df[\"inadimplente\"], test_size=0.2)\n```\n\nQual é o **erro de lógica** neste trecho?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O limite superior deveria ser calculado somando 1,5 × IQR à **média**, e não ao Q3.",
+          "correct": false,
+          "explanation": "Errado. A regra do IQR soma ao **Q3** (e subtrai do **Q1**). Usar a média misturaria o método IQR com o Z-score e traria de volta a sensibilidade aos extremos."
+        },
+        {
+          "id": "b",
+          "text": "A winsorização é uma técnica proibida; o certo seria sempre remover as linhas.",
+          "correct": false,
+          "explanation": "Errado. A winsorização é uma das **três abordagens** do slide 13 (remover, winsorizar, manter com algoritmos robustos). O exemplo do slide é exatamente achatar para o limite superior do IQR."
+        },
+        {
+          "id": "c",
+          "text": "Os quartis e o `clip` foram calculados e aplicados na **base inteira, antes da divisão**; o correto é dividir primeiro e tratar os outliers **apenas no treino**.",
+          "correct": true,
+          "explanation": "Correto. O slide 13 diz: 'trate outliers apenas no conjunto de treino'. Aqui os limites usam informação do futuro conjunto de teste (vazamento) e o teste também é alterado, deixando de refletir o mundo real, em que existem salários extremos."
+        },
+        {
+          "id": "d",
+          "text": "O limite superior deveria ser `q3 + 3 * iqr`, porque a regra é 3 × IQR.",
+          "correct": false,
+          "explanation": "Errado. A regra do slide 11 é **1,5 × IQR**. O fator 3 é o corte do **Z-score**, outra técnica."
+        }
+      ],
+      "generalExplanation": "Qualquer coisa que se **aprende dos dados** (quartis, limites, médias) deve ser aprendida **só no treino**. A ordem certa é `train_test_split` primeiro, depois calcular os limites no treino e tratar o treino."
+    },
+    {
+      "id": "q08",
+      "label": "Mudança de escala",
+      "type": "multiple",
+      "prompt": "Sobre mudança de escala, marque **todas** as afirmações **corretas**.",
+      "options": [
+        {
+          "id": "a",
+          "text": "Na normalização min-max, os valores resultantes ficam no intervalo de **0 a 1**.",
+          "correct": true,
+          "explanation": "Correta (slide 15). O menor valor do atributo vira 0 e o maior vira 1; os demais ficam entre os dois."
+        },
+        {
+          "id": "b",
+          "text": "Na padronização, o atributo passa a ter **média 0 e desvio padrão 1**.",
+          "correct": true,
+          "explanation": "Correta (slide 16). Cada valor vira (valor − média) ÷ desvio padrão, que é o Z-score."
+        },
+        {
+          "id": "c",
+          "text": "Se os atributos estão em escalas muito diferentes, o algoritmo pode decidir **com base apenas nos atributos de escala maior**.",
+          "correct": true,
+          "explanation": "Correta (slide 14). Em contas de distância ou de gradiente, a coluna com números grandes domina e as pequenas viram quase ruído."
+        },
+        {
+          "id": "d",
+          "text": "Árvores de decisão, Random Forest e Gradient Boosting são, em geral, **pouco sensíveis** à escala dos atributos.",
+          "correct": true,
+          "explanation": "Correta. Árvores só testam se o valor passa de um corte aprendido na escala da própria coluna, então mudar a escala não altera as decisões. (O slide 13 lista esses modelos como robustos a outliers, e o princípio é parecido.)"
+        },
+        {
+          "id": "e",
+          "text": "A padronização deixa todos os valores entre 0 e 1, como o min-max.",
+          "correct": false,
+          "explanation": "Falsa. O slide 16 destaca justamente a diferença: a padronização **não tem limite inferior nem superior fixo**; valores como −2,3 ou 4,1 são normais."
+        },
+        {
+          "id": "f",
+          "text": "A normalização min-max é imune a outliers.",
+          "correct": false,
+          "explanation": "Falsa. Um outlier vira o máximo (ou o mínimo) e **espreme todo o resto** para perto de 0 (ou de 1). Min-max e padronização são sensíveis a extremos, e é por isso que se tratam os outliers primeiro (slide 18)."
+        }
+      ],
+      "generalExplanation": "Escala: **min-max → [0,1]** (usa mínimo e máximo); **padronização → média 0, desvio 1** (usa média e σ, sem limite fixo). Ambas sofrem com outliers. Modelos de distância e de gradiente pedem escala; árvores não. (Registro: o slide 17 cita Naive Bayes entre os 'baseados em gradiente', o que diverge da literatura; esta questão evita esse ponto.)"
+    },
+    {
+      "id": "q09",
+      "label": "Código: fit no teste",
+      "type": "single",
+      "prompt": "Este trecho padroniza os atributos e treina um k-NN:\n\n```python\nscaler = StandardScaler()\nX_train = scaler.fit_transform(X_train)\nX_test  = scaler.fit_transform(X_test)\n\nmodel = KNeighborsClassifier(n_neighbors=5)\nmodel.fit(X_train, y_train)\nprint(model.score(X_test, y_test))\n```\n\nQual é o **erro de lógica**?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O teste usa `fit_transform`, de modo que a média e o desvio padrão são **reaprendidos a partir do teste**; deveria ser `scaler.transform(X_test)`, reaproveitando o que foi aprendido no treino.",
+          "correct": true,
+          "explanation": "Correto. O teste tem de ser convertido com **a mesma régua do treino**. Com `fit_transform`, treino e teste ficam em escalas diferentes (cada um com sua média e seu desvio) e, além disso, o teste influencia o pré-processamento."
+        },
+        {
+          "id": "b",
+          "text": "Não se deve padronizar o conjunto de treino; só o de teste.",
+          "correct": false,
+          "explanation": "Errado. A estatística de escala é **aprendida no treino**. Padronizar só o teste inverteria a lógica."
+        },
+        {
+          "id": "c",
+          "text": "Padronização é desnecessária para o k-NN, porque ele não é sensível à escala dos atributos.",
+          "correct": false,
+          "explanation": "Errado. O k-NN mede **distâncias**; com colunas de escalas diferentes, a coluna de números maiores domina a distância (slide 14). Ele é um dos modelos que mais precisam de normalização."
+        },
+        {
+          "id": "d",
+          "text": "Falta chamar `scaler.fit(X_train)` antes de `fit_transform`; sem isso o escalonador não aprende nada.",
+          "correct": false,
+          "explanation": "Errado. `fit_transform` já faz o `fit` seguido de `transform`. Chamar `fit` antes seria redundante, não corrige nada."
+        }
+      ],
+      "generalExplanation": "Regra do scikit-learn: **`fit`/`fit_transform` só no treino; `transform` no teste.** Aprender a escala do teste é uma forma de vazamento de dados e coloca treino e teste em réguas diferentes."
+    },
+    {
+      "id": "q10",
+      "label": "Ordem: outliers × normalização",
+      "type": "single",
+      "prompt": "Você vai preparar a coluna numérica `salario` (que tem outliers) para treinar um modelo sensível à escala. As ações são:\n\n- **A.** Calcular média e desvio padrão do treino e padronizar treino e teste com eles\n- **B.** Dividir a base em treino e teste\n- **C.** Tratar os outliers do treino\n- **D.** Treinar o modelo\n\nQual é a **ordem correta**?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A → C → B → D",
+          "correct": false,
+          "explanation": "Errado em dois pontos: padroniza **antes** de tratar os outliers (a escala nasce contaminada) e antes de dividir (a média usa o teste: vazamento)."
+        },
+        {
+          "id": "b",
+          "text": "C → B → A → D",
+          "correct": false,
+          "explanation": "Errado. Os outliers são tratados antes de dividir, com a base inteira; os limites usam informação do teste e o teste fica alterado. O slide 13 manda tratar **apenas no treino**."
+        },
+        {
+          "id": "c",
+          "text": "B → A → C → D",
+          "correct": false,
+          "explanation": "Errado. A divisão está certa, mas a padronização vem **antes** do tratamento de outliers; a média e o desvio já saem inflados pelos extremos (slide 18)."
+        },
+        {
+          "id": "d",
+          "text": "B → C → A → D",
+          "correct": true,
+          "explanation": "Correto. Divide primeiro (B), trata outliers só no treino (C), e **depois** calcula a média e o desvio (já sem extremos) para padronizar (A); por fim treina (D). Obedece o slide 13 (outliers só no treino) e o slide 18 (outliers antes da normalização)."
+        }
+      ],
+      "generalExplanation": "Três regras em uma: (1) **dividir primeiro**; (2) tratar outliers **só no treino**; (3) tratar outliers **antes** de normalizar, porque min-max e padronização são extremamente sensíveis a valores extremos."
+    },
+    {
+      "id": "q11",
+      "label": "Ordinal × nominal",
+      "type": "single",
+      "prompt": "Um algoritmo exige que todos os atributos sejam numéricos. A base tem estas colunas simbólicas:\n\n| Atributo | Valores possíveis |\n| :-- | :-- |\n| `tamanho_camisa` | P, M, G, GG |\n| `cidade` | Natal, Mossoró, Caicó |\n| `nivel_escolar` | fundamental, médio, superior |\n| `cor_preferida` | azul, verde, vermelho |\n\nQual conversão é a **mais adequada**, segundo os slides 19 e 20?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Todos com one-hot, porque inteiros nunca podem ser usados em atributos simbólicos.",
+          "correct": false,
+          "explanation": "Errado. O slide 19 diz que, se o atributo é **ordinal**, 'pode-se fazer uma conversão simples para valores inteiros ordenáveis'. One-hot funcionaria, mas não é a regra nem é necessário aqui."
+        },
+        {
+          "id": "b",
+          "text": "`tamanho_camisa` e `nivel_escolar` → inteiros que respeitam a ordem; `cidade` e `cor_preferida` → one-hot.",
+          "correct": true,
+          "explanation": "Correto. Os dois primeiros são **ordinais** (existe ordem: P < M < G < GG; fundamental < médio < superior), então inteiros ordenados fazem sentido. Cidade e cor são **nominais** (sem ordem), então se usa one-hot, para que a diferença entre quaisquer dois valores seja sempre a mesma."
+        },
+        {
+          "id": "c",
+          "text": "Todos com inteiros sequenciais (Natal = 0, Mossoró = 1, Caicó = 2 etc.), usando `LabelEncoder`.",
+          "correct": false,
+          "explanation": "Errado para os nominais. Com inteiros, o algoritmo 'entende' que Caicó (2) é maior que Natal (0) e que Mossoró está 'entre' os dois; uma ordem e distâncias que não existem."
+        },
+        {
+          "id": "d",
+          "text": "`tamanho_camisa` e `nivel_escolar` → one-hot; `cidade` e `cor_preferida` → inteiros ordenados.",
+          "correct": false,
+          "explanation": "Errado: é o inverso do correto. Aplicar inteiros a atributos **sem** ordem (cidade, cor) inventa ordem; e jogar fora a ordem real dos ordinais perde informação."
+        }
+      ],
+      "generalExplanation": "**Ordinal** (tem ordem) → inteiros ordenados. **Nominal** (sem ordem) → one-hot, que usa c bits para c valores. Inteiros arbitrários em nominais criam **ordem e distâncias falsas**."
+    },
+    {
+      "id": "q12",
+      "label": "Discretização",
+      "type": "single",
+      "prompt": "Um analista transforma o atributo numérico `idade` (valores de 0 a 100) em quatro faixas com rótulos (`criança`, `jovem`, `adulto`, `idoso`) dividindo o intervalo de 0 a 100 em quatro partes de **mesma largura** (0-25, 25-50, 50-75, 75-100). Qual descrição está **correta**?",
+      "options": [
+        {
+          "id": "a",
+          "text": "É uma conversão **simbólico → numérico**, feita com one-hot encoding.",
+          "correct": false,
+          "explanation": "Errado: a direção está invertida. Aqui o atributo **já é numérico** e vira simbólico. Simbólico → numérico é a codificação (ordinal em inteiros, nominal em one-hot)."
+        },
+        {
+          "id": "b",
+          "text": "É uma padronização, pois a idade passa a ter média 0 e desvio padrão 1.",
+          "correct": false,
+          "explanation": "Errado. Padronização mantém o atributo **numérico** e muda sua escala. Aqui os números viram rótulos de faixas."
+        },
+        {
+          "id": "c",
+          "text": "Larguras iguais significa que cada faixa vai ter **a mesma quantidade de exemplos**.",
+          "correct": false,
+          "explanation": "Errado. Larguras iguais garante que as faixas tenham o **mesmo tamanho em valores**, não a mesma quantidade de amostras. Se a maioria dos clientes tiver entre 20 e 40 anos, uma faixa terá muitos exemplos e outras quase nenhum. (Igual quantidade de exemplos é outra estratégia, a de frequências iguais, que não está no slide.)"
+        },
+        {
+          "id": "d",
+          "text": "É uma conversão **numérico → simbólico** (discretização) pela estratégia de **larguras iguais**: definem-se intervalos e cada um recebe um rótulo.",
+          "correct": true,
+          "explanation": "Correto (slide 21). Discretizar é definir intervalos de valores e rotular cada um. 'Larguras iguais' divide o intervalo original em subintervalos de mesma largura, exatamente o que foi feito."
+        }
+      ],
+      "generalExplanation": "**Numérico → simbólico = discretização**: intervalos + rótulos. A estratégia do slide 21 é **larguras iguais**. Não confunda a direção com a da codificação (simbólico → numérico)."
+    },
+    {
+      "id": "q13",
+      "label": "Por que reduzir dimensões",
+      "type": "multiple",
+      "prompt": "Sobre redução de dimensionalidade, marque **todas** as afirmações **corretas**.",
+      "options": [
+        {
+          "id": "a",
+          "text": "Atributos **ruidosos, irrelevantes ou redundantes** podem confundir o algoritmo e esconder os poucos atributos realmente relevantes.",
+          "correct": true,
+          "explanation": "Correta (slide 22, segundo motivo). Ter muitas colunas não é sinônimo de mais informação; colunas inúteis atrapalham."
+        },
+        {
+          "id": "b",
+          "text": "`Id` e `Nome` são exemplos de atributos **irrelevantes**, e `data_nascimento` e `idade` são exemplos de atributos **redundantes**.",
+          "correct": true,
+          "explanation": "Correta (slides 28 e 29). Id e Nome não se relacionam com o diagnóstico; já a idade pode ser deduzida da data de nascimento."
+        },
+        {
+          "id": "c",
+          "text": "Com mais atributos, é preciso **mais amostras** para cobrir as combinações possíveis de valores e construir modelos que generalizem (maldição da dimensionalidade).",
+          "correct": true,
+          "explanation": "Correta (slide 23). É como testar um sistema com N flags booleanas: o número de combinações explode e os casos de teste nunca bastam."
+        },
+        {
+          "id": "d",
+          "text": "Quanto mais atributos a base tiver, **sempre** melhor será o desempenho do modelo.",
+          "correct": false,
+          "explanation": "Falsa. O slide 22 abre justamente dizendo que 'intuitivamente, quanto mais atributos melhor, porém na prática isso nem sempre é verdade'."
+        },
+        {
+          "id": "e",
+          "text": "A **seleção** de atributos combina várias colunas em novas colunas, enquanto a **agregação** simplesmente descarta colunas.",
+          "correct": false,
+          "explanation": "Falsa: está trocado. **Seleção** escolhe um subconjunto das colunas originais e descarta o resto; **agregação** funde/combina colunas em novas medidas (como o PCA). Slides 26 a 30."
+        },
+        {
+          "id": "f",
+          "text": "Reduzir atributos tem como desvantagem a **perda de informações**, e o modelo pode até ficar pior do que com a base original.",
+          "correct": true,
+          "explanation": "Correta (slide 25). As vantagens são menor custo de armazenamento e possível ganho de desempenho; o preço é o risco de perder informação útil."
+        }
+      ],
+      "generalExplanation": "Reduzir dimensões ajuda por **custo e por qualidade** (menos tempo e armazenamento, menos colunas confusas), mas custa **informação**. Duas abordagens: **seleção** (escolhe colunas originais) e **agregação** (combina colunas, como o PCA)."
+    },
+    {
+      "id": "q14",
+      "label": "PCA: quantos componentes?",
+      "type": "single",
+      "prompt": "Um PCA foi aplicado a uma base de 10 atributos **já padronizados**. O gráfico mostra a variância explicada por cada componente (barras) e a variância **acumulada** (linha vermelha). A linha tracejada marca **95%**.\n\n![Variância explicada por componente e acumulada](../figures/f08_pca.png)\n\nVocê quer reduzir o número de atributos mantendo **pelo menos 95%** da variância. Qual o **menor** número de componentes principais que atende?",
+      "options": [
+        {
+          "id": "a",
+          "text": "2 componentes.",
+          "correct": false,
+          "explanation": "Errado. Com 2 componentes a variância acumulada é de ≈ 74%, bem abaixo do patamar de 95%. O PC1 sozinho explica ≈ 49% e o PC2 ≈ 25%."
+        },
+        {
+          "id": "b",
+          "text": "4 componentes.",
+          "correct": false,
+          "explanation": "Errado. Com 4 a linha vermelha está em ≈ 92%, ainda **abaixo** da linha tracejada de 95%. Falta pouco, mas não atinge."
+        },
+        {
+          "id": "c",
+          "text": "5 componentes.",
+          "correct": true,
+          "explanation": "Correto. É no 5º componente que a curva acumulada cruza a linha tracejada (≈ 95%). Assim, 10 atributos viram 5, perdendo cerca de 5% da variância. Lembre que cada componente é uma **combinação linear** das colunas originais, logo se perde o significado dos atributos originais (slide 31)."
+        },
+        {
+          "id": "d",
+          "text": "10 componentes.",
+          "correct": false,
+          "explanation": "Errado. Com 10 componentes a variância acumulada é 100%, mas **não houve redução alguma**. A pergunta pede o **menor** número que atenda ao critério."
+        }
+      ],
+      "generalExplanation": "Pelo slide 47, mantêm-se os componentes de **maiores autovalores** (os que explicam mais variância). Na prática, escolhe-se o menor número de componentes cuja variância **acumulada** atinge o patamar desejado (aqui, 95% com 5 componentes). Requisitos do PCA (slide 35): atributos numéricos e **padronizados**."
+    },
+    {
+      "id": "q15",
+      "label": "Código: oversampling",
+      "type": "single",
+      "prompt": "A base tem 80% de pacientes `doente` e 20% `saudavel`. Um colega balanceia por oversampling e só depois divide:\n\n```python\nfrom sklearn.utils import resample\n\nminoria = df[df[\"classe\"] == \"saudavel\"]\nmaioria = df[df[\"classe\"] == \"doente\"]\n\n# duplica aleatoriamente a classe minoritária até igualar a maioria\nminoria_up = resample(minoria, replace=True,\n                      n_samples=len(maioria), random_state=0)\ndf_bal = pd.concat([maioria, minoria_up])\n\nX_train, X_test, y_train, y_test = train_test_split(\n    df_bal.drop(columns=\"classe\"), df_bal[\"classe\"], test_size=0.2)\n```\n\nQual é o **erro de lógica**?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O balanceamento deveria ser feito apenas no conjunto de **teste**, e não no de treino.",
+          "correct": false,
+          "explanation": "Errado e invertido. O balanceamento é feito **no treino**, para o modelo não favorecer a classe majoritária. O teste deve ficar como está, representando os dados reais."
+        },
+        {
+          "id": "b",
+          "text": "O oversampling deveria aumentar a classe **majoritária**, e não a minoritária.",
+          "correct": false,
+          "explanation": "Errado. Oversampling = aumentar a classe **minoritária** (undersampling = diminuir a majoritária). Duplicar a majoritária agravaria o desbalanceamento."
+        },
+        {
+          "id": "c",
+          "text": "O oversampling foi feito **antes da divisão**: cópias idênticas da mesma linha caem no treino **e** no teste, inflando a avaliação; além disso o teste deixa de refletir a proporção real (80/20). Deve-se dividir primeiro e balancear **só o treino**.",
+          "correct": true,
+          "explanation": "Correto. Como o oversampling aqui é duplicar linhas (slide 49), depois de embaralhar e dividir várias cópias ficam em ambos os conjuntos: o modelo é 'testado' em exemplos que já viu. E o teste precisa manter a distribuição do mundo real."
+        },
+        {
+          "id": "d",
+          "text": "Duplicar exemplos nunca é permitido; o correto seria sempre fazer undersampling.",
+          "correct": false,
+          "explanation": "Errado. A duplicação é a forma mais simples de **sobreamostragem**, citada no slide 49 (com o risco de sobreajuste). O problema aqui não é a técnica, é **quando** foi aplicada."
+        }
+      ],
+      "generalExplanation": "Balanceamento é pré-processamento **do treino**: dividir → balancear o treino → treinar → testar numa base **não alterada**. Duplicar antes de dividir é vazamento de dados. Riscos do slide 49: oversampling → sobreajuste; undersampling → perda de informação."
+    },
+    {
+      "id": "q16",
+      "label": "Ordem do pipeline completo",
+      "type": "single",
+      "prompt": "Você vai montar o pré-processamento completo de uma base **numérica, com outliers e com classes desbalanceadas**, usando PCA antes de treinar. As ações são:\n\n- **A.** Padronizar os atributos (média e desvio calculados no treino)\n- **B.** Dividir a base em treino e teste\n- **C.** Aplicar o PCA (ajustado no treino)\n- **D.** Balancear as classes do treino (oversampling)\n- **E.** Tratar os outliers do treino\n- **F.** Treinar o modelo\n\nQual é a **ordem correta**?",
+      "options": [
+        {
+          "id": "a",
+          "text": "B → E → A → C → D → F",
+          "correct": true,
+          "explanation": "Correto. Divide (B); trata outliers só no treino (E, slide 13); padroniza já sem extremos (A, slide 18); aplica PCA sobre dados padronizados (C, slide 35); balanceia só o treino (D); treina (F)."
+        },
+        {
+          "id": "b",
+          "text": "D → B → E → A → C → F",
+          "correct": false,
+          "explanation": "Errado: balanceia **antes** de dividir. Cópias da minoria ficariam no treino e no teste, e o teste não refletiria a proporção real. Balancear é só no treino."
+        },
+        {
+          "id": "c",
+          "text": "B → E → C → A → D → F",
+          "correct": false,
+          "explanation": "Errado: aplica o PCA **antes** de padronizar. O slide 35 exige dados padronizados; sem isso, a coluna de maior escala dominaria a variância e o PC1."
+        },
+        {
+          "id": "d",
+          "text": "B → A → E → C → D → F",
+          "correct": false,
+          "explanation": "Errado: padroniza **antes** de tratar os outliers, contaminando a escala (slide 18)."
+        }
+      ],
+      "generalExplanation": "Resumo da ordem: **dividir primeiro**; tudo que é aprendido (limites, média, σ, componentes) vem do **treino**; outliers **antes** da escala; escala **antes** do PCA; balanceamento **só no treino**; depois treinar. No teste, aplica-se apenas o que foi aprendido (`transform`), sem remover outliers nem balancear."
+    }
+  ],
+  "closing": "Se errou as questões de **ordem** ou de **código**, releia a seção 18 (*A ordem certa do pipeline*): dividir primeiro, `fit` só no treino, `transform` no teste, outliers antes da escala, balanceamento só no treino."
+}

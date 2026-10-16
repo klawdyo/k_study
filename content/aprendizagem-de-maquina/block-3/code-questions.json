@@ -1,0 +1,635 @@
+{
+  "schema": "questions/v2",
+  "id": "code-questions",
+  "title": "Questões de Código · Bloco 3: Métricas de Classificação no Scikit-Learn",
+  "questions": [
+    {
+      "id": "c3-q01",
+      "type": "single",
+      "prompt": "Analise o trecho, que avalia um classificador binário:\n```python\nfrom sklearn.metrics import precision_score, recall_score\n\n# y_test: rótulos reais de teste\n# y_pred: rótulos previstos pelo classificador\nprec = precision_score(y_pred, y_test)\nrec = recall_score(y_pred, y_test)\n```\nQual é o erro de lógica?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O precision_score exige rótulos em texto; com inteiros 0 e 1 o código levantaria TypeError já na primeira chamada, antes de calcular qualquer valor.",
+          "correct": false,
+          "explanation": "Incorreto. As funções aceitam inteiros, booleanos ou strings sem problema; o código roda e devolve números. O defeito é que os números saem com os significados trocados."
+        },
+        {
+          "id": "b",
+          "text": "Falta envolver as duas chamadas em try/except, pois as métricas do scikit-learn levantam exceção sempre que a classe positiva é rara no conjunto de teste, além de avisos no log.",
+          "correct": false,
+          "explanation": "Incorreto. Classe rara não gera exceção; no máximo um aviso quando a divisão tem denominador zero. Não existe exigência de try/except para chamar métricas padrão."
+        },
+        {
+          "id": "c",
+          "text": "Os dois argumentos estão invertidos: a assinatura é (y_true, y_pred), então o número rotulado como precisão é, na verdade, o recall, e o rotulado como recall é a precisão.",
+          "correct": true,
+          "explanation": "Correto. Ao passar o previsto no lugar do real, o que era 'positivo real' vira 'positivo previsto' e vice-versa. O código roda sem erro e imprime números plausíveis, só que com os nomes trocados: é um erro silencioso."
+        },
+        {
+          "id": "d",
+          "text": "Não há erro: precisão e recall são simétricas nos dois argumentos, então trocar y_test por y_pred devolve exatamente os mesmos valores.",
+          "correct": false,
+          "explanation": "Incorreto. Só a acurácia é simétrica nos argumentos. Precisão e recall dividem VP por totais diferentes (previstos positivos × reais positivos), então a troca inverte uma pela outra."
+        }
+      ],
+      "generalExplanation": "No scikit-learn a convenção é sempre `metrica(y_true, y_pred)`: primeiro o gabarito, depois a previsão. Se você inverte, o numerador (VP) continua o mesmo, mas o denominador de precisão (VP+FP) e o de recall (VP+FN) trocam de lugar. Analogia de engenharia: é como trocar `expected` e `actual` num assert; o teste roda, mas a mensagem de erro engana.\n\nCorreção:\n```python\nprec = precision_score(y_test, y_pred)\nrec = recall_score(y_test, y_pred)\n```",
+      "label": "Argumentos de métrica invertidos"
+    },
+    {
+      "id": "c3-q02",
+      "type": "single",
+      "prompt": "Um engenheiro quer extrair os quatro valores da matriz de confusão de um classificador binário (classes 0 e 1, a 1 é a positiva):\n```python\nfrom sklearn.metrics import confusion_matrix\n\ncm = confusion_matrix(y_true, y_pred)\nvp, fn, fp, vn = cm.ravel()\n```\nQual é o defeito do desempacotamento?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A ordem do ravel() é VN, FP, FN, VP; as quatro variáveis ficam trocadas: vp recebe VN, fn recebe FP, fp recebe FN e vn recebe VP, e todas as métricas saem erradas.",
+          "correct": true,
+          "explanation": "Correto. A matriz é [[VN, FP], [FN, VP]] e o ravel() lê linha por linha: VN, FP, FN, VP. Na atribuição, vp ← VN, fn ← FP, fp ← FN, vn ← VP. Testamos no Python: nenhuma das quatro variáveis ficou com o valor certo."
+        },
+        {
+          "id": "b",
+          "text": "Só vp e vn estão trocados; fn e fp ficaram nos lugares certos, então só as métricas de acerto saem erradas e precisão e recall continuam corretos.",
+          "correct": false,
+          "explanation": "Incorreto. Com a ordem [VN, FP, FN, VP], o segundo valor (FP) cai em fn e o terceiro (FN) cai em fp: também estão trocados. Como precisão e recall usam fp e fn, eles também saem errados."
+        },
+        {
+          "id": "c",
+          "text": "O ravel() percorre a matriz coluna por coluna, então a ordem real seria VN, FN, FP, VP e o código só errou ao atribuir as variáveis fn e fp.",
+          "correct": false,
+          "explanation": "Incorreto. Por padrão o ravel() do NumPy lê linha por linha (ordem C), e a linha 0 é [VN, FP]. Ler por colunas exigiria pedir order='F'. A ordem correta é VN, FP, FN, VP."
+        },
+        {
+          "id": "d",
+          "text": "O código está correto: o scikit-learn coloca a classe positiva na primeira linha e na primeira coluna, então o primeiro elemento da matriz é o VP.",
+          "correct": false,
+          "explanation": "Incorreto. As classes são ordenadas de forma crescente: a 0 (negativa) vem primeiro, na linha e coluna 0. O VP fica na última posição, a de índice 3."
+        }
+      ],
+      "generalExplanation": "A convenção do `confusion_matrix` para rótulos 0 e 1 é `[[VN, FP], [FN, VP]]`: linhas são o real, colunas o previsto. O `ravel()` achata a matriz linha por linha, e a ordem fica **VN, FP, FN, VP**. O desempacotamento certo é `vn, fp, fn, vp = cm.ravel()`. Dica de prova: se a ordem das variáveis não começa por vn e não termina em vp, desconfie.",
+      "label": "Desempacotar a matriz de confusão"
+    },
+    {
+      "id": "c3-q03",
+      "type": "single",
+      "prompt": "Considere o cálculo da métrica ROC-AUC:\n```python\nfrom sklearn.metrics import roc_auc_score\n\nmodel.fit(X_train, y_train)\n\ny_pred = model.predict(X_test)\nauc = roc_auc_score(y_test, y_pred)\n```\nQual é o problema do cálculo de `auc`?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A AUC deveria usar a probabilidade da classe 0, e não a da classe 1, porque roc_auc_score mede o poder do modelo de separar a classe negativa.",
+          "correct": false,
+          "explanation": "Incorreto. O escore pedido é o da classe positiva (coluna 1 do predict_proba). Usar a coluna 0 inverteria o ranqueamento e a AUC viraria 1 menos o valor real."
+        },
+        {
+          "id": "b",
+          "text": "A ordem está trocada: roc_auc_score espera primeiro o escore e depois o rótulo real, então o certo seria roc_auc_score(y_pred, y_test) neste caso.",
+          "correct": false,
+          "explanation": "Incorreto. A assinatura é (y_true, y_score): o gabarito primeiro, o escore depois. A ordem do código está certa; o defeito é o que foi passado como escore."
+        },
+        {
+          "id": "c",
+          "text": "Falta binarizar y_pred com um limiar de 0,5 antes da chamada, porque roc_auc_score exige rótulos 0 e 1 e não aceita números contínuos, como as probabilidades do predict_proba.",
+          "correct": false,
+          "explanation": "Incorreto. É o contrário: a função aceita (e quer) escores contínuos, justamente para varrer todos os limiares. Binarizar antes joga fora a informação que a AUC precisa."
+        },
+        {
+          "id": "d",
+          "text": "Foram passados rótulos 0 e 1 de predict(): só existe um limiar efetivo, a curva ROC vira poucos pontos e a AUC sai grosseira; o certo é passar predict_proba(X_test)[:, 1].",
+          "correct": true,
+          "explanation": "Correto. A ROC varia o limiar sobre escores contínuos. Rótulos 0/1 já são o resultado de um limiar único (0,5), e a informação de ranqueamento se perde. Num teste nosso, a AUC caiu de cerca de 0,92 para 0,82 só por essa troca."
+        }
+      ],
+      "generalExplanation": "Para a curva ROC e a AUC, forneça o **escore contínuo** da classe positiva: `model.predict_proba(X_test)[:, 1]` (ou `decision_function`). `predict()` já aplica o limiar de 0,5 e devolve só 0 ou 1; com isso a curva ROC passa por apenas três pontos, (0,0), (FPR,TPR) e (1,1), e a AUC sai pior e enganosa.\n\nCorreção:\n```python\ny_prob = model.predict_proba(X_test)[:, 1]\nauc = roc_auc_score(y_test, y_prob)\n```",
+      "label": "ROC-AUC com rótulos"
+    },
+    {
+      "id": "c3-q04",
+      "type": "single",
+      "prompt": "Um analista quer priorizar o recall num detector de fraudes, onde deixar passar uma fraude custa caro. Ele escreveu:\n```python\n# probabilidade prevista para a classe 1 (fraude)\ny_probs = model.predict_proba(X_test)[:, 1]\n\n# limiar customizado, em vez do 0,50 padrão\ny_pred_custom = (y_probs >= 0.20).astype(int)\n```\nQual é a intenção técnica e o efeito esperado nas métricas?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Baixar o limiar para tornar o modelo mais conservador: com 0,20 só os casos muito prováveis são marcados, então a precisão sobe e os falsos positivos caem.",
+          "correct": false,
+          "explanation": "Incorreto. Marcar só casos muito prováveis seria subir o limiar (por exemplo, para 0,90). Baixar o limiar deixa o modelo mais permissivo, o que aumenta falsos positivos e reduz a precisão."
+        },
+        {
+          "id": "b",
+          "text": "Baixar o limiar de 0,50 para 0,20 para marcar como fraude também os casos menos prováveis: o recall tende a subir e a precisão a cair, pois surgem mais alarmes falsos.",
+          "correct": true,
+          "explanation": "Correto. Com 0,20, qualquer transação com 20% de suspeita já é marcada. Menos fraudes escapam (menos falsos negativos, recall maior), mas mais legítimas são acusadas (mais falsos positivos, precisão menor)."
+        },
+        {
+          "id": "c",
+          "text": "Aumentar a acurácia geral: ao diminuir o limiar o modelo acerta mais negativos, e por isso o recall e a precisão sobem juntos na mesma proporção.",
+          "correct": false,
+          "explanation": "Incorreto. Recall e precisão costumam andar em sentidos opostos quando o limiar muda (trade-off), e a acurácia geral não sobe necessariamente: os novos alarmes falsos podem até reduzi-la."
+        },
+        {
+          "id": "d",
+          "text": "Não alterar as métricas: o limiar de 0,20 só muda a probabilidade exibida, e os rótulos previstos continuam os mesmos que predict() devolveria.",
+          "correct": false,
+          "explanation": "Incorreto. predict() usa 0,50; ao comparar as probabilidades com 0,20 mais exemplos viram classe 1. Os rótulos mudam, e com eles a matriz de confusão e as métricas."
+        }
+      ],
+      "generalExplanation": "Quando o falso negativo é o erro caro (fraude, doença), **baixa-se o limiar de decisão** para aumentar o recall, aceitando mais falsos positivos (trade-off). O limiar é um parâmetro do **uso** do modelo: o modelo continua o mesmo, só muda o ponto de corte aplicado às probabilidades. Boa prática: escolher o limiar em dados de validação, nunca no teste (veja a questão sobre ajuste de limiar no teste).",
+      "label": "Baixar o limiar para pegar fraudes"
+    },
+    {
+      "id": "c3-q05",
+      "type": "single",
+      "prompt": "Observe o trecho:\n```python\nfrom sklearn.metrics import classification_report\n\n# Teste: 9.900 amostras da classe A e 100 da classe B\ny_pred = model.predict(X_test)\nprint(classification_report(y_test, y_pred))\n```\nO modelo prevê a classe A para todas as amostras. Quais linhas do relatório mostram o fracasso na classe B?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A linha accuracy, que cairá para perto de 0,50, porque o modelo errou todas as amostras da classe B e esse erro pesa metade da nota.",
+          "correct": false,
+          "explanation": "Incorreto. A acurácia é uma conta sobre todas as amostras: 9.900 acertos em 10.000 dá 0,99. Os 100 erros da classe B pesam só 1%. É exatamente por isso que ela mascara o problema."
+        },
+        {
+          "id": "b",
+          "text": "A linha weighted avg, que ficará em torno de 0,50, porque pondera as classes pelo suporte e a classe B zerada puxa o F1 médio para baixo de forma proporcional ao seu tamanho no teste.",
+          "correct": false,
+          "explanation": "Incorreto. Ponderar pelo suporte dá peso de 99% à classe A. A weighted avg fica em torno de 0,98 a 0,99 e esconde o fracasso na classe B; é a macro avg que a revela."
+        },
+        {
+          "id": "c",
+          "text": "A linha da própria classe B (precisão, recall e F1 iguais a 0,00) e a macro avg, com F1 em torno de 0,50, pois a média simples dá à classe B o mesmo peso da classe A.",
+          "correct": true,
+          "explanation": "Correto. A classe B aparece zerada na sua linha. A macro avg não pondera pelo suporte: com F1 de cerca de 0,99 na A e 0,00 na B, a média simples dá cerca de 0,50. O scikit-learn ainda emite um aviso de métrica indefinida para a precisão de B."
+        },
+        {
+          "id": "d",
+          "text": "Nenhuma linha mostra o problema: o relatório só traz médias, e por isso o F1 da classe B some quando o modelo prevê tudo como a classe A.",
+          "correct": false,
+          "explanation": "Incorreto. O relatório traz uma linha para cada classe, além das médias. A linha da classe B existe e mostra recall 0,00, que é justamente o sinal de alarme."
+        }
+      ],
+      "generalExplanation": "Em bases desbalanceadas, a **acurácia** e a **weighted avg** são dominadas pela classe abundante. O que revela a falha é a **linha da classe rara** (recall 0,00) e a **macro avg**, que trata as classes com o mesmo peso. Executamos o caso: accuracy 0,99, weighted avg ≈ 0,98 de precisão e 0,99 de F1, macro avg com F1 de 0,50.\n\nO aviso `UndefinedMetricWarning` aparece porque, sem nenhuma previsão da classe B, a precisão dela seria uma divisão por zero; o scikit-learn a define como 0.",
+      "label": "Ler o classification_report"
+    },
+    {
+      "id": "c3-q06",
+      "type": "single",
+      "prompt": "Um desenvolvedor escreveu esta rotina de validação:\n```python\nfrom sklearn.metrics import accuracy_score\n\nmodel.fit(X_train, y_train)\ny_pred_train = model.predict(X_train)\nscore = accuracy_score(y_train, y_pred_train)\nprint(f'Desempenho esperado em produção: {score:.2f}')\n```\nQual é o erro metodológico?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A acurácia foi medida em X_train, os mesmos dados usados no fit, então não estima o desempenho em produção; é preciso medir em X_test, que o modelo nunca viu.",
+          "correct": true,
+          "explanation": "Correto. Um modelo flexível, como uma árvore sem poda, pode decorar o treino e marcar perto de 100%, mesmo falhando em dados novos. Só o conjunto de teste, separado antes do treino, estima a generalização."
+        },
+        {
+          "id": "b",
+          "text": "O fit deveria receber X_test e y_test, para que o modelo aprenda com os dados mais recentes antes de a acurácia ser medida para o uso em produção.",
+          "correct": false,
+          "explanation": "Incorreto. Treinar no teste contaminaria a única amostra independente que existe. O correto é treinar no treino e medir no teste; as duas partes não podem se misturar."
+        },
+        {
+          "id": "c",
+          "text": "A acurácia é métrica de regressão; para estimar o desempenho em produção seria preciso usar o R² calculado sobre as previsões do treino.",
+          "correct": false,
+          "explanation": "Incorreto. A acurácia é métrica de classificação, adequada aqui; o R² é de regressão. Além disso, qualquer métrica calculada no treino sofre do mesmo problema."
+        },
+        {
+          "id": "d",
+          "text": "O código está certo: treinar e medir nos mesmos dados confirma que o modelo aprendeu, e em produção o desempenho só pode ser igual ou maior que o do treino.",
+          "correct": false,
+          "explanation": "Incorreto. Em produção o desempenho costuma ser menor que o do treino, e a diferença é o overfitting. Nota de treino alta não prova que o modelo generaliza."
+        }
+      ],
+      "generalExplanation": "O treino serve para **aprender**; o teste serve para **medir**. Medir no treino devolve uma nota inflada (overfitting escondido). É como validar um sistema só com os casos de teste usados para escrevê-lo.\n\nCorreção:\n```python\ny_pred_test = model.predict(X_test)\nscore = accuracy_score(y_test, y_pred_test)\n```\nSe o treino marcar bem mais que o teste, o modelo está em overfitting.",
+      "label": "Nota medida no treino"
+    },
+    {
+      "id": "c3-q07",
+      "type": "single",
+      "prompt": "Analise o trecho que avalia um classificador binário:\n```python\nfrom sklearn.metrics import r2_score, mean_squared_error\n\nr2 = r2_score(y_test, y_pred)\nmse = mean_squared_error(y_test, y_pred)\n```\nAs variáveis `y_test` e `y_pred` contêm apenas as classes 0 ('Legítimo') e 1 ('Fraude'). O que há de errado no uso dessas funções?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O MSE exige que y_pred seja uma probabilidade; com rótulos 0 e 1 o valor sai sempre zero, então a única correção possível é usar predict_proba.",
+          "correct": false,
+          "explanation": "Incorreto. Com rótulos 0/1 o MSE é a fração de erros, diferente de zero sempre que o modelo erra. O problema é a escolha da métrica, não o formato de y_pred."
+        },
+        {
+          "id": "b",
+          "text": "O R² só pode ser calculado sobre os dados de treino; no conjunto de teste deve-se usar apenas o erro quadrático médio, que é a métrica de classificação, conforme a documentação do módulo.",
+          "correct": false,
+          "explanation": "Incorreto. R² e MSE são ambos métricas de regressão e podem ser calculados no teste. O erro é usá-las para um classificador, e não em qual conjunto são calculadas."
+        },
+        {
+          "id": "c",
+          "text": "As duas métricas são adequadas enquanto as classes forem numéricas como 0 e 1; só para rótulos em texto seria necessário trocar por acurácia.",
+          "correct": false,
+          "explanation": "Incorreto. Que as classes sejam números não torna a tarefa uma regressão. A natureza do alvo (categórica) define a métrica, não o tipo de dado em que o rótulo está guardado."
+        },
+        {
+          "id": "d",
+          "text": "R² e erro quadrático médio são métricas de regressão; para classes 0 e 1 devem-se usar acurácia, precisão, recall, F1 ou AUC, que partem da matriz de confusão.",
+          "correct": true,
+          "explanation": "Correto. R² e MSE medem distância numérica entre valores contínuos. Com rótulos 0/1, o MSE vira só a taxa de erro (1 menos a acurácia) e o R² perde o sentido. Nenhum deles distingue falso positivo de falso negativo."
+        }
+      ],
+      "generalExplanation": "A métrica precisa casar com a **tarefa**: regressão (alvo contínuo) usa R², MSE, MAE; classificação (alvo categórico) usa acurácia, precisão, recall, F1, AUC. Codificar classes como 0 e 1 não transforma a tarefa em regressão. Detalhe: em 0/1 o MSE equivale à taxa de erro, mas o R² não tem interpretação útil, e nenhum dos dois separa falso positivo de falso negativo.",
+      "label": "Métrica de regressão em classificação"
+    },
+    {
+      "id": "c3-q08",
+      "type": "single",
+      "prompt": "Um analista traçou a curva ROC assim e viu uma curva abaixo da diagonal:\n```python\nfrom sklearn.metrics import roc_curve\nimport matplotlib.pyplot as plt\n\nfpr, tpr, thresholds = roc_curve(y_test, model.predict_proba(X_test)[:, 1])\nplt.plot(tpr, fpr)\n```\nQual é o erro de lógica?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O modelo é pior que o acaso e a curva abaixo da diagonal está certa; basta inverter as previsões do modelo para que a curva suba acima da diagonal.",
+          "correct": false,
+          "explanation": "Incorreto. Inverter previsões só faria sentido se a AUC real fosse menor que 0,5. Aqui o modelo é bom; a curva ficou embaixo porque os eixos foram trocados no plt.plot."
+        },
+        {
+          "id": "b",
+          "text": "Os eixos estão trocados: na curva ROC o eixo X é a taxa de falsos positivos (fpr) e o eixo Y a de verdadeiros positivos (tpr); a curva sai refletida e a área vira 1 menos a AUC.",
+          "correct": true,
+          "explanation": "Correto. Pelo slide 33 o eixo Y é o TPR (recall) e o eixo X o FPR (1 menos a especificidade). Trocar os eixos reflete a curva sobre a diagonal: um modelo bom parece pior que o acaso."
+        },
+        {
+          "id": "c",
+          "text": "fpr deveria ser a precisão e tpr o recall: a curva ROC compara a precisão (eixo X) com o recall (eixo Y) para cada limiar de decisão testado e a curva abaixo da diagonal seria o esperado.",
+          "correct": false,
+          "explanation": "Incorreto. Precisão contra recall é outra curva (a de precisão e revocação). A ROC usa a taxa de falsos positivos no eixo X e a de verdadeiros positivos no eixo Y."
+        },
+        {
+          "id": "d",
+          "text": "O código está certo: a ordem dos eixos da curva ROC é indiferente, pois trocar fpr e tpr apenas gira o gráfico sem mudar a AUC nem a leitura.",
+          "correct": false,
+          "explanation": "Incorreto. Trocar os eixos não gira o gráfico, reflete-o sobre a diagonal, e a área vira 1 menos a AUC. A leitura muda por completo: a convenção importa."
+        }
+      ],
+      "generalExplanation": "`roc_curve` devolve três vetores: `fpr` (taxa de falsos positivos = 1 menos a especificidade = FP/(VN+FP)), `tpr` (taxa de verdadeiros positivos = recall) e os limiares. O gráfico correto é `plt.plot(fpr, tpr)`: **X = fpr, Y = tpr**. Pelo slide 33, o ideal é a curva colada no canto superior esquerdo; a diagonal é o acaso. Uma curva abaixo da diagonal sem motivo é pista de eixo trocado ou de escore invertido.",
+      "label": "Eixos trocados na curva ROC"
+    },
+    {
+      "id": "c3-q09",
+      "type": "single",
+      "prompt": "Em um problema com 3 espécies de plantas (classes 0, 1 e 2), um desenvolvedor chamou:\n```python\nfrom sklearn.metrics import f1_score\n\n# y_test e y_pred contêm rótulos 0, 1 e 2\nf1 = f1_score(y_test, y_pred)\n```\nO que acontece ao executar com as configurações padrão?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Roda sem erro e devolve o F1 da classe 1, que o scikit-learn adota como positiva por padrão, ignorando as classes 0 e 2 no cálculo.",
+          "correct": false,
+          "explanation": "Incorreto. Em dados com três ou mais classes o padrão binário não é aplicado: o scikit-learn lança erro, em vez de escolher uma classe como positiva em silêncio."
+        },
+        {
+          "id": "b",
+          "text": "Roda sem erro e devolve a média simples (macro) dos três F1, pois macro é o valor padrão do parâmetro average em problemas multiclasse.",
+          "correct": false,
+          "explanation": "Incorreto. O padrão de average é 'binary', não 'macro'. A média macro só é usada se pedida explicitamente, por exemplo com average='macro'."
+        },
+        {
+          "id": "c",
+          "text": "Levanta ValueError: o padrão é average='binary', que só serve para duas classes, e com três é preciso escolher macro, weighted, micro ou None.",
+          "correct": true,
+          "explanation": "Correto. Executamos o caso: 'Target is multiclass but average='binary''. O scikit-learn obriga a escolher como agregar as classes, pois não há uma única classe positiva."
+        },
+        {
+          "id": "d",
+          "text": "Emite só um aviso (warning) e calcula o F1 entre as classes 0 e 1, descartando a classe 2, porque o padrão do scikit-learn é a avaliação binária.",
+          "correct": false,
+          "explanation": "Incorreto. Não há descarte silencioso de classes nem simples aviso: a chamada falha com ValueError e exige que o desenvolvedor escolha a estratégia de média."
+        }
+      ],
+      "generalExplanation": "Com mais de duas classes, `f1_score`, `precision_score` e `recall_score` exigem `average=`: `'macro'` (média simples das classes), `'weighted'` (ponderada pelo suporte), `'micro'` (soma os acertos e erros de todas as classes) ou `None` (um valor por classe). Confirmamos que `precision_score` sem `average` com 3 classes também levanta `ValueError`. Em bases desbalanceadas, `'macro'` é a que não esconde a classe rara (veja a questão sobre average micro).",
+      "label": "F1 sem average em multiclasse"
+    },
+    {
+      "id": "c3-q10",
+      "type": "single",
+      "prompt": "Considere este pipeline:\n```python\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.neighbors import KNeighborsClassifier\nfrom sklearn.metrics import classification_report\n\nscaler = StandardScaler()\nX_scaled = scaler.fit_transform(X)  # X completo\n\nX_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2)\nknn = KNeighborsClassifier().fit(X_train, y_train)\nprint(classification_report(y_test, knn.predict(X_test)))\n```\nQual erro na ordem das ações torna o relatório pouco confiável?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O scaler foi ajustado (fit) na base inteira antes do split: média e desvio do teste entram no pré-processamento, o que vaza informação e deixa as métricas otimistas.",
+          "correct": true,
+          "explanation": "Correto. A ordem certa é: dividir, ajustar o scaler só em X_train (fit_transform), aplicar apenas transform em X_test e então treinar. Assim o teste simula dados realmente novos."
+        },
+        {
+          "id": "b",
+          "text": "A padronização deveria vir depois do classification_report, porque o k-NN usa distâncias brutas e escalar antes do treino distorce a vizinhança.",
+          "correct": false,
+          "explanation": "Incorreto. O k-NN é sensível à escala, por isso padronizar antes do treino é recomendado. O problema não é escalar, e sim ajustar o scaler com dados que incluem o teste."
+        },
+        {
+          "id": "c",
+          "text": "O k-NN deveria ser treinado antes do split, na base completa, e o split serviria só para repartir as previsões entre treino e teste na hora de avaliar.",
+          "correct": false,
+          "explanation": "Incorreto. Treinar na base completa joga o teste dentro do treino e mata a avaliação independente. A divisão acontece antes de qualquer ajuste: scaler ou modelo."
+        },
+        {
+          "id": "d",
+          "text": "Falta passar stratify=y no split; sem estratificar existe vazamento, e com estratificação o scaler já pode ser ajustado antes da divisão sem prejuízo.",
+          "correct": false,
+          "explanation": "Incorreto. Estratificar mantém a proporção das classes, mas não impede o vazamento. O scaler continua enxergando o teste se for ajustado antes do split."
+        }
+      ],
+      "generalExplanation": "Regra: **tudo que aprende parâmetros dos dados** (scaler, imputador, PCA, modelo) é ajustado **só no treino**; no teste usa-se apenas `transform`/`predict`. Em CI, seria como rodar a homologação com dados de produção já vistos.\n\nOrdem correta:\n```python\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)\nscaler = StandardScaler().fit(X_train)\nX_train_s = scaler.transform(X_train)\nX_test_s = scaler.transform(X_test)\nknn = KNeighborsClassifier().fit(X_train_s, y_train)\n```\nUm `Pipeline` do scikit-learn garante essa ordem sozinho.",
+      "label": "Padronizar antes de dividir"
+    },
+    {
+      "id": "c3-q11",
+      "type": "single",
+      "prompt": "**Complemento:** o `DummyClassifier` não aparece nos slides da Aula 7; a ideia de que a acurácia engana em bases desbalanceadas (slide 15) sim. A base tem 95% de exemplos negativos:\n```python\nfrom sklearn.dummy import DummyClassifier\n\ndummy = DummyClassifier(strategy='most_frequent').fit(X_train, y_train)\nprint('Baseline:', dummy.score(X_test, y_test))   # 0.95\nprint('Modelo:', model.score(X_test, y_test))     # 0.95\n```\nUm colega conclui: 'o modelo acertou 95%, está ótimo'. Qual é a leitura correta?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O modelo está ótimo: igualar o baseline em 95% confirma que ele aprendeu o padrão da classe positiva, já que o baseline também parte dos mesmos atributos, sem necessidade de olhar as demais métricas.",
+          "correct": false,
+          "explanation": "Incorreto. O baseline most_frequent ignora os atributos: só devolve a classe mais comum. Empatar com ele indica que o modelo não agregou nada em acurácia."
+        },
+        {
+          "id": "b",
+          "text": "O baseline está mal construído: strategy='most_frequent' prevê ao acaso, e por isso o 95% dele seria coincidência e não um piso de desempenho.",
+          "correct": false,
+          "explanation": "Incorreto. most_frequent é determinístico: sempre prevê a classe mais comum do treino. O 95% não é coincidência, é a proporção de negativos na base."
+        },
+        {
+          "id": "c",
+          "text": "Basta trocar a acurácia pela precisão: a precisão do baseline também vale 95%, então ela confirma que a classe rara está sendo bem detectada.",
+          "correct": false,
+          "explanation": "Incorreto. O baseline nunca prevê a classe positiva, então a precisão dela é indefinida (zero por convenção) e o recall é 0. Precisão e recall da classe rara é que expõem o baseline."
+        },
+        {
+          "id": "d",
+          "text": "O modelo só empatou com o baseline que sempre chuta a classe majoritária; 95% de acurácia nessa base não prova aprendizado, e convém olhar recall e F1 da classe rara.",
+          "correct": true,
+          "explanation": "Correto. Um modelo trivial que sempre responde 'negativo' já atinge 95%. Se o modelo real não passa disso, ele pode não estar detectando nenhum positivo. A acurácia sozinha não distingue as duas situações."
+        }
+      ],
+      "generalExplanation": "Um **baseline** é a régua mínima: se o modelo não supera o chute ingênuo, não há valor prático. Em bases desbalanceadas, a acurácia do chute 'sempre a classe majoritária' é alta e engana (executamos: 0,945 numa base 95/5). Compare sempre com recall, precisão e F1 da **classe rara**. O `DummyClassifier` é só uma forma prática de obter esse baseline; a ideia vale mesmo sem ele.",
+      "label": "Baseline ingênuo (complemento)"
+    },
+    {
+      "id": "c3-q12",
+      "type": "single",
+      "prompt": "Um modelo de detecção de fraudes gerou esta matriz de confusão (linhas = real, colunas = previsto):\n```python\n#                 previsto legítimo   previsto fraude\n# real legítimo   [      980,               20     ]\n# real fraude     [       10,               90     ]\n```\nQual leitura identifica as fraudes reais que o modelo deixou passar (o que reduz o recall)?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O valor 20, na linha do legítimo real e na coluna 'previsto fraude': são fraudes que passaram despercebidas, e quanto maior ele for, menor o recall.",
+          "correct": false,
+          "explanation": "Incorreto. O 20 são transações legítimas que o modelo acusou de fraude (falsos positivos). Elas derrubam a precisão, não o recall; nenhuma fraude real está nessa linha."
+        },
+        {
+          "id": "b",
+          "text": "O valor 10, na linha da fraude real e na coluna 'previsto legítimo': são fraudes que o modelo classificou como legítimas, ou seja, os falsos negativos.",
+          "correct": true,
+          "explanation": "Correto. Fraude real está na linha de baixo; o modelo disse 'legítimo' em 10 delas, então 10 fraudes passaram. É essa célula que reduz o recall: das 100 fraudes reais, 90 foram pegas."
+        },
+        {
+          "id": "c",
+          "text": "O valor 90, na linha da fraude real e na coluna 'previsto fraude': são as fraudes que escaparam, porque a diagonal principal reúne os erros do modelo.",
+          "correct": false,
+          "explanation": "Incorreto. A diagonal principal reúne os acertos (980 e 90), não os erros. O 90 são as fraudes detectadas (verdadeiros positivos), o oposto do que a pergunta quer."
+        },
+        {
+          "id": "d",
+          "text": "O valor 980, na linha do legítimo real e na coluna 'previsto legítimo': são as transações que o modelo deixou de investigar, logo as fraudes perdidas.",
+          "correct": false,
+          "explanation": "Incorreto. O 980 são os verdadeiros negativos: legítimas corretamente liberadas. Não há fraude real nessa linha, então não pode ser fraude perdida."
+        }
+      ],
+      "generalExplanation": "Para ler uma matriz de confusão: a **linha** diz o que a transação realmente era; a **coluna** diz o que o modelo previu. Fraude perdida = linha 'fraude real' + coluna 'previsto legítimo' (falso negativo, 10). Alarme falso = linha 'legítimo real' + coluna 'previsto fraude' (falso positivo, 20). O recall olha só a linha da fraude real: 90 pegas entre 100 existentes (90%). Sempre confira qual convenção de linhas e colunas o enunciado adota antes de ler.",
+      "label": "Ler a célula da matriz"
+    },
+    {
+      "id": "c3-q13",
+      "type": "single",
+      "prompt": "Um analista procura o melhor limiar de decisão e reporta o resultado:\n```python\nprobs = model.predict_proba(X_test)[:, 1]\nbest_t, best_f1 = 0.5, 0.0\nfor t in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]:\n    f1 = f1_score(y_test, (probs >= t).astype(int))\n    if f1 > best_f1:\n        best_t, best_f1 = t, f1\nprint('Limiar:', best_t, '| F1 esperado em produção:', best_f1)\n```\nQual é o erro de lógica?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O laço testa limiares demais: percorrer seis valores causa overfitting do modelo, e o correto seria fixar sempre 0,5, o único limiar válido em classificação, que é o valor padrão do predict.",
+          "correct": false,
+          "explanation": "Incorreto. Varrer limiares é prática legítima e não retreina o modelo. O defeito é fazer isso no teste; o limiar pode ser ajustado em dados de validação."
+        },
+        {
+          "id": "b",
+          "text": "O F1 deveria ser calculado direto sobre probs, sem binarizar: f1_score aceita probabilidades contínuas e dispensa a escolha de um limiar de decisão.",
+          "correct": false,
+          "explanation": "Incorreto. O F1 depende de rótulos previstos 0/1, que só existem depois de aplicar um limiar. Passar probabilidades contínuas gera erro de tipos de alvo misturados."
+        },
+        {
+          "id": "c",
+          "text": "O limiar foi escolhido olhando o próprio conjunto de teste e o mesmo F1 é reportado como esperado em produção; o teste deixou de ser independente e a nota fica otimista.",
+          "correct": true,
+          "explanation": "Correto. Escolher o melhor entre seis limiares no teste é usar o teste para decidir. O F1 máximo achado ali é favorecido pelo acaso daquela amostra e superestima o desempenho real."
+        },
+        {
+          "id": "d",
+          "text": "O erro é usar o F1: para escolher limiar deve-se maximizar a acurácia, pois o F1 só serve para comparar modelos diferentes e nunca limiares.",
+          "correct": false,
+          "explanation": "Incorreto. O F1 pode ser usado para escolher limiar, e em bases desbalanceadas é até mais adequado que a acurácia. O problema é o conjunto usado, não a métrica."
+        }
+      ],
+      "generalExplanation": "O conjunto de teste é a **prova final**: só pode ser usado uma vez, depois de todas as decisões. Escolher hiperparâmetros ou limiar nele é um vazamento sutil. Correto: separar treino, validação e teste (ou usar validação cruzada no treino), escolher o limiar na validação e então medir **uma vez** no teste com o limiar fixado. Analogia: ajustar o código até passar nos testes de homologação e depois dizer que 'passou em produção'.",
+      "label": "Ajustar o limiar no teste"
+    },
+    {
+      "id": "c3-q14",
+      "type": "single",
+      "prompt": "Uma equipe aprova modelos de fraude pela validação cruzada. A base tem 1% de fraudes:\n```python\nfrom sklearn.model_selection import cross_val_score\n\nscores = cross_val_score(model, X, y, cv=5)   # métrica padrão\nprint('Aprovado se a média passar de 0,98:', scores.mean())\n```\nQual é o erro de lógica do critério de aprovação?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A métrica padrão é a acurácia; com 1% de fraudes, um modelo que nunca aponta fraude já passa de 0,98. O critério deveria usar recall, F1 ou AUC da classe rara.",
+          "correct": true,
+          "explanation": "Correto. Num modelo que prevê tudo como legítimo, a acurácia é 0,99 e o recall de fraudes é 0. O critério aprovaria um modelo inútil. Troca-se a métrica via parâmetro scoring."
+        },
+        {
+          "id": "b",
+          "text": "O número de dobras é o problema: com cv=5 cada dobra tem poucas fraudes, e usar cv=2 concentraria mais fraudes por dobra e tornaria a acurácia confiável.",
+          "correct": false,
+          "explanation": "Incorreto. Mais fraudes por dobra ajudam na estabilidade, mas não corrigem a métrica: a acurácia continua premiando o modelo que ignora a classe rara."
+        },
+        {
+          "id": "c",
+          "text": "Falta passar as previsões y_pred à função; sem elas o cross_val_score não consegue calcular a métrica e acaba devolvendo a acurácia do baseline.",
+          "correct": false,
+          "explanation": "Incorreto. O cross_val_score treina e prevê sozinho em cada dobra; ele não precisa de y_pred. O defeito é a métrica padrão (acurácia), não a falta de previsões."
+        },
+        {
+          "id": "d",
+          "text": "O limiar de 0,98 está baixo demais para acurácia; exigindo 0,999 a validação cruzada passaria a reprovar os modelos que não detectam as fraudes.",
+          "correct": false,
+          "explanation": "Incorreto. Subir o corte de aprovação não muda o que a acurácia mede: o modelo que nunca aponta fraude continua em 0,99, e um corte maior só reprovaria também bons detectores com alguns alarmes falsos."
+        }
+      ],
+      "generalExplanation": "Em bases desbalanceadas, escolha a métrica pelo **custo do erro**, não pelo costume. No scikit-learn, `cross_val_score` usa por padrão a acurácia (classificadores) e a métrica se troca com `scoring=`: por exemplo `scoring='recall'`, `'f1'` ou `'roc_auc'`; para multiclasse, `'f1_macro'`. Sempre desconfie de aprovações por acurácia quando a classe de interesse é rara (slide 15).",
+      "label": "Acurácia como critério com 1% de fraudes"
+    },
+    {
+      "id": "c3-q15",
+      "type": "single",
+      "prompt": "Dois modelos concorrentes foram avaliados no mesmo conjunto de teste:\n```python\nfrom sklearn.metrics import roc_auc_score\n\nauc_A = roc_auc_score(y_test, model_A.predict_proba(X_test)[:, 1])\nauc_B = roc_auc_score(y_test, model_B.predict_proba(X_test)[:, 1])\n# Saída: auc_A = 0.92 e auc_B = 0.65\n```\nQual conclusão os resultados sustentam?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O modelo B é melhor, pois uma AUC menor significa menos área de erro, e 0,65 representa uma curva mais próxima do canto superior esquerdo.",
+          "correct": false,
+          "explanation": "Incorreto. Na AUC, quanto maior melhor (slide 34: quanto mais perto de 1, melhor). A curva do B, com 0,65, está mais perto da diagonal do acaso do que a do A."
+        },
+        {
+          "id": "b",
+          "text": "Os dois modelos têm a mesma precisão em qualquer ponto de corte; a AUC só muda a forma da curva, sem relação com o desempenho em cada limiar e a diferença de 0,27 na AUC seria só ruído de amostragem.",
+          "correct": false,
+          "explanation": "Incorreto. Uma AUC bem maior significa que, para quase todo limiar, o modelo oferece melhor combinação de TPR e FPR. Os dois não são equivalentes em ponto de corte nenhum."
+        },
+        {
+          "id": "c",
+          "text": "O modelo A está em overfitting porque a AUC passou de 0,90; valores confiáveis ficam entre 0,70 e 0,85, e acima disso a avaliação é suspeita.",
+          "correct": false,
+          "explanation": "Incorreto. A AUC foi medida no teste, com dados que o modelo não viu. Overfitting seria nota de treino muito maior que a de teste; não existe teto de 'AUC confiável'."
+        },
+        {
+          "id": "d",
+          "text": "O modelo A separa melhor as classes: com AUC 0,92 há grande chance de um positivo aleatório receber escore maior que um negativo aleatório, enquanto o B mal supera o acaso.",
+          "correct": true,
+          "explanation": "Correto. A AUC é a probabilidade de ranquear um positivo acima de um negativo. 0,92 indica excelente separação ao longo de todos os limiares; 0,65 está pouco acima do acaso (0,50)."
+        }
+      ],
+      "generalExplanation": "A AUC resume a curva ROC em um número: a probabilidade de o modelo dar escore maior a um positivo aleatório do que a um negativo aleatório (0,5 = acaso, 1 = perfeito). Comparar duas AUCs no **mesmo teste** é um jeito justo de dizer qual modelo separa melhor as classes. Para ligar a um sintoma de overfitting, compare a nota de treino com a de teste, e não o valor absoluto da AUC.",
+      "label": "Comparar duas AUCs"
+    },
+    {
+      "id": "c3-q16",
+      "type": "single",
+      "prompt": "Um colega descreveu, em passos embaralhados, como avalia um classificador:\n```python\n# passo 1: print(classification_report(y_test, y_pred))\n# passo 2: model.fit(X_train, y_train)\n# passo 3: X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y)\n# passo 4: y_pred = model.predict(X_test)\n```\nQual ordem de execução produz uma avaliação confiável?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Ajustar o modelo com X e y completos, dividir em treino e teste, prever no teste e então gerar o relatório comparando y_test com y_pred.",
+          "correct": false,
+          "explanation": "Incorreto. Ajustar na base completa faz o modelo ver o teste durante o treino (vazamento): o código roda, mas as métricas ficam otimistas e não medem generalização."
+        },
+        {
+          "id": "b",
+          "text": "Dividir em treino e teste, ajustar o modelo só com o treino, prever no teste e então gerar o relatório comparando y_test com y_pred.",
+          "correct": true,
+          "explanation": "Correto. A divisão vem primeiro, para que o teste fique de fora de tudo o que aprende. Depois vêm fit no treino, predict no teste e, só no fim, as métricas sobre as previsões."
+        },
+        {
+          "id": "c",
+          "text": "Dividir em treino e teste, prever no teste, ajustar o modelo com o treino e só então gerar o relatório comparando y_test com y_pred.",
+          "correct": false,
+          "explanation": "Incorreto. Prever antes do fit usa um modelo ainda não treinado: o scikit-learn levanta NotFittedError. As previsões precisam existir antes das métricas e depois do treino."
+        },
+        {
+          "id": "d",
+          "text": "Dividir em treino e teste, ajustar o modelo com o treino, prever sobre o próprio treino e gerar o relatório comparando y_train com essas previsões.",
+          "correct": false,
+          "explanation": "Incorreto. A ordem dos passos até parece certa, mas o relatório do treino é nota inflada: não mede generalização. As previsões e as métricas devem usar o conjunto de teste."
+        }
+      ],
+      "generalExplanation": "Ordem de um pipeline de avaliação: **1) split, 2) fit (só no treino), 3) predict (no teste), 4) métricas (y_test × y_pred)**. Qualquer transformação que aprende com os dados (scaler, imputador, seleção de atributos) também entra depois do split e é ajustada só no treino. Analogia: congelar a suíte de testes antes de escrever o código, e não depois.",
+      "label": "Ordem das ações da avaliação"
+    },
+    {
+      "id": "c3-q17",
+      "type": "single",
+      "prompt": "Um problema multiclasse tem 900 amostras da classe 0, 80 da classe 1 e 20 da classe 2 (a rara). O modelo erra todas as da classe 2. O analista escreveu:\n```python\nfrom sklearn.metrics import precision_score, recall_score\n\nprec = precision_score(y_test, y_pred, average='micro')\nrec = recall_score(y_test, y_pred, average='micro')\nprint(prec, rec)   # 0.98 0.98\nprint('Modelo aprovado: bom em todas as classes')\n```\nQual é o erro de lógica?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O average='micro' é inválido em multiclasse: com mais de duas classes só se aceita 'binary', e o scikit-learn levanta ValueError antes de imprimir qualquer valor e aborta a execução do script.",
+          "correct": false,
+          "explanation": "Incorreto. É o contrário: 'binary' é o padrão que falha com 3 classes; 'micro', 'macro' e 'weighted' são justamente as opções válidas. O código roda e imprime 0,98."
+        },
+        {
+          "id": "b",
+          "text": "O micro dá peso maior às classes raras; por isso 0,98 mostra bom desempenho na classe 2 e o único erro é o analista não ter calculado também o F1.",
+          "correct": false,
+          "explanation": "Incorreto. O micro acumula contagens globais, então a classe com mais amostras domina; a classe rara quase não pesa. O 0,98 vem da classe 0, e a classe 2 teve recall zero."
+        },
+        {
+          "id": "c",
+          "text": "O average='micro' soma os acertos e erros de todas as classes e, em multiclasse, coincide com a acurácia; ele esconde o fracasso total na classe 2. Convém usar macro ou average=None.",
+          "correct": true,
+          "explanation": "Correto. Executamos o caso: micro = 0,98 para precisão e recall (igual à acurácia), enquanto o recall por classe é 1,0, 1,0 e 0,0 e o macro cai para cerca de 0,67. A classe rara pesa pouco no micro."
+        },
+        {
+          "id": "d",
+          "text": "O correto seria average='weighted', que dá o mesmo peso a todas as classes e por isso revelaria o fracasso na classe rara do problema.",
+          "correct": false,
+          "explanation": "Incorreto. O weighted pondera pelo suporte (tamanho) das classes e continua dominado pela maior: no teste, recall de 0,98. Quem dá o mesmo peso a todas as classes é o macro."
+        }
+      ],
+      "generalExplanation": "Com várias classes, a escolha de `average=` define o que você enxerga: `'micro'` (conta global; em multiclasse é igual à acurácia), `'weighted'` (média ponderada pelo tamanho das classes) e `'macro'` (média simples, mesmo peso para todas), além de `None` (um valor por classe). Em bases desbalanceadas, use **macro** ou `None` para não esconder a classe rara. Sem `average=`, `precision_score` com 3 classes levanta `ValueError` (confirmado).",
+      "label": "average micro esconde a classe rara"
+    },
+    {
+      "id": "c3-q18",
+      "type": "single",
+      "prompt": "Um analista quer aumentar o recall de um modelo e aplicou um limiar de 0,20:\n```python\ny_pred = model.predict(X_test)\ny_pred_sens = (y_pred >= 0.20).astype(int)\nprint('Recall:', recall_score(y_test, y_pred_sens))\n```\nO recall não mudou em relação ao do modelo original. Qual é o erro de lógica?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O limiar foi aplicado sobre predict(), que já devolve 0 ou 1; comparar com 0,20 reproduz os mesmos rótulos. O certo é aplicá-lo sobre predict_proba(X_test)[:, 1].",
+          "correct": true,
+          "explanation": "Correto. predict() já cortou as probabilidades em 0,50 e devolveu só 0 ou 1; (y_pred >= 0.20) devolve esses mesmos valores. Testamos: os rótulos ficam idênticos. Só as probabilidades permitem mexer no corte."
+        },
+        {
+          "id": "b",
+          "text": "O limiar de 0,20 foi aplicado corretamente, mas o recall só sobe se o modelo for retreinado, pois o limiar não afeta previsões que já foram calculadas.",
+          "correct": false,
+          "explanation": "Incorreto. Mudar o limiar não exige retreinar: o modelo é o mesmo e o corte é aplicado depois sobre as probabilidades. O defeito é ter partido de rótulos, e não de probabilidades."
+        },
+        {
+          "id": "c",
+          "text": "O erro está no astype(int): a comparação deveria continuar booleana, pois converter para inteiro arredonda as previsões para 0 ou 1 e anula o limiar.",
+          "correct": false,
+          "explanation": "Incorreto. astype(int) apenas converte True/False em 1/0 e é o que as métricas esperam. A perda de informação ocorreu antes, ao usar predict() em vez de predict_proba."
+        },
+        {
+          "id": "d",
+          "text": "O limiar deveria ser maior que 0,50 para aumentar o recall, já que valores altos marcam mais exemplos como positivos e capturam mais casos raros.",
+          "correct": false,
+          "explanation": "Incorreto. Limiares altos marcam menos exemplos como positivos e diminuem o recall. Para ele subir, o limiar tem que baixar, mas aplicado sobre as probabilidades."
+        }
+      ],
+      "generalExplanation": "`predict()` entrega rótulos já decididos (limiar 0,50 embutido); `predict_proba()` entrega a probabilidade, e é sobre ela que se aplica um limiar próprio:\n```python\ny_prob = model.predict_proba(X_test)[:, 1]\ny_pred_sens = (y_prob >= 0.20).astype(int)\n```\nBaixar o limiar sobe o recall e desce a precisão (trade-off). Atenção: o limiar deve ser escolhido em validação, não no teste.",
+      "label": "Limiar aplicado sobre predict"
+    },
+    {
+      "id": "c3-q19",
+      "type": "single",
+      "prompt": "Uma triagem de doença rara aprova modelos olhando só a precisão. Perder um doente é muito mais grave que um alarme falso:\n```python\ny_pred = model.predict(X_test)\nprint('Precisão:', precision_score(y_test, y_pred))   # 0.95\nprint('Modelo aprovado para a triagem')\n```\nQual é o erro de lógica na escolha da métrica?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A precisão está adequada para triagem, pois uma precisão alta garante que nenhum doente deixe de ser detectado, já que os falsos negativos entram no denominador do modelo.",
+          "correct": false,
+          "explanation": "Incorreto. No denominador da precisão estão VP e FP, não os FN. Os doentes não detectados só aparecem no denominador do recall. Precisão alta é compatível com muitos doentes perdidos."
+        },
+        {
+          "id": "b",
+          "text": "O correto seria a especificidade, que mede a fração de doentes detectados e é a métrica indicada quando perder um doente é muito mais grave.",
+          "correct": false,
+          "explanation": "Incorreto. Especificidade mede a fração de saudáveis corretamente liberados (VN/(VN+FP)). A fração de doentes detectados é a sensibilidade, que é o recall."
+        },
+        {
+          "id": "c",
+          "text": "A precisão deveria ser trocada pela acurácia, que pesa falsos positivos e falsos negativos de forma igual e por isso protege contra perder doentes.",
+          "correct": false,
+          "explanation": "Incorreto. Com doença rara a acurácia é dominada pelos saudáveis e pode ser altíssima mesmo se o modelo perder quase todos os doentes. Pesar os dois erros igual não reflete o custo."
+        },
+        {
+          "id": "d",
+          "text": "A precisão só diz quantos alertas estavam certos e ignora os doentes não detectados (falsos negativos); como o custo está neles, a aprovação deveria olhar o recall.",
+          "correct": true,
+          "explanation": "Correto. Precisão = VP/(VP+FP): os falsos negativos não entram na conta. Um modelo que alerta só em 1 caso certo teria precisão 100% e perderia quase todos os doentes. Recall = VP/(VP+FN) mede esse custo."
+        }
+      ],
+      "generalExplanation": "Escolha a métrica pelo **custo do erro**: se o falso negativo é o erro caro (triagem de doença, fraude), priorize **recall (sensibilidade)** e acompanhe a precisão como contrapeso; se o falso positivo é o caro (spam que apaga e-mail importante), priorize a **precisão**. O F1 equilibra as duas. Sempre pergunte: o que acontece se o modelo errar para cada lado?",
+      "label": "Métrica errada para triagem"
+    }
+  ],
+  "description": "Questões práticas sobre código em Python com scikit-learn: erros de lógica clássicos (métricas no treino, vazamento, ordem das ações, limiar sobre predict, métrica contra desbalanceamento), ordenação da matriz de confusão, ROC-AUC e médias macro, micro e weighted."
+}

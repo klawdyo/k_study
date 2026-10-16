@@ -1,0 +1,597 @@
+{
+  "schema": "questions/v2",
+  "id": "bloco-1-aula-4",
+  "title": "Aula 4 · Questões",
+  "instructions": "Responda **antes** de ler qualquer explicação. Depois de responder, leia a explicação de **todas** as alternativas, inclusive das que você acertou: é nelas que está o conteúdo. Se errar, volte à seção indicada em *Leitura: Aula 4 do zero*. Nenhuma questão exige cálculo: as perguntas são sobre **ler** gráficos e tabelas, **a ordem** das ações e **erros de lógica** em trechos curtos de código.",
+  "questions": [
+    {
+      "id": "q01",
+      "label": "Viés de amostragem",
+      "type": "single",
+      "prompt": "Um banco treinou um modelo para prever se um cliente vai pagar o empréstimo. Para isso usou **apenas o histórico dos clientes cujo crédito foi aprovado** no passado. Em produção, o modelo passou a avaliar **todos** os pedidos, inclusive de perfis que o banco antes recusava, e foi mal. Qual é o problema central?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Underfitting: o banco usou um modelo simples demais.",
+          "correct": false,
+          "explanation": "Underfitting seria erro alto **já no treino**. Aqui o modelo pode até ir bem nos clientes aprovados; ele falha em um grupo que nunca viu, e isso é falta de representatividade, não falta de capacidade."
+        },
+        {
+          "id": "b",
+          "text": "Overfitting causado por usar o conjunto de teste durante o treino.",
+          "correct": false,
+          "explanation": "Nada no enunciado diz que o teste participou do treino. O defeito está na **origem** dos dados (quem entrou na base), não em como o modelo foi ajustado."
+        },
+        {
+          "id": "c",
+          "text": "Viés de amostragem: os dados de treino não representam o problema real em que o modelo vai operar.",
+          "correct": true,
+          "explanation": "Os clientes recusados nunca entraram na base, então o modelo não aprendeu nada sobre eles. A forma de coletar deixou de fora, de forma sistemática, uma parte do problema. É exatamente a definição do slide 5: dados que **não representam com precisão** o problema no qual o modelo operará."
+        },
+        {
+          "id": "d",
+          "text": "Ruído nos dados: erros de digitação nos cadastros.",
+          "correct": false,
+          "explanation": "Ruído é erro nos valores. O enunciado descreve um recorte inteiro de clientes ausente, e não valores errados. Mesmo uma base perfeitamente limpa teria o mesmo problema."
+        }
+      ],
+      "generalExplanation": "**Viés de amostragem** = a coleta ou seleção deixa de fora parte do problema real. Pode ocorrer **mesmo com base grande**. Exemplo do slide 6: pesquisar desnutrição rural só em casas perto das estradas. Consequência: o modelo não generaliza."
+    },
+    {
+      "id": "q02",
+      "label": "Gráfico · complexidade × erro",
+      "type": "single",
+      "prompt": "Dois alunos desenharam como esperam que o **erro** varie quando o modelo fica mais **complexo** (por exemplo, uma árvore mais profunda ou um polinômio de grau maior). Cada gráfico tem a curva do erro no **treino** e a do erro no **teste**.\n\n![Dois gráficos de erro × complexidade](../figures/f01_complexidade.png)\n\nQual gráfico é **teoricamente coerente**?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O gráfico A: o erro de treino cai sempre; o erro de teste cai, atinge um mínimo e depois sobe.",
+          "correct": true,
+          "explanation": "Mais complexidade deixa o modelo cada vez mais capaz de ajustar o treino (erro de treino só cai). No teste, no início ele aprende o padrão (erro cai); depois passa a decorar ruído (erro sobe). O mínimo do teste é o melhor modelo. À esquerda há **underfitting**; à direita, **overfitting**."
+        },
+        {
+          "id": "b",
+          "text": "O gráfico B: o erro de treino sobe com a complexidade e o erro de teste fica abaixo do de treino.",
+          "correct": false,
+          "explanation": "Um modelo mais flexível pode ajustar o treino **igual ou melhor**, nunca pior de forma sistemática. E erro de teste abaixo do de treino de forma consistente não é o comportamento esperado."
+        },
+        {
+          "id": "c",
+          "text": "Os dois são coerentes, pois dependem do algoritmo.",
+          "correct": false,
+          "explanation": "A forma geral (treino sempre caindo; teste em U) vale para a maioria dos algoritmos. O gráfico B contradiz isso."
+        },
+        {
+          "id": "d",
+          "text": "Nenhum dos dois: o erro de teste sempre cai quanto mais complexo o modelo.",
+          "correct": false,
+          "explanation": "Se fosse assim, o overfitting não existiria. A partir de certa complexidade o erro de teste volta a subir."
+        }
+      ],
+      "generalExplanation": "Como ler: **treino baixo e teste alto** = overfitting. **Treino e teste ambos altos** = underfitting. O ponto certo é o **fundo do U** da curva de teste (slides 29 e 30)."
+    },
+    {
+      "id": "q03",
+      "label": "Gráfico · três ajustes",
+      "type": "single",
+      "prompt": "Três modelos de regressão polinomial foram ajustados aos **mesmos 25 pontos** (curva vermelha).\n\n![Três ajustes aos mesmos pontos](../figures/f02_ajustes.png)\n\nX é uma reta, Y é uma curva suave e Z é uma curva que passa por todos os pontos, oscilando muito. Qual descrição está correta?",
+      "options": [
+        {
+          "id": "a",
+          "text": "X: sobreajuste. Y: bom ajuste. Z: subajuste.",
+          "correct": false,
+          "explanation": "Está invertido. A reta (X) é o modelo mais simples e erra a tendência; a curva que oscila (Z) é a mais complexa."
+        },
+        {
+          "id": "b",
+          "text": "X: subajuste (alto viés). Y: bom ajuste. Z: sobreajuste (alta variância).",
+          "correct": true,
+          "explanation": "X é simples demais para a curva dos dados (não acerta nem o treino): subajuste. Z decorou até o ruído: sobreajuste. Y segue a tendência sem decorar. Com novos pontos, **Y** teria o menor erro."
+        },
+        {
+          "id": "c",
+          "text": "X: bom ajuste. Y: subajuste. Z: sobreajuste.",
+          "correct": false,
+          "explanation": "A reta não acompanha a curvatura dos pontos, portanto não é o bom ajuste."
+        },
+        {
+          "id": "d",
+          "text": "Z é o melhor modelo, porque erra menos nos pontos usados no ajuste.",
+          "correct": false,
+          "explanation": "Errar pouco **no treino** não prova nada: Z passa por todos os pontos justamente porque decorou o ruído e vai errar em dados novos."
+        }
+      ],
+      "generalExplanation": "Correção para Z: reduzir a complexidade, usar **regularização**, obter **mais dados** ou remover ruído e atributos irrelevantes. Correção para X: modelo mais poderoso ou melhores atributos."
+    },
+    {
+      "id": "q04",
+      "label": "Tabela · diagnóstico de quatro modelos",
+      "type": "single",
+      "prompt": "Quatro modelos foram treinados e avaliados com hold-out 80/20 na mesma base:\n\n| Modelo | Acurácia no treino | Acurácia no teste |\n| :-- | :-- | :-- |\n| A | 0,99 | 0,72 |\n| B | 0,64 | 0,62 |\n| C | 0,91 | 0,89 |\n| D | 0,95 | 0,93 |\n\nQual diagnóstico está correto?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A: overfitting. B: underfitting. C e D: generalizam bem (treino e teste altos e próximos).",
+          "correct": true,
+          "explanation": "A tem treino quase perfeito e teste bem pior: a regra do slide 16 (**treino bom, teste ruim = overfitting**). B tem os dois baixos e próximos: não aprendeu nem o que viu (underfitting). C e D têm os dois altos e com pouca distância, bom sinal de generalização."
+        },
+        {
+          "id": "b",
+          "text": "A: o melhor modelo, pois tem a maior acurácia de treino. B: overfitting.",
+          "correct": false,
+          "explanation": "Acurácia de treino alta **não** mede qualidade; o que conta é o teste. E B não tem o sinal de overfitting (treino alto e teste baixo); ele é baixo nos dois."
+        },
+        {
+          "id": "c",
+          "text": "A: underfitting, pois o teste é baixo. B: bom ajuste, pois treino e teste são parecidos.",
+          "correct": false,
+          "explanation": "Parecer-se não basta: B tem os dois valores **baixos**, o que indica underfitting. E A não é underfitting: o erro de treino dele é pequeno; o problema aparece só no teste."
+        },
+        {
+          "id": "d",
+          "text": "Todos estão em overfitting, porque em todos o treino é maior que o teste.",
+          "correct": false,
+          "explanation": "Treino um pouco acima do teste é **normal**. O sinal de overfitting é uma **distância grande** (como em A), combinada com treino alto. Em C e D a distância é pequena."
+        }
+      ],
+      "generalExplanation": "Roteiro de duas perguntas: (1) O erro de treino é baixo? Se não, underfitting. (2) Se for baixo, o de teste é muito pior? Se sim, overfitting. Se não, bom ajuste."
+    },
+    {
+      "id": "q05",
+      "label": "Causas e soluções",
+      "type": "multiple",
+      "prompt": "Marque **todas** as afirmações corretas sobre sobreajuste (overfitting) e subajuste (underfitting).",
+      "options": [
+        {
+          "id": "a",
+          "text": "Para um modelo com underfitting, uma solução é usar um modelo mais poderoso, com mais parâmetros.",
+          "correct": true,
+          "explanation": "Slide 11, primeira solução. O modelo era simples demais para a estrutura dos dados."
+        },
+        {
+          "id": "b",
+          "text": "Em underfitting, basta coletar muito mais dados do mesmo tipo, sem mudar o modelo.",
+          "correct": false,
+          "explanation": "Um modelo simples demais continua simples demais com mais dados: as curvas de treino e validação já estão juntas e baixas. Mais dados ajudam principalmente no **overfitting**."
+        },
+        {
+          "id": "c",
+          "text": "Vazamento de dados pode produzir um modelo que parece excelente nos testes e falha em produção, e o slide o lista entre as causas de sobreajuste.",
+          "correct": true,
+          "explanation": "O slide 10 inclui vazamento (data leakage) entre as causas de overfitting. O modelo \"parece\" ótimo porque, de alguma forma, já viu informação do teste."
+        },
+        {
+          "id": "d",
+          "text": "Treinamento insuficiente é uma causa típica de overfitting.",
+          "correct": false,
+          "explanation": "Pouco treinamento está na lista de causas de **underfitting** (slide 11). O que causa overfitting é treinamento **excessivo** (over-training, slide 10)."
+        },
+        {
+          "id": "e",
+          "text": "Regularizar mais fortemente é o remédio principal para underfitting.",
+          "correct": false,
+          "explanation": "É o contrário: regularização **limita** a complexidade e combate overfitting. Aumentá-la num modelo que já é simples demais piora o subajuste. Para underfitting se **reduz** a regularização."
+        },
+        {
+          "id": "f",
+          "text": "Para um modelo com underfitting, também ajuda fornecer atributos melhores ao algoritmo.",
+          "correct": true,
+          "explanation": "Slide 11. Se faltam atributos (missing features), nenhum modelo consegue aprender o que os dados não mostram."
+        },
+        {
+          "id": "g",
+          "text": "Uma base de dados muito pequena favorece o overfitting, pois é fácil decorar poucos exemplos.",
+          "correct": true,
+          "explanation": "Slide 10: base muito pequena é causa de sobreajuste. Com poucos exemplos, o modelo memoriza todos e não precisa descobrir o padrão geral."
+        }
+      ],
+      "generalExplanation": "Causas de **overfitting**: modelo complexo, base pequena, ruído, treino excessivo, vazamento. Causas de **underfitting**: modelo simples, atributos insuficientes, pré-processamento inadequado, treino insuficiente. Os remédios são opostos: simplificar × dar mais capacidade."
+    },
+    {
+      "id": "q06",
+      "label": "Gráfico · curva de aprendizado",
+      "type": "single",
+      "prompt": "Acurácia de treino e de validação em função do **número de exemplos de treino**, para dois modelos:\n\n![Curvas de aprendizado de X e Y](../figures/s01_curva_aprendizado.png)\n\nEm X, o treino fica por volta de 0,95 e a validação sobe de 0,60 para cerca de 0,83. Em Y, treino e validação terminam juntos em torno de 0,70. Qual conclusão está correta?",
+      "options": [
+        {
+          "id": "a",
+          "text": "X tem overfitting (maior distância entre as curvas, que diminui com mais dados), então mais dados ou regularização ajudam. Y tem underfitting, então precisa de modelo mais capaz ou melhores atributos.",
+          "correct": true,
+          "explanation": "Em X o treino é alto e a validação é bem menor, mas a distância **encolhe** com mais exemplos: sinal de variância alta. Em Y as duas curvas já se encontraram em um valor baixo: o modelo está limitado e **mais dados não resolvem**; é preciso mais capacidade ou atributos melhores."
+        },
+        {
+          "id": "b",
+          "text": "Y é o melhor modelo, porque suas curvas de treino e validação estão mais próximas.",
+          "correct": false,
+          "explanation": "Proximidade sozinha não basta: Y é estável, mas **baixo** (0,70) nos dois. X chega a uma validação maior (≈0,83). Um modelo que erra igual em treino e teste pode ser simplesmente ruim."
+        },
+        {
+          "id": "c",
+          "text": "Os dois se resolvem coletando mais exemplos.",
+          "correct": false,
+          "explanation": "Em Y as curvas já convergiram; adicionar exemplos não muda o platô. Seria dinheiro gasto sem ganho."
+        },
+        {
+          "id": "d",
+          "text": "X tem underfitting e Y tem overfitting, porque X tem a validação mais baixa que o treino.",
+          "correct": false,
+          "explanation": "Está invertido. Distância grande com treino alto é overfitting (X). Y, com as duas curvas baixas e coladas, é underfitting."
+        }
+      ],
+      "generalExplanation": "Curva de aprendizado [complemento da aula, útil para gráficos]: **distância grande entre treino e validação que diminui** = overfitting (mais dados ajudam). **Curvas juntas e baixas** = underfitting (mais dados não ajudam)."
+    },
+    {
+      "id": "q07",
+      "label": "Tabela · hold-out repetido",
+      "type": "single",
+      "prompt": "Dois modelos foram avaliados com **10 divisões aleatórias** treino/teste (amostragem aleatória repetida). Resultado de acurácia:\n\n| Modelo | Média | Desvio padrão |\n| :-- | :-- | :-- |\n| P | 0,84 | 0,01 |\n| Q | 0,85 | 0,09 |\n\nQual interpretação está mais adequada ao que os slides ensinam?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Q tem média parecida com a de P, mas o desvio alto indica instabilidade: o resultado depende muito de qual amostra caiu no teste. P é mais confiável.",
+          "correct": true,
+          "explanation": "Slide 18: desvio padrão alto = alta variabilidade, ou seja, **instabilidade** do modelo diante de mudanças nas amostras. A média quase igual não compensa; um único hold-out de Q poderia ter dado algo bem acima ou bem abaixo de 0,85."
+        },
+        {
+          "id": "b",
+          "text": "Q é melhor, porque a média é maior.",
+          "correct": false,
+          "explanation": "A diferença de média (0,01) é muito menor que o desvio de Q (0,09); não dá para afirmar que Q é melhor. Olhar só a média ignora a instabilidade."
+        },
+        {
+          "id": "c",
+          "text": "O desvio padrão alto de Q mostra que ele está em overfitting.",
+          "correct": false,
+          "explanation": "Desvio alto entre partições indica **instabilidade da estimativa**, não é sinônimo de overfitting. Overfitting se diagnostica comparando erro de treino com erro de teste."
+        },
+        {
+          "id": "d",
+          "text": "O desvio padrão mede o erro do modelo nos dados de treino.",
+          "correct": false,
+          "explanation": "O desvio padrão aqui mede o quanto o resultado **varia entre as repetições**, e não o erro de treino."
+        }
+      ],
+      "generalExplanation": "Amostragem aleatória (slides 18 e 19): várias divisões, resultado em **média e desvio padrão**. Crítica: não há garantia de que os conjuntos de teste sejam diferentes entre si. A alternativa é a validação cruzada."
+    },
+    {
+      "id": "q08",
+      "label": "Validação cruzada · afirmações",
+      "type": "multiple",
+      "prompt": "Sobre a validação cruzada k-fold (por exemplo, com K = 5), marque **todas** as afirmações corretas.",
+      "options": [
+        {
+          "id": "a",
+          "text": "A base é dividida em K partes de igual tamanho, e cada parte é usada como teste exatamente uma vez.",
+          "correct": true,
+          "explanation": "É a definição do slide 20. Ao final, todas as amostras foram testadas uma vez, e nenhum teste se repete."
+        },
+        {
+          "id": "b",
+          "text": "Treina-se um único modelo, que é depois testado nos K folds.",
+          "correct": false,
+          "explanation": "São **K treinamentos**, um por rodada, cada um com um fold diferente de fora. Se fosse um modelo só, testado em partes que ele já viu, estaríamos de volta ao erro metodológico do slide 13."
+        },
+        {
+          "id": "c",
+          "text": "O desempenho é relatado pela média e pelo desvio padrão das K rodadas.",
+          "correct": true,
+          "explanation": "Slide 20. O desvio ajuda a avaliar a estabilidade, o que o hold-out único não consegue."
+        },
+        {
+          "id": "d",
+          "text": "É indicada principalmente para bases pequenas; em uma base grande e representativa, o hold-out simples costuma bastar.",
+          "correct": true,
+          "explanation": "Slide 21. A validação cruzada treina K modelos, então é cara; em bases grandes o ganho não compensa."
+        },
+        {
+          "id": "e",
+          "text": "Garante que o modelo não sofrerá overfitting.",
+          "correct": false,
+          "explanation": "A validação cruzada só **mede** a generalização de modo mais estável; ela não impede o overfitting. Um modelo complexo demais continua sobreajustando."
+        },
+        {
+          "id": "f",
+          "text": "Em cada rodada, um fold fica de fora do treinamento e os outros K−1 formam o treino.",
+          "correct": true,
+          "explanation": "Slide 20: \"1 pedaço é deixado de fora do treinamento para ser usado no teste\". Em cada rodada o teste é um conjunto que o modelo não viu **naquela** rodada."
+        },
+        {
+          "id": "g",
+          "text": "Tem custo computacional menor que o hold-out, porque usa mais dados para teste.",
+          "correct": false,
+          "explanation": "O custo é maior: cerca de K vezes o treino. É por isso que o slide 21 limita seu uso a bases pequenas."
+        }
+      ],
+      "generalExplanation": "K-fold: K partes, K rodadas, cada fold é teste uma vez, resultado em média e desvio. Caro, então para bases pequenas. Não previne overfitting: apenas ajuda a **detectá-lo** e a medir o desempenho com menos dependência da partição."
+    },
+    {
+      "id": "q09",
+      "label": "Tabela · resultados por fold",
+      "type": "single",
+      "prompt": "Dois modelos foram avaliados com validação cruzada de 5 folds na mesma base pequena. Acurácia no fold de teste de cada rodada:\n\n| Rodada (fold de teste) | Modelo A | Modelo B |\n| :-- | :-- | :-- |\n| 1 | 0,86 | 0,95 |\n| 2 | 0,85 | 0,70 |\n| 3 | 0,87 | 0,92 |\n| 4 | 0,84 | 0,68 |\n| 5 | 0,86 | 0,90 |\n\nQual conclusão está correta?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A tem desempenho estável entre os folds; B oscila muito e é instável. Além disso, a média de A (≈0,86) é maior que a de B (≈0,83).",
+          "correct": true,
+          "explanation": "Os valores de A ficam entre 0,84 e 0,87; os de B vão de 0,68 a 0,95. Dispersão grande = desvio padrão alto = instabilidade (slides 18 e 20). Somando, a média de B fica em torno de 0,83, abaixo da de A. O pico de 0,95 de B é só um fold, não o desempenho esperado."
+        },
+        {
+          "id": "b",
+          "text": "B é melhor, pois alcançou a maior acurácia (0,95) em um dos folds.",
+          "correct": false,
+          "explanation": "O que importa é a **média e o desvio** de todas as rodadas, não o melhor fold. Escolher o melhor fold seria cherry picking."
+        },
+        {
+          "id": "c",
+          "text": "Os resultados de B mostram que o modelo B sofre underfitting, pois algumas acurácias são baixas.",
+          "correct": false,
+          "explanation": "Oscilar entre folds é sinal de **instabilidade**, não de underfitting. Underfitting se vê quando o erro é alto também no treino. Aqui nem sabemos o desempenho no treino."
+        },
+        {
+          "id": "d",
+          "text": "A validação cruzada foi mal executada, pois os folds deveriam dar o mesmo resultado.",
+          "correct": false,
+          "explanation": "Resultados diferentes entre folds são normais: cada fold tem amostras distintas. O desvio padrão existe justamente para quantificar essa variação."
+        }
+      ],
+      "generalExplanation": "Na validação cruzada reporte **média ± desvio padrão** dos K folds. Desvio alto = o desempenho depende de quais amostras caem no teste (instabilidade)."
+    },
+    {
+      "id": "q10",
+      "label": "Gráfico · perda por época",
+      "type": "single",
+      "prompt": "Perda (erro) de uma rede neural em cada **época** de treinamento, no treino e em um **conjunto de validação**:\n\n![Perda de treino e de validação por época](../figures/f12_nn_perda.png)\n\nO que o gráfico indica e o que se deve fazer?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Deve-se continuar treinando até a perda de validação igualar a de treino.",
+          "correct": false,
+          "explanation": "Treinar mais **aumenta** a distância (o treino cai e a validação sobe). Isso aprofunda o overfitting."
+        },
+        {
+          "id": "b",
+          "text": "Depois da época 28 há underfitting, pois a perda de validação aumenta.",
+          "correct": false,
+          "explanation": "Underfitting teria perda alta **também no treino**. Aqui o treino continua caindo; a validação subir com o treino caindo é overfitting."
+        },
+        {
+          "id": "c",
+          "text": "O melhor ponto é a época 60, pois a perda de treino é a menor.",
+          "correct": false,
+          "explanation": "Perda de treino baixa não mede generalização. Na época 60 a perda de validação está bem mais alta que em 28, o que mostra overfitting."
+        },
+        {
+          "id": "d",
+          "text": "Por volta da época 28 a perda de validação para de cair e volta a subir enquanto a de treino continua caindo: começa o overfitting, e o treino deveria ser interrompido ali (parada antecipada).",
+          "correct": true,
+          "explanation": "Slide 34: o algoritmo testa na validação após cada iteração; quando o erro de validação começa a subir, para-se o treino. A distância crescente entre as curvas mostra que o modelo passou a decorar o treino. Terminado o treino, faz-se o teste final no conjunto de teste."
+        }
+      ],
+      "generalExplanation": "**Conjunto de validação** = subconjunto do treino usado **durante** o treinamento para acompanhar a generalização. **Parada antecipada (early stopping)** = parar quando a perda de validação começa a subir. O **teste** só se usa no final."
+    },
+    {
+      "id": "q11",
+      "label": "Ordem das ações",
+      "type": "single",
+      "prompt": "Uma equipe quer normalizar os atributos (padronização com média e desvio padrão), treinar um classificador e estimar seu desempenho. Qual **ordem** de passos evita vazamento de dados?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Normalizar toda a base → dividir em treino e teste → treinar → avaliar.",
+          "correct": false,
+          "explanation": "É o exemplo clássico do slide 24: a média e o desvio foram calculados com a base inteira, então o treino já \"sabe\" algo sobre o teste. Vazamento no pré-processamento."
+        },
+        {
+          "id": "b",
+          "text": "Dividir em treino e teste → calcular média e desvio só com o treino → aplicar a transformação ao treino e ao teste → treinar com o treino → avaliar no teste.",
+          "correct": true,
+          "explanation": "É a ordem do slide 24 em prática: o teste não participa de nenhum cálculo de estatística nem do treino. O teste é transformado com os valores **do treino**, simulando o que acontece com dados novos em produção."
+        },
+        {
+          "id": "c",
+          "text": "Dividir → normalizar o treino com a média do treino e o teste com a média do teste → treinar → avaliar.",
+          "correct": false,
+          "explanation": "Evita o vazamento, mas cria outro problema: treino e teste ficam em **escalas diferentes**, e em produção você não tem um conjunto novo com média própria. O teste deve usar os valores aprendidos no treino."
+        },
+        {
+          "id": "d",
+          "text": "Dividir → treinar → avaliar no teste → só então normalizar para refinar o resultado.",
+          "correct": false,
+          "explanation": "A normalização precisa existir **antes** do treino, porque o modelo aprende com os dados já transformados. Normalizar depois de avaliar não faz parte do pipeline e invalida a medição."
+        }
+      ],
+      "generalExplanation": "Pipeline correto: **dividir primeiro**; `fit` de qualquer transformação (normalização, imputação, seleção de atributos) **só no treino**; `transform` no treino e no teste; treinar; avaliar no teste uma vez."
+    },
+    {
+      "id": "q12",
+      "label": "Vazamento · quais cenários",
+      "type": "multiple",
+      "prompt": "Analise os seis cenários:\n\n| Cenário | Descrição |\n| :-- | :-- |\n| 1 | Normaliza-se a base inteira com a média e o desvio de todas as linhas e **depois** divide-se em treino e teste. |\n| 2 | Para prever cancelamento de contrato, usa-se a coluna `motivo_do_cancelamento`, preenchida apenas quando o cliente cancela. |\n| 3 | O mesmo cliente aparece em duas linhas idênticas por erro de coleta; uma cai no treino e a outra no teste. |\n| 4 | Para prever vendas de janeiro, treina-se com dados de fevereiro e março do mesmo ano. |\n| 5 | Divide-se em treino e teste e, só então, calcula-se a média do treino para preencher valores ausentes dos dois conjuntos. |\n| 6 | Usa-se validação cruzada de 5 folds em uma base pequena. |\n\nMarque **todos** os cenários que configuram vazamento de dados.",
+      "options": [
+        {
+          "id": "a",
+          "text": "Cenário 5",
+          "correct": false,
+          "explanation": "É o procedimento **correto**: a média vem só do treino e é aplicada ao teste (imputação sem vazamento)."
+        },
+        {
+          "id": "b",
+          "text": "Cenário 6",
+          "correct": false,
+          "explanation": "Validação cruzada em base pequena é a prática recomendada pelo slide 21; não é vazamento por si só."
+        },
+        {
+          "id": "c",
+          "text": "Cenário 2",
+          "correct": true,
+          "explanation": "Vazamento **de atributos** (slide 23): a variável só existe depois do evento que se quer prever. Na hora da previsão real ela não estaria disponível."
+        },
+        {
+          "id": "d",
+          "text": "Cenário 4",
+          "correct": true,
+          "explanation": "Vazamento **temporal** (slide 23): usa-se o futuro (fev e mar) para prever o passado (jan)."
+        },
+        {
+          "id": "e",
+          "text": "Cenário 3",
+          "correct": true,
+          "explanation": "Vazamento **por duplicação** (slide 23): o modelo já viu, no treino, o mesmo registro que será testado."
+        },
+        {
+          "id": "f",
+          "text": "Cenário 1",
+          "correct": true,
+          "explanation": "Vazamento **no pré-processamento** (slide 24): as estatísticas incluem o teste."
+        }
+      ],
+      "generalExplanation": "Os quatro tipos do slide: **temporal**, **duplicação**, **de atributos**, **no pré-processamento**. Teste de bolso: \"na hora da previsão real eu teria essa informação? O teste participou de algum `fit`?\""
+    },
+    {
+      "id": "q13",
+      "label": "Código · padronizar antes de dividir",
+      "type": "single",
+      "prompt": "Analise o trecho (a sintaxe está correta):\n\n```python\nscaler = StandardScaler()\nX_scaled = scaler.fit_transform(X)\nX_train, X_test, y_train, y_test = train_test_split(\n    X_scaled, y, test_size=0.2, random_state=0\n)\nmodel = LogisticRegression().fit(X_train, y_train)\nprint(model.score(X_test, y_test))\n```\n\nQual é o **erro de lógica**?",
+      "options": [
+        {
+          "id": "a",
+          "text": "`test_size=0.2` é pequeno demais; o correto seria 0.5.",
+          "correct": false,
+          "explanation": "80/20 é uma das divisões comuns do slide 16. Não é um erro de lógica."
+        },
+        {
+          "id": "b",
+          "text": "Falta chamar `model.predict(X_test)` antes de `score`.",
+          "correct": false,
+          "explanation": "`score` já faz as previsões internamente e compara com `y_test`. Não falta nada aí."
+        },
+        {
+          "id": "c",
+          "text": "`random_state=0` causa vazamento, pois fixa a divisão.",
+          "correct": false,
+          "explanation": "Fixar a semente só torna a divisão **reprodutível**. Não coloca informação do teste no treino."
+        },
+        {
+          "id": "d",
+          "text": "O `fit` do `StandardScaler` usa a base inteira, inclusive as linhas que serão de teste, antes da divisão: há vazamento de dados no pré-processamento.",
+          "correct": true,
+          "explanation": "O scaler calculou média e desvio com todas as linhas. O treino foi transformado com informação do teste. A acurácia impressa tende a ficar otimista. Correção: dividir primeiro, `scaler.fit(X_train)`, e depois `transform` em treino e teste (ou usar um `Pipeline`)."
+        }
+      ],
+      "generalExplanation": "Regra de ouro: `fit` **só no treino**; no teste, só `transform`/`predict`. Em scikit-learn, o `Pipeline` garante isso, inclusive dentro da validação cruzada."
+    },
+    {
+      "id": "q14",
+      "label": "Código · escolher hiperparâmetro no teste",
+      "type": "single",
+      "prompt": "Uma pessoa escolhe o melhor número de vizinhos do k-NN e depois informa a acurácia esperada em produção:\n\n```python\nmelhor_k, melhor_nota = None, 0\nfor k in [1, 3, 5, 11, 21]:\n    knn = KNeighborsClassifier(n_neighbors=k)\n    knn.fit(X_train, y_train)\n    nota = knn.score(X_test, y_test)\n    if nota > melhor_nota:\n        melhor_k, melhor_nota = k, nota\nprint(\"Acurácia esperada em produção:\", melhor_nota)\n```\n\nQual é o problema de lógica e o que seria mais adequado?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O conjunto de teste foi usado para escolher o hiperparâmetro; a nota do melhor k é otimista. O correto é escolher k com um conjunto de validação (ou validação cruzada dentro do treino) e usar o teste uma única vez no final.",
+          "correct": true,
+          "explanation": "Ao escolher o k que melhor se saiu **no teste**, o teste participou do ajuste do modelo: é um vazamento. A nota resultante é inflada, pois você selecionou justamente o k que melhor \"casou\" com aquele teste (slides 33 e 34: a validação serve para esse papel)."
+        },
+        {
+          "id": "b",
+          "text": "O erro é calcular a nota no teste; deveria ser calculada no treino, que o modelo conhece melhor.",
+          "correct": false,
+          "explanation": "Medir no treino é o erro metodológico do slide 13: o modelo apenas decoraria. Com k = 1 a nota no treino seria sempre 100%."
+        },
+        {
+          "id": "c",
+          "text": "O erro é testar muitos valores de k; o correto é fixar k = 1.",
+          "correct": false,
+          "explanation": "Testar vários valores de hiperparâmetro é normal e desejável. O que está errado é **com qual conjunto** eles são comparados. E k = 1 costuma ser o mais propenso a overfitting."
+        },
+        {
+          "id": "d",
+          "text": "O erro é não embaralhar os dados antes do `fit`.",
+          "correct": false,
+          "explanation": "O código não indica problema de ordem dos dados, e embaralhar não resolveria o uso do teste na escolha do k."
+        }
+      ],
+      "generalExplanation": "Três papéis: **treino** (ajusta parâmetros), **validação** (escolhe hiperparâmetros, decide quando parar), **teste** (nota final, uma vez). Quando o teste influencia qualquer decisão, deixa de ser teste."
+    },
+    {
+      "id": "q15",
+      "label": "Código · série temporal",
+      "type": "single",
+      "prompt": "Um arquivo `vendas_diarias.csv`, ordenado por data, será usado para prever as vendas do dia seguinte:\n\n```python\ndf = pd.read_csv(\"vendas_diarias.csv\")   # linhas em ordem cronológica\nX = df.drop(columns=[\"vendas\"])\ny = df[\"vendas\"]\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, shuffle=True, random_state=1\n)\nmodel.fit(X_train, y_train)\nprint(model.score(X_test, y_test))\n```\n\nQual é o erro de lógica?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Falta `stratify=y` para manter a proporção das classes.",
+          "correct": false,
+          "explanation": "`stratify` vale para **classificação** com classes desbalanceadas. Aqui o alvo é numérico (vendas), e estratificar não resolve o problema temporal."
+        },
+        {
+          "id": "b",
+          "text": "`test_size=0.2` é pequeno e deveria ser 0.5 para garantir um teste confiável.",
+          "correct": false,
+          "explanation": "80/20 é uma proporção usual. O problema não está no tamanho do teste, mas em **quais dias** compõem cada conjunto."
+        },
+        {
+          "id": "c",
+          "text": "`shuffle=True` mistura passado e futuro: o treino contém dias posteriores a dias de teste (vazamento temporal). O correto é uma divisão por tempo, treinando com o passado e testando com o futuro.",
+          "correct": true,
+          "explanation": "Slide 23: nunca usar o futuro para prever o passado. Em produção só há o passado. Com embaralhamento, o modelo pode quase interpolar entre dias vizinhos e a nota fica irreal. Correção: cortar pela ordem (por exemplo, os primeiros 80% para treino e os últimos 20% para teste) ou usar `TimeSeriesSplit`."
+        },
+        {
+          "id": "d",
+          "text": "O correto é trocar o `train_test_split` por `cross_val_score` com K-fold embaralhado, que resolve o problema.",
+          "correct": false,
+          "explanation": "Validação cruzada **embaralhada** repete o problema: folds de treino com datas posteriores às do fold de teste. Em séries temporais usa-se divisão temporal, não K-fold comum."
+        }
+      ],
+      "generalExplanation": "Dados que dependem do tempo: **treino sempre antes do teste**. Embaralhar é um erro silencioso: o código roda e a nota é boa, mas em produção o modelo falha."
+    },
+    {
+      "id": "q16",
+      "label": "Gráfico · árvore de decisão",
+      "type": "multiple",
+      "prompt": "Uma árvore de decisão foi treinada com profundidades máximas de 1 a 15. O gráfico mostra a acurácia no treino e no teste:\n\n![Acurácia de treino e teste por profundidade da árvore](../figures/f10_arvore.png)\n\nLeitura aproximada: profundidade 1, treino ≈ 0,81 e teste ≈ 0,81; profundidade 5, treino ≈ 0,94 e teste ≈ 0,89 (maior teste); profundidade 15, treino ≈ 0,99 e teste ≈ 0,83. Marque **todas** as afirmações corretas.",
+      "options": [
+        {
+          "id": "a",
+          "text": "Se a profundidade 5 for escolhida por esta curva de teste, a acurácia no teste deixa de ser uma estimativa totalmente honesta, e o ideal seria escolher a profundidade com validação.",
+          "correct": true,
+          "explanation": "Escolher o hiperparâmetro olhando o teste faz o teste participar do ajuste (vazamento, como na questão 14). A nota de ≈0,89 tende a ser um pouco otimista. Em um experimento rigoroso, usa-se validação ou validação cruzada dentro do treino."
+        },
+        {
+          "id": "b",
+          "text": "Com profundidade 15 há sinais de overfitting (alta variância): o treino é quase perfeito e o teste é bem menor que o de profundidade 5.",
+          "correct": true,
+          "explanation": "A distância entre treino (≈0,99) e teste (≈0,83) é grande. A árvore decorou o treino, e o teste inclusive piorou em relação ao pico. Slide 16: erro de treino baixo e de teste alto indica sobreajuste."
+        },
+        {
+          "id": "c",
+          "text": "Aumentar a profundidade além de 5 continua melhorando o treino, mas não melhora o teste.",
+          "correct": true,
+          "explanation": "O treino sobe quase sempre; o teste fica estável ou cai. É o comportamento do slide 29: mais complexidade reduz o erro de treino e pode aumentar o de teste."
+        },
+        {
+          "id": "d",
+          "text": "Com profundidade 1 há sinais de underfitting (alto viés): treino e teste são baixos e próximos.",
+          "correct": true,
+          "explanation": "Os dois valores (≈0,81) são os menores do gráfico e quase iguais. Uma árvore de um único corte é simples demais para os dados."
+        },
+        {
+          "id": "e",
+          "text": "A melhor árvore é a de profundidade 15, porque tem a maior acurácia.",
+          "correct": false,
+          "explanation": "A maior acurácia **de treino** não define o melhor modelo. O que vale é a acurácia em dados não vistos, e nela a profundidade 15 é pior que a 5."
+        },
+        {
+          "id": "f",
+          "text": "O gráfico é incoerente, porque o erro de teste deveria subir sempre com a profundidade.",
+          "correct": false,
+          "explanation": "Não há essa regra. A forma esperada é: o teste melhora até um ponto e depois se estabiliza ou piora. O gráfico é coerente com isso (com pequenas oscilações, comuns em teste de tamanho limitado)."
+        }
+      ],
+      "generalExplanation": "Leitura de gráfico de complexidade: treino sobe (ou erro cai) sempre; teste tem um ponto ótimo (aqui ≈ profundidade 5). **Esquerda** do ótimo = underfitting (alto viés); **direita** = overfitting (alta variância). E lembre-se: o teste não deve ser usado para escolher o hiperparâmetro."
+    }
+  ],
+  "closing": "Se você errou questões de **vazamento**, releia as seções 11 e 13 da Aula 4 do zero e refaça a lista \"na hora da previsão real eu teria essa informação? o teste participou de algum fit?\". Se errou as de **gráfico**, volte à seção 5.5."
+}
