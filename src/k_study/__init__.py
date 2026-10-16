@@ -1,3 +1,3 @@
-"""study_app: local study app (API + web UI) and the CLI tools that feed it."""
+"""k_study: servidor de trilhas de aprendizagem (API + interface) e ferramentas de linha de comando."""
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"

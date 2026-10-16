@@ -1,162 +1,270 @@
-"""Command line:  study <command>
+"""Linha de comando do k_study:  kstudy <comando>   (ou  py main.py <comando>;  sem comando = serve)
 
-  study serve       [--port 8765] [--lan]  run the API and the web UI (asks for the data folder on first run)
-  study data-dir    [PATH]                  show / save the data folder for this computer
-  study validate                            validate the data folder
-  study search      TERMS...                search YouTube
-  study captions    ID... | --text ID        download YouTube captions / print one with timestamps
-  study transcribe  ID...                   add to the shared queue and transcribe locally (GPU if available; waits until done)
-  study queue                               show the shared transcription queue (pending / failed / runner)
-  study clean                               delete leftover temporary audio (nothing else deletes it)
+  serve            sobe o servidor dos alunos (porta 8765)
+  admin            sobe o painel do admin (porta 8766, só em 127.0.0.1 por padrão)
+  validate [slug]  valida a estrutura de uma trilha (ou de todas); erros reprovam, heurísticas só avisam
+  sync             reindexa content/ no banco
+  trails           lista as trilhas e seus números
+  new-trail SLUG   cria content/<slug>/ com trail.json e a estrutura mínima
+  import-progress  importa um progress.json antigo para um aluno
 
-The data folder comes from --data-dir, else STUDY_DATA_DIR, else the folder saved for this computer
-(chosen in the web UI on first run or with `study data-dir PATH`).
+Códigos de saída: 0 ok, 1 problemas de validação, 2 erro de uso ou de ambiente.
+Pasta de conteúdo: --content-dir ou K_STUDY_CONTENT (padrão ./content). Banco: --db ou K_STUDY_DB (padrão ./data/k_study.db).
 """
 import argparse
 import json
+import os
+import re
 import sys
+from datetime import date
+from pathlib import Path
 
-from . import paths
+from . import __version__
+
+
+# mensagens automáticas do argparse em português (o módulo as busca por gettext em inglês)
+_PTBR = {
+    "usage: ": "uso: ", "positional arguments": "argumentos posicionais", "options": "opções", "optional arguments": "opções",
+    "show this help message and exit": "mostra esta ajuda e sai",
+    "%(prog)s: error: %(message)s\n": "%(prog)s: erro: %(message)s\n",
+    "the following arguments are required: %s": "os argumentos a seguir são obrigatórios: %s",
+    "unrecognized arguments: %s": "argumentos não reconhecidos: %s",
+    "expected one argument": "esperava um argumento", "expected at least one argument": "esperava ao menos um argumento",
+    "argument %(argument_name)s: %(message)s": "argumento %(argument_name)s: %(message)s",
+    "invalid %(type)s value: %(value)r": "valor inválido para %(type)s: %(value)r",
+    "invalid choice: %(value)r (choose from %(choices)s)": "opção inválida: %(value)r (escolha entre %(choices)s)",
+    "invalid choice: %(value)r (choose from %(choices)s)": "opção inválida: %(value)r (escolha entre %(choices)s)",
+}
+argparse._ = lambda text: _PTBR.get(text, text)
+
+SLUG = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+COMMANDS = ("serve", "admin", "validate", "sync", "trails", "new-trail", "import-progress")
+
+
+class UsageError(Exception):
+    """Erro de uso ou de ambiente (código de saída 2)."""
 
 
 def _stdout_utf8():
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", line_buffering=True)
+        except Exception:
+            pass
+
+
+def content_dir_of(args) -> Path:
+    return Path(args.content_dir or os.environ.get("K_STUDY_CONTENT") or "content")
+
+
+def db_path_of(args) -> Path:
+    from .db import default_db_path
+    return default_db_path(args.db)
+
+
+def build_parser() -> argparse.ArgumentParser:
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("--content-dir", metavar="PASTA", help="pasta com as trilhas (padrão: $K_STUDY_CONTENT ou ./content)")
+    common.add_argument("--db", metavar="ARQUIVO", help="arquivo do banco SQLite (padrão: $K_STUDY_DB ou ./data/k_study.db)")
+
+    ap = argparse.ArgumentParser(prog="kstudy", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter,
+                                 add_help=False)
+    ap.add_argument("-h", "--help", action="help", help="mostra esta ajuda e sai")
+    ap.add_argument("--version", action="version", version=f"k_study {__version__}", help="mostra a versão e sai")
+    sub = ap.add_subparsers(dest="command", metavar="comando")
+
+    def add(name, help_text, parents=(common,)):
+        p = sub.add_parser(name, help=help_text, description=help_text, parents=list(parents), add_help=False)
+        p.add_argument("-h", "--help", action="help", help="mostra esta ajuda e sai")
+        return p
+
+    s = add("serve", "sobe o servidor dos alunos")
+    s.add_argument("--port", type=int, default=8765, help="porta (padrão 8765)")
+    s.add_argument("--lan", action="store_true",
+                   help="aceita também outros computadores da sua rede privada (sem senha; o firewall pode pedir permissão)")
+
+    s = add("admin", "sobe o painel do admin (estatísticas)")
+    s.add_argument("--port", type=int, default=8766, help="porta (padrão 8766)")
+    s.add_argument("--lan", action="store_true", help="escuta na rede local (exige --password)")
+    s.add_argument("--password", help="senha do painel (ou a variável K_STUDY_ADMIN_PASSWORD); obrigatória com --lan")
+
+    s = add("validate", "valida uma trilha (ou todas)")
+    s.add_argument("slug", nargs="?", help="trilha a validar (padrão: todas)")
+
+    s = add("sync", "reindexa o conteúdo no banco")
+    s.add_argument("--force", action="store_true", help="reindexa todas as trilhas, mesmo sem mudança nos manifestos")
+
+    add("trails", "lista as trilhas e seus números")
+
+    s = add("new-trail", "cria uma trilha nova com a estrutura mínima")
+    s.add_argument("slug", help="identificador da trilha e nome da pasta: só a-z, 0-9 e hífen")
+    s.add_argument("--title", required=True, help="título da trilha")
+    s.add_argument("--description", default="", help="descrição curta")
+
+    s = add("import-progress", "importa um progress.json antigo para um aluno")
+    s.add_argument("file", metavar="ARQUIVO.json", help="progress.json antigo (não é alterado)")
+    s.add_argument("--email", required=True, help="e-mail do aluno (criado se não existir)")
+    s.add_argument("--trail", required=True, metavar="SLUG", help="trilha que recebe o progresso")
+    return ap
+
+
+# ---- comandos ------------------------------------------------------------------------------------------------------
+
+def cmd_serve(args) -> int:
+    from .server import serve
+    serve(content_dir_of(args), db_path_of(args), args.port, args.lan)
+    return 0
+
+
+def cmd_admin(args) -> int:
+    password = args.password or os.environ.get("K_STUDY_ADMIN_PASSWORD") or None
+    if args.lan and not password:
+        raise UsageError("com --lan o painel exige uma senha: use --password ou K_STUDY_ADMIN_PASSWORD.")
     try:
-        sys.stdout.reconfigure(encoding="utf-8")
-    except Exception:
-        pass
+        from .admin.server import run
+    except ModuleNotFoundError as exc:
+        if (exc.name or "").startswith("k_study.admin"):
+            raise UsageError("o painel do admin (k_study.admin.server) ainda não está instalado neste projeto.")
+        raise
+    db = db_path_of(args)
+    if not db.exists():
+        print(f"aviso: o banco {db} ainda não existe; ele é criado ao subir `kstudy serve`.", file=sys.stderr)
+    run(db, args.port, args.lan, password)
+    return 0
+
+
+def cmd_validate(args) -> int:
+    from .validate import inspect, trail_slugs
+    content = content_dir_of(args)
+    slugs = trail_slugs(content)
+    if args.slug:
+        if not (content / args.slug / "trail.json").is_file():
+            raise UsageError(f"trilha não encontrada: {content / args.slug}")
+        slugs = [args.slug]
+    if not slugs:
+        print(f"Nenhuma trilha encontrada em {content}.")
+        return 0
+    failed = False
+    for slug in slugs:
+        summary, problems, warnings = inspect(content / slug)
+        print(f"== {slug}")
+        print("\n".join(summary))
+        print("PROBLEMAS:" if problems else "OK: nenhum problema.")
+        for p in problems:
+            print(" -", p)
+        if warnings:
+            print(f"AVISOS ({len(warnings)}; heurísticas, nunca reprovam a validação; confira):")
+            for w in warnings:
+                print(" ~", w)
+        failed = failed or bool(problems)
+    return 1 if failed else 0
+
+
+def cmd_sync(args) -> int:
+    from .db import Database
+    from .indexer import sync
+    result = sync(content_dir_of(args), Database(db_path_of(args)), force=args.force)
+    print(f"Reindexadas: {', '.join(result['indexed']) or 'nenhuma (nada mudou)'}")
+    if result["removed"]:
+        print(f"Removidas do índice (pasta sumiu): {', '.join(result['removed'])}")
+    for slug, reason in result["skipped"].items():
+        print(f"aviso: trilha {slug} ignorada: {reason}", file=sys.stderr)
+    return 0
+
+
+def cmd_trails(args) -> int:
+    from .db import Database
+    from .indexer import sync
+    db = Database(db_path_of(args))
+    sync(content_dir_of(args), db)
+    rows = db.list_trails()
+    if not rows:
+        print(f"Nenhuma trilha em {content_dir_of(args)}. Crie uma com: kstudy new-trail SLUG --title \"Título\"")
+        return 0
+    width = max(len(r["slug"]) for r in rows)
+    for r in rows:
+        print(f"{r['slug']:<{width}}  {r['blocks']} blocos, {r['items']} itens ({r['requiredItems']} obrigatórios), "
+              f"~{r['minutes']} min  |  {r['title']}")
+    return 0
+
+
+def cmd_new_trail(args) -> int:
+    from .db import now
+    slug = args.slug
+    if not SLUG.match(slug):
+        raise UsageError(f"slug inválido: {slug!r}. Use só a-z, 0-9 e hífen, sem começar nem terminar com hífen.")
+    folder = content_dir_of(args) / slug
+    if folder.exists():
+        raise UsageError(f"já existe: {folder}")
+    manifest = {"schema": "trail/v1", "id": slug, "title": args.title, "description": args.description,
+                "language": "pt-BR", "level": "iniciante", "tags": [], "createdAt": date.today().isoformat(),
+                "blocks": [{"id": "block-1", "title": "Bloco 1", "file": "block-1/block.json"}]}
+    block = {"schema": "block/v2", "id": "block-1", "title": "Bloco 1", "description": "", "sections": []}
+    (folder / "block-1").mkdir(parents=True)
+    for name in ("transcripts", "figures"):
+        (folder / name).mkdir()
+        (folder / name / ".gitkeep").write_text("", encoding="utf-8")
+    (folder / "trail.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    (folder / "block-1" / "block.json").write_text(json.dumps(block, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(f"Trilha criada em {folder}\nPróximo passo: preencha block-1/block.json e rode `kstudy validate {slug}`.")
+    return 0
+
+
+def cmd_import_progress(args) -> int:
+    from .db import Database, normalize_email
+    from .indexer import sync
+    email = normalize_email(args.email)
+    if email is None:
+        raise UsageError(f"e-mail inválido: {args.email!r}")
+    source = Path(args.file)
+    try:
+        state = json.loads(source.read_text(encoding="utf-8"))
+    except OSError as exc:
+        raise UsageError(f"não consegui ler {source}: {exc.strerror or exc}")
+    except ValueError as exc:
+        raise UsageError(f"{source} não é um JSON válido: {exc}")
+    if not isinstance(state, dict) or not any(k in state for k in ("items", "answers", "notes")):
+        raise UsageError(f"{source} não parece um progress.json (esperava as chaves items, answers e notes).")
+    db = Database(db_path_of(args))
+    sync(content_dir_of(args), db)
+    if not db.trail_exists(args.trail):
+        raise UsageError(f"trilha não encontrada: {args.trail}")
+    student, created = db.get_or_create_student(email)
+    counts = db.import_state(student["id"], args.trail, state)
+    known = {(r["block_id"], r["item_id"]) for r in db.query("SELECT block_id, item_id FROM items WHERE trail=?", (args.trail,))}
+    keys = set(state.get("items") or {}) | set(state.get("answers") or {}) | set(state.get("notes") or {})
+    unknown = sorted(k for k in keys if tuple(k.split("/", 1)) not in known)
+    print(f"Aluno {email} ({'criado' if created else 'já existia'}). Importados: {counts['items']} itens, "
+          f"{counts['answers']} respostas, {counts['notes']} anotações; ignorados por formato inválido: {counts['skipped']}.")
+    if unknown:
+        print(f"aviso: {len(unknown)} chave(s) não existem hoje na trilha (ficam guardadas): {', '.join(unknown[:5])}"
+              f"{' ...' if len(unknown) > 5 else ''}", file=sys.stderr)
+    return 0
+
+
+HANDLERS = {"serve": cmd_serve, "admin": cmd_admin, "validate": cmd_validate, "sync": cmd_sync, "trails": cmd_trails,
+            "new-trail": cmd_new_trail, "import-progress": cmd_import_progress}
 
 
 def main(argv=None) -> int:
     _stdout_utf8()
-    ap = argparse.ArgumentParser(prog="study", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--data-dir", help=f"data folder (default: ${paths.ENV_DATA})")
-    sub = ap.add_subparsers(dest="command", required=True)
-
-    s = sub.add_parser("serve", help="run the API and the web UI")
-    s.add_argument("--port", type=int, default=8765)
-    s.add_argument("--lan", action="store_true",
-                   help="also accept other computers on your private network (no password; the firewall may ask to allow it)")
-
-    s = sub.add_parser("data-dir", help="show or save the data folder for this computer")
-    s.add_argument("path", nargs="?")
-
-    sub.add_parser("validate", help="validate the data folder")
-
-    s = sub.add_parser("search", help="search YouTube")
-    s.add_argument("terms", nargs="+")
-
-    s = sub.add_parser("captions", help="download YouTube captions")
-    s.add_argument("videos", nargs="*")
-    s.add_argument("--text", metavar="ID", help="print the stored transcript with timestamps")
-    s.add_argument("--pause", type=int, default=6)
-
-    s = sub.add_parser("transcribe", help="transcribe locally (parallel downloads and transcriptions)")
-    s.add_argument("videos", nargs="+")
-    s.add_argument("--model", default="small", help="tiny, base, small (default), medium, large-v3")
-    s.add_argument("--language", default="pt", help="pt (default), en, ... or auto")
-    s.add_argument("--device", default="auto", choices=["auto", "cpu", "cuda"])
-    s.add_argument("--downloads", type=int, default=1, help="videos downloaded at the same time (default 1: one by one)")
-    s.add_argument("--workers", type=int, default=2, help="videos transcribed at the same time (default 2)")
-    s.add_argument("--pause", type=int, default=4, help="seconds each downloader waits between its downloads")
-    s.add_argument("--overwrite", action="store_true")
-    s.add_argument("--no-wait", action="store_true", help="only queue the videos and return (default: wait until they are done)")
-
-    s = sub.add_parser("queue", help="show the shared transcription queue (same view as `study transcribe`)")
-    s.add_argument("--watch", action="store_true", help="keep redrawing until Ctrl+C (open it in another terminal)")
-
-    s = sub.add_parser("clean", help="delete the temporary audio (the only thing that ever deletes it)")
-    s.add_argument("--force", action="store_true", help="even if a transcription runner seems to be active")
-
-    args = ap.parse_args(argv)
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if not argv or (argv[0].startswith("-") and argv[0] not in ("-h", "--help", "--version")):
+        argv.insert(0, "serve")                       # sem comando = serve (aceita `py main --lan`)
+    args = build_parser().parse_args(argv)
+    if not args.command:
+        build_parser().print_help()
+        return 0
     try:
-        if args.command == "search":
-            from .youtube.search import search
-            for row in search(" ".join(args.terms)):
-                print(" | ".join(row))
-            return 0
-
-        if args.command == "data-dir":
-            from pathlib import Path
-            from . import settings
-            if args.path:
-                target = Path(args.path).expanduser().resolve()
-                if not paths.is_data_dir(target):
-                    raise paths.ConfigError(f"{target} does not look like a data folder (config.json not found).")
-                settings.save_data_dir(target)
-                print(f"saved: {target}")
-                print(f"settings file: {settings.settings_file()}")
-            else:
-                found, source = paths.resolve(args.data_dir)
-                print(f"data folder: {found or '(not set)'}  (source: {source})")
-                print(f"settings file: {settings.settings_file()}")
-            return 0
-        if args.command == "queue":
-            import time
-
-            from .youtube.jobs import snapshot
-            from .youtube.view import Watcher, enable_windows_ansi, render, use_color
-            if args.watch:
-                watcher = Watcher(snapshot, []).start()
-                try:
-                    while True:
-                        time.sleep(3600)
-                except KeyboardInterrupt:
-                    watcher.stop()
-                return 0
-            color = use_color()
-            if color:
-                enable_windows_ansi()
-            print(chr(10).join(render(snapshot(), set(), None, color)))
-            return 0
-        if args.command == "clean":
-            from .youtube.jobs import runner_active
-            from .youtube.transcribe import clean_work
-            if runner_active() and not args.force:
-                print("a transcription runner is active; its audio would be deleted. Wait for it or use --force.")
-                return 1
-            print(f"removed {clean_work()} leftover folder(s) from {paths.work_dir()}")
-            return 0
-        if args.command == "serve":
-            from .server import serve
-            found, source = paths.resolve(args.data_dir)
-            serve(found, args.port, source, args.lan)
-            return 0
-
-        data = paths.data_dir(args.data_dir)
-        if args.command == "validate":
-            from .validate import inspect
-            summary, problems, warnings = inspect(data)
-            print("\n".join(summary))
-            print("PROBLEMS:" if problems else "OK: no problems.")
-            for p in problems:
-                print(" -", p)
-            if warnings:
-                print(f"WARNINGS ({len(warnings)}; heuristics, they never fail the validation; check them):")
-                for w in warnings:
-                    print(" ~", w)
-            return 1 if problems else 0
-        elif args.command == "captions":
-            from .youtube import extract_id
-            from .youtube.captions import fetch, fetch_many
-            out = paths.transcripts_dir(data)
-            if args.text:
-                doc = fetch(extract_id(args.text), out)
-                if "error" in doc:
-                    print("error:", doc["error"])
-                    return 1
-                for second, text in doc["segments"]:
-                    print(f"[{second // 60:02d}:{second % 60:02d}] {text}")
-            else:
-                fetch_many([extract_id(v) for v in args.videos], out, args.pause)
-        elif args.command == "transcribe":
-            from .youtube.jobs import submit
-            result = submit(args.videos, paths.transcripts_dir(data), args.model, args.language, args.pause,
-                            args.overwrite, args.device, args.downloads, args.workers, wait=not args.no_wait)
-            return 3 if result["blocked"] else (1 if result["failed"] else 0)
-    except paths.ConfigError as exc:
-        print("error:", exc, file=sys.stderr)
+        return HANDLERS[args.command](args)
+    except UsageError as exc:
+        print(f"erro: {exc}", file=sys.stderr)
         return 2
-    return 0
+    except KeyboardInterrupt:
+        return 0
+    except OSError as exc:
+        print(f"erro: {exc}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":
