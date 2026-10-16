@@ -6,6 +6,10 @@ O **k_study** é um servidor local de **trilhas de aprendizagem** (cursos com v�
 
 **Comece pela entrevista em `specs/01-entrevista.md`.** Antes de agir, leia as specs nesta ordem: `specs/00-visao-geral.md`, `01-entrevista.md`, `02-estrutura-do-conteudo.md`, `03-pipeline-de-geracao.md`, e consulte `04` (vídeos e k_transcriptor), `05` (leituras), `06` (questões), `07` (validação e qualidade), `08` (servidor e admin), `09` (templates) quando chegar a hora. Formato dos arquivos: `docs/modelo-de-dados.md`. Contrato técnico: `docs/arquitetura.md`. Exemplo real de qualidade: `content/aprendizagem-de-maquina/`.
 
+## Tarefas em andamento
+
+Há tarefas planejadas e o registro do que já foi feito em `.tasks/`. **Leia `.tasks/00-manifest.md` antes de agir** e siga o protocolo dele (escolher a próxima tarefa disponível, marcar o andamento, comitar de forma atômica, registrar decisões).
+
 ## Regras inegociáveis
 
 1. Não crie nada antes da entrevista aprovada; grave as decisões em `content/<slug>/brief.md`.
