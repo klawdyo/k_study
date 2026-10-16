@@ -43,7 +43,7 @@ Use o que a avaliação real usa (entrevista, C2 e C4). **Sem cálculo** quando 
 Ao final da trilha (ou do bloco), rode um script seu (guarde-o fora de `content/`, ou em `tools/` se a pessoa quiser) que, para cada questão `single` e `multiple`, reordena `options` com semente fixa derivada de `id do arquivo + id da questão` e **reatribui os ids** `a, b, c, d…` na nova ordem, de modo a equilibrar a posição da correta. Regras:
 
 - **Nunca embaralhe questões que algum aluno já respondeu.** O progresso guarda `chosen: ["b"]`: mudar o significado da letra falsifica as respostas. Confira o banco (somente leitura) ou, na dúvida, não embaralhe um conjunto publicado. Só embaralhe conjuntos novos, antes de publicar.
-- Rode `py main.py validate <slug>` depois e confira que a distribuição ficou equilibrada.
+- Rode `kstudy validate <slug>` depois e confira que a distribuição ficou equilibrada.
 
 ## Banco de erros lógicos comuns (para questões de código; adapte ao assunto)
 
@@ -75,4 +75,4 @@ Veja `09-templates.md` para um esqueleto de cada tipo.
 - [ ] Nenhuma citação por letra; tamanhos equilibrados; posições equilibradas (script rodado, se aplicável).
 - [ ] Gabaritos conferidos; códigos executados.
 - [ ] Sem cálculo (se a avaliação não tem); sem LaTeX; imagens existem.
-- [ ] `py main.py validate` sem erros e sem avisos de posição/tamanho.
+- [ ] `kstudy validate` sem erros e sem avisos de posição/tamanho.

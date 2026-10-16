@@ -1,18 +1,20 @@
 # 04 · Vídeos e o k_transcriptor
 
-O k_study **não** busca nem transcreve vídeos. Isso é feito pelo **k_transcriptor** (outro repositório do mesmo autor; comando `ktr`). Ele busca no YouTube, baixa **só o áudio** (um por vez), transcreve localmente com o Whisper (GPU NVIDIA se houver; senão CPU) e guarda a transcrição com minutagem. A transcrição é o que permite **conferir o que o vídeo realmente diz**.
+O k_study **não** busca nem transcreve vídeos. Isso é feito pelo **k_transcriptor** (outro repositório do mesmo autor; comando `ktr`, ou `py main.py <comando>` dentro da pasta dele). Ele busca no YouTube, baixa **só o áudio** (um por vez), transcreve localmente com o Whisper (GPU NVIDIA se houver; senão CPU) e guarda a transcrição com minutagem. A transcrição é o que permite **conferir o que o vídeo realmente diz**.
 
 ## Instalar o k_transcriptor
 
-1. Procure uma pasta irmã (`../k_transcriptor`) ou uma instalação existente (`ktr where`; `ktr --help`). Se já houver, use-a.
-2. Se não houver, clone fora da pasta do k_study (por exemplo, ao lado dele). A URL é **`https://github.com/klawdyo/k_transcriptor.git`**; um clone existente mostra a URL com `git remote -v`.
+1. Procure uma instalação existente: `ktr --help`, `ktr where` (mostra o cache dele) ou uma pasta irmã (`../k_transcriptor`). Se já houver, use-a.
+2. Se não houver, clone **fora** da pasta da trilha. A URL é **`https://github.com/klawdyo/k_transcriptor.git`**.
 
    ```bash
    git clone https://github.com/klawdyo/k_transcriptor.git ../k_transcriptor
    cd ../k_transcriptor
+   py main.py setup
    ```
-3. Instale seguindo o `README.md` do próprio k_transcriptor (hoje: `.\install.ps1` no Windows, `sh install.sh` em Linux/macOS; o README pode indicar `py main.py setup`: **vale o README dele**). Requer Python 3.10+. O instalador faz `ktr doctor --download-model` (baixa o modelo, cerca de 0,5 GB na primeira vez).
-4. Confira: `ktr doctor`.
+
+3. `py main.py setup` instala o que ele precisa (requer Python 3.10+) e baixa o modelo de transcrição (cerca de 0,5 GB na primeira vez). Se o README do k_transcriptor trouxer outro comando de instalação, **vale o README dele**.
+4. Confira: `ktr doctor`. Se o comando `ktr` não estiver no PATH, use `py main.py <comando>` dentro da pasta do k_transcriptor (por exemplo, `py main.py doctor`). O cache e os áudios ficam numa pasta própria dele (`ktr where`), nunca dentro da trilha.
 
 Antes de baixar qualquer áudio, **tenha a autorização da pessoa** (pergunta B5 da entrevista) registrada no `brief.md`.
 
@@ -26,7 +28,7 @@ ktr queue --watch                                   # fila ao vivo, em outro ter
 ktr export ID1 ID2 --to content/<slug>/transcripts # copia transcrições já em cache
 ktr captions ID1 ID2                                # legenda do YouTube (rápido, mas o IP é bloqueado após ~15 consultas)
 ktr clean                                           # apaga os áudios; ÚNICO que apaga
-ktr where                                           # onde fica o cache
+ktr where                                           # onde fica o cache dele (próprio; fora da trilha)
 ```
 
 - **Fila única.** Várias chamadas, em vários terminais, entram na mesma fila; cada chamada só retorna quando os **seus** vídeos terminam. Downloads **um por vez** (não aumente `--downloads`); transcrição até 2 em paralelo (`--workers`).

@@ -6,9 +6,9 @@ Monte sua lista de tarefas (ferramenta de tarefas, ou `content/<slug>/_tarefas.m
 
 ## Etapa 0 · Preparação
 
-1. `py main.py new-trail <slug> --title ... --description ...`.
+1. `kstudy new-trail <slug> --title ... --description ...` (sem o `kstudy`: copie os templates de `09`).
 2. Coloque o material em `materials/`; extraia o texto de cada arquivo para `materials/_text/<arquivo>.txt` (cache seu: não reabra arquivos pesados depois). Guarde a **numeração** (slide N, página N) porque `goals`, `slides` e as leituras citam isso.
-3. Instale e teste o k_transcriptor (`04`): `ktr doctor`.
+3. Instale e teste o k_transcriptor (`04`): `py main.py setup` na pasta dele e depois `ktr doctor`.
 4. Divisão aprovada → crie a lista de aulas.
 
 ## Etapa 1 · Por aula: tópicos do material
@@ -33,11 +33,24 @@ Em paralelo à curadoria (subagentes, ver abaixo): `aula-N-do-zero.md` (`05`) e 
 
 ## Etapa 6 · Integração
 
-Quem integra é **o agente principal**: monta `block-N/block.json` (vídeos na ordem do material com `clips`, `warnings`, `goals`, `transcript`, `review`; depois leitura; depois questões), registra o bloco em `trail.json`, roda o **embaralhamento determinístico** das alternativas (`06`, seção de posições), `py main.py validate <slug>` e `py main.py sync`.
+Quem integra é **o agente principal**: monta `block-N/block.json` (vídeos na ordem do material com `clips`, `warnings`, `goals`, `transcript`, `review`; depois leitura; depois questões), registra o bloco em `trail.json`, roda o **embaralhamento determinístico** das alternativas (`06`, seção de posições), `kstudy validate <slug>` e `kstudy sync`.
 
 ## Etapa 7 · Auditoria própria
 
-Siga `07`. Inclui conferir pessoalmente os vídeos descartados e a cobertura. Só então rode `ktr clean` (se tiver certeza) e entregue.
+Siga `07`. Inclui conferir pessoalmente os vídeos descartados e a cobertura. Só então rode `ktr clean` (se tiver certeza).
+
+## Etapa 8 · Capa (opcional)
+
+Uma capa deixa o cartão da trilha reconhecível. **Pergunte à pessoa** se quer uma (ou use o que ela decidiu na entrevista). Se sim:
+
+- Imagem **1200×630**, formato `png`, `jpg` ou `webp`, **até 1 MB**; salve em `content/<slug>/cover.webp` (ou `.png`/`.jpg`) e registre no `trail.json`: `"cover": "cover.webp"` (caminho relativo à pasta da trilha).
+- Gere com a ferramenta de imagens que você tiver; sem ela, peça à pessoa uma imagem própria. Se a imagem passar de 1 MB, comprima ou reduza.
+- **Direitos:** nada de logotipos, marcas, personagens ou rostos de terceiros; nada de captura de slide ou de vídeo; texto grande e curto (no máximo o título), nunca texto minúsculo. Ilustração abstrata ou simples sobre o tema funciona melhor.
+- Rode `kstudy validate <slug>` de novo: ele confere existência, tipo e tamanho da capa.
+
+## Etapa 9 · Empacotar e entregar
+
+`kstudy pack <slug>` valida a trilha e gera `<slug>.zip` (regras e checklist em `07`, seção "Empacotar e entregar"). Entregue o arquivo à pessoa e diga a ela: abrir `/admin/` no servidor, **Importar trilha**, escolher o `.zip`. Você não tem acesso ao servidor: não tente importar nem copiar para lá.
 
 ## Paralelização com subagentes
 
@@ -63,7 +76,7 @@ Cada aula tem uma **meta de tempo obrigatório** derivada da entrevista (padrão
 
 ## Critérios de pronto (por bloco e para a trilha)
 
-- [ ] `py main.py validate <slug>` sem erros; avisos lidos e tratados ou justificados.
+- [ ] `kstudy validate <slug>` sem erros; avisos lidos e tratados ou justificados.
 - [ ] Todo tópico do material tem: leitura (tabela de cobertura 100%) e pelo menos uma questão; vídeo bom ou lacuna declarada após 2 rodadas.
 - [ ] Todo vídeo avaliado está em um bloco ou numa ficha com veredito e motivo; nenhuma transcrição "órfã".
 - [ ] Todo `mm:ss` de `covers`, `clips` e `verdict` existe na transcrição e na duração real.
@@ -74,4 +87,4 @@ Cada aula tem uma **meta de tempo obrigatório** derivada da entrevista (padrão
 
 ## O que entregar ao final (relatório curto à pessoa)
 
-Em português, sem despejar conteúdo: (1) o que ficou pronto (blocos, aulas, número de vídeos/leituras/questões, tempo obrigatório total); (2) o que **não** pôde ser verificado (figuras não lidas, vídeos sem lacuna coberta, transcrição ilegível); (3) o que ela precisa decidir; (4) como abrir (`py main.py serve`, `http://localhost:8765/#/t/<slug>`). Registre o mesmo no `brief.md`.
+Em português, sem despejar conteúdo: (1) o que ficou pronto (blocos, aulas, número de vídeos/leituras/questões, tempo obrigatório total); (2) o que **não** pôde ser verificado (figuras não lidas, vídeos sem lacuna coberta, transcrição ilegível); (3) o que ela precisa decidir; (4) **onde está o pacote** (`<slug>.zip`) e como importá-lo: no servidor, `/admin/` → **Importar trilha** (para trocar uma trilha existente, marcar "substituir"). Registre o mesmo no `brief.md`.

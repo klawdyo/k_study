@@ -14,11 +14,14 @@ Esqueletos para copiar. Troque o conteúdo, mantenha as chaves. Comentários `//
   "level": "iniciante",
   "tags": ["<assunto>", "<objetivo>"],
   "createdAt": "<AAAA-MM-DD>",
+  "cover": "cover.webp",
   "blocks": [
     { "id": "block-1", "title": "Bloco 1 · <tema>", "file": "block-1/block.json" }
   ]
 }
 ```
+
+`cover` é opcional (imagem 1200×630, png, jpg ou webp, até 1 MB, dentro da pasta da trilha); remova a linha se não houver capa.
 
 ## `block-1/block.json` (um item de cada tipo)
 

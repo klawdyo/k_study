@@ -1,6 +1,6 @@
 # 07 · Validação e qualidade
 
-`py main.py validate <slug>` confere a **estrutura**. Ele **não prova qualidade**. Uma geração anterior passou no validador e a auditoria achou: validação de vídeos **inventada** (tempos além da duração do vídeo, `covers` que não existem na fala, vídeo em inglês transcrito como português), LaTeX nas leituras, leituras com 184 a 235 linhas, respostas quase sempre na mesma alternativa e sempre a mais longa. Use esta spec para não repetir.
+`kstudy validate <slug>` confere a **estrutura**. Ele **não prova qualidade**. Uma geração anterior passou no validador e a auditoria achou: validação de vídeos **inventada** (tempos além da duração do vídeo, `covers` que não existem na fala, vídeo em inglês transcrito como português), LaTeX nas leituras, leituras com 184 a 235 linhas, respostas quase sempre na mesma alternativa e sempre a mais longa. Use esta spec para não repetir.
 
 ## O que o `validate` REPROVA (erros; saída 1)
 
@@ -58,7 +58,29 @@ Aviso não é erro, mas **todo aviso deve ser lido**; resolva ou justifique no b
 **Geral**
 - [ ] `validate` sem erros; avisos tratados.
 - [ ] `brief.md` atualizado (decisões, pendências, totais).
-- [ ] Servidor aberto no navegador: um vídeo com trechos, uma leitura com imagem, uma questão, o cartão de transcrição.
+- [ ] Se você tem o repositório do k_study: servidor local de teste (`kstudy serve` com banco e `.env` temporários) aberto no navegador: um vídeo com trechos, uma leitura com imagem, uma questão, o cartão de transcrição.
+- [ ] `kstudy pack <slug>` gerou o `.zip` sem erros; abri o zip e conferi: uma pasta de topo `<slug>/`, nada de segredos, áudio nem arquivos fora da lista de extensões.
+
+## Empacotar e entregar
+
+```bash
+kstudy pack <slug>                 # valida e gera <slug>.zip na pasta atual (--out F para outro caminho)
+```
+
+O `pack` roda a validação (problemas reprovam; avisos são mostrados), recusa extensões não permitidas, ignora lixo (`desktop.ini`, `.DS_Store`, `__pycache__`, `*.tmp`, `_tarefas.md`, `progress.json`, `.env`) e grava um zip determinístico. **O servidor refaz todas as checagens ao importar** e recusa o pacote inteiro se alguma falhar. As regras:
+
+- **Uma única pasta de topo `<slug>/`** com a trilha dentro, exatamente como em `02`; o `id` do `trail.json` é igual ao slug (só `a-z`, `0-9`, `-`).
+- **Caminhos** normalizados: sem `..`, sem `/` inicial, sem `\`, sem letra de unidade, sem caracteres de controle; **sem links simbólicos**.
+- **Extensões permitidas:** `.json .md .png .jpg .jpeg .webp .gif .pdf .txt`. **Recusados:** SVG, HTML, JS e executáveis.
+- **Limites:** até 100 MB compactado, 300 MB descompactado, 5000 arquivos; razão de compressão por arquivo até 200.
+- **Conteúdo ativo é recusado** em `.md`, `.json` e `.txt`: `<script`, `<iframe`, `<object`, `<embed`, `javascript:`, `data:text/html`, atributos de evento (`onerror=`, `onload=`...). Em leituras, escreva código como bloco de código; não precisa de HTML.
+- **Capa** (`cover`): imagem png, jpg ou webp de até 1 MB dentro da pasta da trilha.
+- A validação precisa passar **sem problemas** (avisos viram avisos na tela do administrador).
+- Se o slug já existe no servidor, o administrador precisa marcar "substituir": a troca é atômica e o progresso dos alunos é mantido (por isso **ids publicados não mudam**).
+
+Não consegue usar o `kstudy`? Gere o zip à mão com **as mesmas regras** (uma pasta de topo, só as extensões permitidas, sem links simbólicos), confira com a checklist de `07` e avise a pessoa de que o servidor pode recusar o pacote.
+
+O que **não** vai para o pacote por regra (mesmo que exista na pasta): áudios e vídeos, `materials/` que a pessoa não queira distribuir (material de terceiros), `.env`, bancos, arquivos de progresso. Se `materials/` ou `transcripts/` contiverem material de terceiros, confirme com a pessoa antes de empacotar (a decisão fica no `brief.md`).
 
 ## Auditoria por subagente independente
 
@@ -76,4 +98,5 @@ Depois de pronto, rode um subagente **que não escreveu nada** da trilha, só l�
 8. Entregar gabarito não conferido ou código não executado como se tivesse sido.
 9. Baixar vários vídeos ao mesmo tempo, guardar áudio/vídeo dentro de `content/` ou no Git.
 10. Perguntar "posso continuar?" a cada etapa depois da entrevista aprovada; ou, ao contrário, mudar o escopo aprovado sem avisar.
-11. Alterar `docs/arquitetura.md` ou o código do servidor para "consertar" conteúdo: conteúdo se corrige no arquivo.
+11. Alterar o código do servidor (ou o contrato dele) para "consertar" conteúdo: conteúdo se corrige no arquivo.
+12. Pôr segredos, `.env`, banco de dados, áudio, SVG, HTML ou JavaScript no pacote; entregar um zip que o `kstudy pack` não gerou e que você não conferiu contra as regras abaixo.

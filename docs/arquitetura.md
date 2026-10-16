@@ -44,7 +44,7 @@ data/k_study.db          o banco (fora do git)
 tests/                   pytest, sem rede
 ```
 
-Configuração: `--content-dir` (padrão `./content`), `--db` (padrão `./data/k_study.db`), `--env` (padrão `./.env`); variáveis `K_STUDY_CONTENT`, `K_STUDY_DB`, `K_STUDY_ENV`, `K_STUDY_SPECS_ROOT` (pasta de onde saem as specs do zip; padrão: a raiz do projeto), `K_STUDY_HTTPS=1` (marca cookies `Secure` quando houver HTTPS na frente).
+Configuração: `--content-dir` (padrão `./content`), `--db` (padrão `./data/k_study.db`), `--env` (padrão `./.env`); variáveis `K_STUDY_CONTENT`, `K_STUDY_DB`, `K_STUDY_ENV`, `K_STUDY_SPECS_ROOT` (pasta de onde saem as specs do zip; padrão: a raiz do projeto), `K_STUDY_HTTPS=1` (marca cookies `Secure` quando houver HTTPS na frente), `K_STUDY_HOST` (endereço em que escuta; `--host`; padrão `127.0.0.1`, em Docker `0.0.0.0`), `K_STUDY_ALLOWED_HOSTS` (nomes de host aceitos no cabeçalho `Host`, separados por vírgula, além de localhost), `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` (entrada com o Google, seção 5.1).
 
 ## 3. Uma trilha em disco (o que os agentes escrevem)
 
@@ -121,6 +121,14 @@ Migração v1 → v2: contas antigas (sem senha) ficam com `password_hash=''` e 
 - **Mostrar sempre nome e e-mail** em qualquer lugar que identifique o aluno (cabeçalho, tabelas do admin, detalhes).
 - **Limite de tentativas:** `check`, `login` e `register` limitados a 5 falhas por 15 min por (e-mail+IP) e 30 por IP → `429 too_many_attempts` com `Retry-After`.
 
+### 5.1 Entrada com o Google (OAuth 2.0 / OpenID Connect, opcional)
+
+- **Só existe se `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` estiverem preenchidas** (no `.env` ou no ambiente). `GET /api/auth/me` devolve `oauth: {"google": bool}` e a tela de entrada só mostra o botão "Entrar com o Google" quando for `true`. Sem as duas variáveis, as rotas respondem `404`. O `.env` criado pelo servidor traz as duas **vazias**, com o comentário de como configurar; o `.env.example` mostra o mesmo.
+- **O endereço de retorno é fixo no sistema: `/auth/oauth/google/callback`. Ele NÃO é variável de ambiente nem vai no `.env`.** Quem configura o Google informa lá, em "URIs de redirecionamento autorizados", o endereço do servidor seguido desse caminho (por exemplo `http://localhost:8765/auth/oauth/google/callback`). O servidor monta o `redirect_uri` com `http` (ou `https` com `K_STUDY_HTTPS=1`) e o `Host` da requisição, que já passou pela validação de host.
+- Rotas (sem sessão, `GET`): `/auth/oauth/google/start` (redireciona ao Google) e `/auth/oauth/google/callback` (recebe `code` e `state`; responde `302` para `/`, ou para `/?oauth_error=<chave>` com as chaves `denied`, `invalid_state`, `failed`, `unverified`, `too_many`; a interface só mostra mensagens fixas).
+- Fluxo de código com **PKCE (S256)**, `state` e `nonce`, guardados num cookie assinado com HMAC do segredo (`kstudy_oauth`; `HttpOnly; SameSite=Lax; Path=/auth/oauth/; Max-Age=600`; Lax porque o Google devolve a pessoa por redirecionamento de outro site). O código é trocado por `id_token` no endpoint de token do Google (única requisição de saída do servidor, a endereços fixos) e conferido: `aud`, `iss`, `exp`, `nonce` e `email_verified`.
+- A conta é achada pelo e-mail (normalizado). Se não existir, é criada com o nome do Google e o hash de senha `oauth$google` (nunca confere como senha e **não** é "conta sem senha": não pode ser reivindicada por `register`); o primeiro cadastro, por qualquer meio, vira administrador. Conta existente com senha entra sem mudar a senha; conta antiga sem senha passa a ter o hash `oauth$google`. Auditoria: `login_oauth` e `login_oauth_failed`; falhas contam no limite por endereço.
+
 ## 6. CSRF e cabeçalhos
 
 - Toda requisição que muda estado (`POST`, `PUT`, `PATCH`, `DELETE`) exige o cabeçalho **`X-CSRF-Token`** igual ao token da sessão (`sessions.csrf_token`), comparado com `hmac.compare_digest`; sem ele, `403 csrf_failed`. `GET /api/auth/me` devolve `csrfToken`.
@@ -128,7 +136,7 @@ Migração v1 → v2: contas antigas (sem senha) ficam com `password_hash=''` e 
 - Exceção: `POST /api/track` com `navigator.sendBeacon` (que não envia cabeçalhos) aceita o token no corpo JSON (campo `csrf`).
 - Cabeçalho `Origin` (quando presente) deve ser o próprio host; escritas exigem `Content-Type: application/json` (exceto o upload do zip: `application/zip`); corpo JSON ≤ 1 MB (`413`).
 - Todas as respostas: `Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-src https://www.youtube-nocookie.com https://www.youtube.com; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: same-origin`, `Cross-Origin-Resource-Policy: same-origin`, `Cache-Control: no-store` nas rotas de API.
-- Host: localhost, `127.0.0.1`, `::1`; com `--lan` também IPs e o nome do computador, e só clientes de rede privada. `--lan` continua escutando em `0.0.0.0`.
+- Host: localhost, `127.0.0.1`, `::1` e os nomes de `K_STUDY_ALLOWED_HOSTS`; com `--lan` também IPs e o nome do computador, e só clientes de rede privada. `--lan` continua escutando em `0.0.0.0`; `--host` escolhe o endereço de escuta sem restringir clientes (uso em Docker e atrás de proxy).
 
 ## 7. API (JSON UTF-8; erros `{"error": "<codigo>", "message": "<texto em português>"}`)
 
@@ -174,7 +182,7 @@ Rastreio (igual à revisão 1): `{"event":"open","trail","block","item"}` → `{
 
 | Comando | Para quem | O que faz |
 | :-- | :-- | :-- |
-| `serve [--port 8765] [--lan] [--content-dir D] [--db F] [--env F]` | todos | sobe o servidor (cria o `.env` no primeiro uso) |
+| `serve [--port 8765] [--host H] [--lan] [--content-dir D] [--db F] [--env F]` | todos | sobe o servidor (cria o `.env` no primeiro uso); `SIGTERM` encerra limpo (Docker) |
 | `validate [slug]` | agente | valida uma trilha (ou todas); erros reprovam, heurísticas só avisam |
 | `new-trail SLUG --title T [--description D]` | agente | cria `content/<slug>/` com estrutura mínima |
 | `pack SLUG [--out FILE]` | agente | valida e gera o pacote zip importável (3.1) |
@@ -189,7 +197,7 @@ Não existe mais o comando `admin` nem a porta 8766. Códigos de saída: 0 ok, 1
 
 ## 10. Segurança: requisitos não negociáveis (OWASP Top 10)
 
-A01 acesso: toda rota de dados exige sessão; rotas admin exigem `is_admin`; filtros por `student_id` da sessão (nunca de parâmetro); nenhuma rota por caminho de arquivo; lista permitida de arquivos. A02 criptografia: scrypt + pepper, tokens com `secrets`, `.env` fora do git e 0600, sem segredos em log. A03 injeção: SQL parametrizado, sem `shell=True`, sem `eval`, saída HTML escapada, CSP. A04 desenho: limites de tamanho e de taxa, importação de zip em quarentena. A05 configuração: cabeçalhos de segurança, sem listagem de diretório, sem traceback ao cliente, `Server` sem versão. A06 componentes: dependências vendorizadas (`marked`) em versão sem CVE conhecida. A07 autenticação: política de senha, limite de tentativas, sessão trocada no login, expiração, logout no servidor, mensagem genérica de erro de login. A08 integridade: validação do pacote antes de registrar, extração em pasta temporária e troca atômica. A09 registro: `audit_log` de logins e ações do admin, sem senhas nem tokens. A10 SSRF: o servidor não faz requisições de saída com dados do usuário.
+A01 acesso: toda rota de dados exige sessão; rotas admin exigem `is_admin`; filtros por `student_id` da sessão (nunca de parâmetro); nenhuma rota por caminho de arquivo; lista permitida de arquivos. A02 criptografia: scrypt + pepper, tokens com `secrets`, `.env` fora do git e 0600, sem segredos em log. A03 injeção: SQL parametrizado, sem `shell=True`, sem `eval`, saída HTML escapada, CSP. A04 desenho: limites de tamanho e de taxa, importação de zip em quarentena. A05 configuração: cabeçalhos de segurança, sem listagem de diretório, sem traceback ao cliente, `Server` sem versão. A06 componentes: dependências vendorizadas (`marked`) em versão sem CVE conhecida. A07 autenticação: política de senha, limite de tentativas, sessão trocada no login, expiração, logout no servidor, mensagem genérica de erro de login. A08 integridade: validação do pacote antes de registrar, extração em pasta temporária e troca atômica. A09 registro: `audit_log` de logins e ações do admin, sem senhas nem tokens. A10 SSRF: o servidor não faz requisições de saída com dados do usuário; a única saída é a troca do código OAuth, a um endereço fixo do Google, e só com o login do Google configurado.
 
 ## 11. Quem é dono de quê
 

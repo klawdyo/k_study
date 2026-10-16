@@ -1,6 +1,6 @@
 # Modelo de dados dos arquivos de conteúdo
 
-Formato exato dos arquivos que os agentes escrevem em `content/<slug>/`. O contrato geral (pastas, banco, API, CLI) está em [`arquitetura.md`](arquitetura.md); este arquivo detalha só os arquivos de conteúdo. Se este texto divergir do validador (`src/k_study/validate.py`), vale o validador, e este texto deve ser corrigido.
+Formato exato dos arquivos que os agentes escrevem em `content/<slug>/`. O contrato do servidor (banco, API, CLI) está em `arquitetura.md`, no repositório do k_study; este arquivo detalha só os arquivos de conteúdo e é autossuficiente para quem cria trilhas. Se este texto divergir do validador (`src/k_study/validate.py`), vale o validador, e este texto deve ser corrigido.
 
 Regras gerais:
 
@@ -23,6 +23,7 @@ Regras gerais:
   "level": "iniciante",
   "tags": ["redes", "trabalho"],
   "createdAt": "2026-10-16",
+  "cover": "cover.webp",
   "blocks": [
     { "id": "block-1", "title": "Bloco 1 · Fundamentos", "file": "block-1/block.json" }
   ]
@@ -36,6 +37,7 @@ Regras gerais:
 | `title` | sim | título exibido |
 | `blocks` | sim | lista ordenada de `{id, title, file}`; `id` igual ao `id` dentro do `block.json` |
 | `description`, `language`, `level`, `tags`, `createdAt` | não | exibidos na grade de trilhas e usados em filtros; `level`: `iniciante`, `intermediario` ou `avancado` (convenção, sem validação) |
+| `cover` | não | **capa** da trilha: caminho relativo (à pasta da trilha) de uma imagem `png`, `jpg` ou `webp` de **até 1 MB** (recomendado 1200×630), por exemplo `"cover.webp"`. O validador confere que o arquivo existe, o tipo e o tamanho. Aparece no cartão da trilha; sem ela, a interface usa um degradê |
 
 ## 2. `block.json` (schema `block/v2`)
 
@@ -64,7 +66,7 @@ A ordem de `sections[].items[]` **é a sequência de estudo**. O primeiro item n
 | `goalsTitle` | não | título alternativo da caixa de objetivos |
 | `warnings` | não | lista de pontos em que o item **diverge do material** ou tem armadilha (caixa amarela) |
 | `note` | não | texto livre mostrado acima do conteúdo |
-| `optional` | não | `true`: não entra na barra de progresso e é pulado pelo "PRÓXIMO" |
+| `optional` | não | `true`: a aula é marcada **"Opcional"** (cor própria na interface) e é pulada pelo "PRÓXIMO"; as demais são "Obrigatória". **A barra de progresso conta todas as aulas**, obrigatórias e opcionais |
 | `duration` | não | texto exibido (`"17:29"` ou `"10 min"`); é só rótulo |
 | `channel` | não | canal/autor, exibido no menu |
 
@@ -94,17 +96,17 @@ A ordem de `sections[].items[]` **é a sequência de estudo**. O primeiro item n
 
 - `url`: precisa conter um id de 11 caracteres do YouTube (`watch?v=ID` ou `youtu.be/ID`); é incorporado com `youtube-nocookie`.
 - `start` / `end` (segundos, opcionais, no nível do item) **ou** `clips`: `[{start, end, slides, note}]`, um botão por trecho; `end` > `start`. `slides` é texto livre ("10, 13", "30–34"); `note` diz o que o trecho ensina e o que pular.
-- `transcript`: caminho do JSON de transcrição (seção 4). A página mostra um cartão com o começo, "Ver mais" e horários clicáveis; os `clips` ficam em destaque.
+- `transcript`: caminho do JSON de transcrição (seção 4); o servidor o entrega por id da aula, nunca por caminho. A página mostra um cartão com o começo, "Ver mais" e horários clicáveis; os `clips` ficam em destaque.
 - `review`: resultado da leitura da transcrição contra o material. `badge` = etiqueta verde; `covers` = lista de `"mm:ss–mm:ss — assunto (slides)"` (todo horário citado **tem de existir** no vídeo); `notCovered` = texto; `profile` = lista de linhas Markdown; `verdict` = texto. **Um vídeo sem `review` exibe "transcrição ainda não lida"**; `review` exige `transcript`.
 - `summary`: Markdown opcional.
 
 ### 2.3 `markdown`
 
-`path` (arquivo `.md`, relativo ao `block.json`) **ou** `content` (Markdown dentro do próprio JSON, para textos curtos). Imagens e links são relativos ao `.md`; imagens precisam existir.
+`path` (arquivo `.md`, relativo ao `block.json`) **ou** `content` (Markdown dentro do próprio JSON, para textos curtos). Imagens precisam existir e ficar em `figures/` (cite `../figures/nome.png`; o servidor só entrega imagens dessa pasta, com nome só de letras, números, ponto, hífen e sublinhado). **O Markdown é escapado:** HTML bruto vira texto, só links `http`, `https`, `mailto` e âncoras funcionam, e imagens de fora não aparecem. Link para outro arquivo da trilha não funciona (a aula é entregue por id).
 
 ### 2.4 `pdf`
 
-`path` para um PDF dentro da pasta da trilha.
+`path` para um PDF dentro da pasta da trilha. Ele abre em outra aba (não é incorporado à página).
 
 ### 2.5 `link`
 
@@ -143,7 +145,7 @@ A ordem de `sections[].items[]` **é a sequência de estudo**. O primeiro item n
 | :-- | :-- |
 | `questions[].id` | único no arquivo; convenção `q01`, `q02`…; nunca muda |
 | `type` | `single` (exatamente 1 `correct: true`, botões de rádio) ou `multiple` (2 ou mais corretas; só é acerto se o conjunto marcado for igual ao correto) |
-| `prompt` / `promptFile` | enunciado no próprio JSON ou em `.md` ao lado (para enunciados longos com código e imagens); se houver os dois, vale o arquivo |
+| `prompt` / `promptFile` | enunciado no próprio JSON (**recomendado**). `promptFile` (`.md` ao lado) é aceito pelo validador, mas o servidor ainda **não o entrega** (a interface mostra um aviso): para enunciados longos com código, use `prompt` |
 | `options[]` | `{id, text, correct, explanation}`; `id` único na questão (`a`, `b`, `c`, `d`…) |
 | `options[].explanation` | **obrigatória em toda alternativa**, certa ou errada (o aprendizado está nelas) |
 | `generalExplanation` | **obrigatória**: a ideia central, que ensina |
@@ -170,13 +172,24 @@ Formato do k_transcriptor (`ktr transcribe … --copy-to content/<slug>/transcri
 | `brief.md` | respostas da entrevista (decisões); retomar o trabalho depois. Ver `specs/01-entrevista.md` e `specs/09-templates.md` |
 | `block-N/validacao-videos-aula-N.md` | ficha de conferência dos vídeos (matriz tópico × vídeo, descartados, lacunas); registro, não aparece na interface |
 | `block-N/guia-*.md` | opcional: guia de leitura de código; entra no bloco como item `markdown` |
-| `materials/` | material que a pessoa forneceu |
-| `figures/` | imagens usadas nas leituras e questões |
+| `materials/` | material que a pessoa forneceu (**não** é lido pela interface; só entra no pacote se a pessoa quiser distribuí-lo) |
+| `figures/` | imagens usadas nas leituras e questões (`png`, `jpg`, `webp` ou `gif`; é a única pasta de imagens que o servidor entrega) |
+| `cover.webp` | a capa, se houver (`cover` do `trail.json`) |
 
 ## 6. O que o validador confere
 
-Ver `specs/07-validacao-e-qualidade.md`. Em resumo: **erros** (reprovam, saída 1) para estrutura, ids, caminhos, imagens, URL de vídeo, trechos com fim ≤ início, transcrição inexistente, `review` sem `transcript`, questões sem alternativa certa/explicação e caracteres de controle; **avisos** (heurísticas) para trecho além do fim do vídeo, LaTeX, posição/tamanho da alternativa correta, explicações curtas e leituras curtas.
+Ver `specs/07-validacao-e-qualidade.md`. Em resumo: **erros** (reprovam, saída 1) para estrutura, ids, caminhos, imagens, capa (existência, tipo e tamanho), URL de vídeo, trechos com fim ≤ início, transcrição inexistente, `review` sem `transcript`, questões sem alternativa certa/explicação e caracteres de controle; **avisos** (heurísticas) para trecho além do fim do vídeo, LaTeX, posição/tamanho da alternativa correta, explicações curtas e leituras curtas.
 
-## 7. Progresso dos alunos
+## 7. Pacote zip da trilha
 
-Não é arquivo: fica no banco (`data/k_study.db`) e só a API grava. Formato devolvido por `GET /api/trails/<slug>/progress`: ver `arquitetura.md`, seção 6. Para importar um `progress.json` do formato antigo: `kstudy import-progress --email E --trail SLUG ARQUIVO.json`.
+O que o administrador importa. Um `.zip` com **uma única pasta de topo `<slug>/`** que contém a trilha como descrita acima. Gere com `kstudy pack <slug>`. Regras (o servidor recusa o pacote inteiro se alguma falhar; detalhes e checklist em `specs/07-validacao-e-qualidade.md`):
+
+- caminhos normalizados, sem `..`, sem `\`, sem links simbólicos;
+- só as extensões `.json .md .png .jpg .jpeg .webp .gif .pdf .txt` (nada de SVG, HTML ou JS);
+- até 100 MB compactado, 300 MB descompactado, 5000 arquivos;
+- sem conteúdo ativo (`<script`, `<iframe`, `javascript:`, atributos `onerror=`...) em `.md`, `.json` e `.txt`;
+- `kstudy validate` precisa passar sem problemas.
+
+## 8. Progresso dos alunos
+
+Não é arquivo: fica no banco (`data/k_study.db`) e só a API grava, para a conta de quem está logado. Formato devolvido por `GET /api/trails/<slug>/progress`: `{items, answers, notes}`, com chaves `"<bloco>/<item>"`. Para importar um `progress.json` do formato antigo para uma conta existente: `kstudy import-progress --email E --trail SLUG ARQUIVO.json`.
