@@ -20,3 +20,7 @@ progress.json
 
 # segredos locais
 .env
+
+# 
+content
+.tasks
