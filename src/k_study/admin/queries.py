@@ -1,5 +1,8 @@
 """Consultas SQL do painel do admin (somente leitura). Cada função recebe uma conexão sqlite3 e devolve dados JSON.
 
+Esquema v2 (docs/arquitetura.md, seção 4): todo aluno traz `name` e `email`; toda trilha traz `active`.
+As funções só leem: recebem uma conexão sqlite3 com row_factory = sqlite3.Row e não conhecem HTTP.
+
 Convenções
   * Tempo em segundos inteiros; datas em ISO 8601 UTC; taxas em fração 0..1 (None quando não há base de cálculo).
   * "Item obrigatório" = items.optional = 0. "Item feito" = progress.done = 1 em um item que existe no índice.
@@ -19,15 +22,15 @@ overview():
                           "answers", "wrong", "error_rate"}]                         # até 8
    "abandoned_items":   [{"trail", "trail_title", "block_id", "item_id", "title", "type", "visits", "quick_visits",
                           "abandon_rate"}]                                           # até 8, mínimo 3 visitas
-   "recent": [{"at", "kind": "visit"|"answer"|"done", "student_id", "email", "trail", "trail_title", "item_id",
+   "recent": [{"at", "kind": "visit"|"answer"|"done", "student_id", "name", "email", "trail", "trail_title", "item_id",
                "title", "detail"}]}                                                  # até 15
 
 students():
-  {"students": [{"id", "email", "created_at", "last_activity", "seconds", "visits", "quick_visits",
+  {"students": [{"id", "name", "email", "created_at", "last_activity", "seconds", "visits", "quick_visits",
                  "items_done", "required_done", "answers", "correct", "accuracy"}]}
 
 student(id):  (None se não existe)
-  {"student": {"id", "email", "created_at", "last_activity", "seconds", "visits", "quick_visits", "items_done",
+  {"student": {"id", "name", "email", "created_at", "last_activity", "seconds", "visits", "quick_visits", "items_done",
                "answers", "correct", "accuracy"},
    "trails": [{"slug", "title", "required_items", "required_done", "items_done", "completion", "seconds",
                "visits", "quick_visits", "answers", "correct", "accuracy",
@@ -36,7 +39,7 @@ student(id):  (None se não existe)
                           "questions": [{"question_id", "correct", "chosen", "at"}]}]}]}
 
 trails():
-  {"trails": [{"slug", "title", "description", "blocks", "items", "required_items", "students", "active_7d",
+  {"trails": [{"slug", "title", "description", "cover" (URL ou None), "active" (bool), "blocks", "items", "required_items", "students", "active_7d",
                "avg_completion", "seconds", "avg_seconds", "visits", "accuracy"}]}
 
 trail(slug):  (None se não existe)
@@ -146,7 +149,7 @@ def _avg(values):
 def _trail_summaries(conn, now: datetime) -> list:
     titles = _trail_titles(conn)
     counts = _required_counts(conn)
-    desc = {r["slug"]: r["description"] for r in _rows(conn, "SELECT slug, description FROM trails")}
+    meta = {r["slug"]: r for r in _rows(conn, "SELECT slug, description, cover, active FROM trails")}
     blocks_n = {r["trail"]: r["n"] for r in _rows(conn, "SELECT trail, COUNT(*) n FROM blocks GROUP BY trail")}
     stats = _student_trail_stats(conn)
     cutoff = _iso(now - timedelta(days=ACTIVE_DAYS))
@@ -159,7 +162,9 @@ def _trail_summaries(conn, now: datetime) -> list:
         seconds = sum(s["seconds"] for s in mine)
         answers = sum(s["answers"] for s in mine)
         out.append({
-            "slug": slug, "title": titles[slug], "description": desc.get(slug) or "",
+            "slug": slug, "title": titles[slug], "description": (meta[slug]["description"] or "") if slug in meta else "",
+            "cover": f"/api/trails/{slug}/cover" if slug in meta and meta[slug]["cover"] else None,
+            "active": bool(meta[slug]["active"]) if slug in meta else True,
             "blocks": blocks_n.get(slug, 0), "items": items, "required_items": required,
             "students": len(mine), "active_7d": active.get(slug, 0),
             "avg_completion": _avg([_completion(s, required) for s in mine]),
@@ -242,11 +247,11 @@ def _recent(conn, titles, limit=15) -> list:
             "LEFT JOIN items i ON i.trail=x.trail AND i.block_id=x.block_id AND i.item_id=x.item_id "
             "{where} ORDER BY at DESC LIMIT ?")
     parts = [
-        ("visit", "SELECT x.started_at at, x.student_id sid, s.email, x.trail, x.item_id, i.title, x.seconds det",
+        ("visit", "SELECT x.started_at at, x.student_id sid, s.name, s.email, x.trail, x.item_id, i.title, x.seconds det",
          "visits", ""),
-        ("answer", "SELECT x.at at, x.student_id sid, s.email, x.trail, x.item_id, i.title, x.correct det",
+        ("answer", "SELECT x.at at, x.student_id sid, s.name, s.email, x.trail, x.item_id, i.title, x.correct det",
          "answers", ""),
-        ("done", "SELECT x.at at, x.student_id sid, s.email, x.trail, x.item_id, i.title, 1 det", "progress",
+        ("done", "SELECT x.at at, x.student_id sid, s.name, s.email, x.trail, x.item_id, i.title, 1 det", "progress",
          "WHERE x.done = 1"),
     ]
     events = []
@@ -261,7 +266,7 @@ def _recent(conn, titles, limit=15) -> list:
                 detail = "acertou" if det else "errou"
             else:
                 detail = "concluiu"
-            events.append({"at": r["at"], "kind": kind, "student_id": r["sid"], "email": r["email"], "trail": r["trail"],
+            events.append({"at": r["at"], "kind": kind, "student_id": r["sid"], "name": r["name"] or "", "email": r["email"], "trail": r["trail"],
                            "trail_title": titles.get(r["trail"], r["trail"]), "item_id": r["item_id"],
                            "title": r["title"] or r["item_id"], "detail": detail})
     events.sort(key=lambda e: e["at"], reverse=True)
@@ -277,9 +282,9 @@ def students(conn) -> dict:
         for k in d:
             d[k] += s[k]
     out = []
-    for r in _rows(conn, "SELECT id, email, created_at FROM students ORDER BY email"):
+    for r in _rows(conn, "SELECT id, name, email, created_at FROM students ORDER BY email"):
         t = totals.get(r["id"]) or _empty_stats()
-        out.append({"id": r["id"], "email": r["email"], "created_at": r["created_at"], "last_activity": last.get(r["id"]),
+        out.append({"id": r["id"], "name": r["name"] or "", "email": r["email"], "created_at": r["created_at"], "last_activity": last.get(r["id"]),
                     "seconds": t["seconds"], "visits": t["visits"], "quick_visits": t["quick"], "items_done": t["done"],
                     "required_done": t["required_done"], "answers": t["answers"], "correct": t["correct"],
                     "accuracy": _rate(t["correct"], t["answers"])})
@@ -338,7 +343,7 @@ def student(conn, student_id: int) -> dict | None:
                            "quick_visits": s["quick"], "answers": s["answers"], "correct": s["correct"],
                            "accuracy": _rate(s["correct"], s["answers"]), "items": items})
     me = next(x for x in students(conn)["students"] if x["id"] == student_id)
-    return {"student": {k: me[k] for k in ("id", "email", "created_at", "last_activity", "seconds", "visits",
+    return {"student": {k: me[k] for k in ("id", "name", "email", "created_at", "last_activity", "seconds", "visits",
                                            "quick_visits", "items_done", "answers", "correct", "accuracy")},
             "trails": trail_list}
 

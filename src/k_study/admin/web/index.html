@@ -3,46 +3,35 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Painel do admin · k_study</title>
+<title>Administração · k_study</title>
 <meta name="color-scheme" content="light dark">
-<link rel="stylesheet" href="/style.css">
-<script>
-  // aplica o tema salvo antes de pintar, para não piscar
-  try { var t = localStorage.getItem("kstudy-admin-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
-</script>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
 </head>
 <body>
 <a class="skip" href="#main">Pular para o conteúdo</a>
 <div class="shell" id="shell" hidden>
   <header class="topbar">
-    <a class="brand" href="#/" aria-label="k_study, painel do admin">
+    <a class="brand" href="#/" aria-label="k_study, administração">
       <span class="brand-mark" aria-hidden="true">k</span>
-      <span class="brand-text"><strong>k_study</strong><small>Painel do admin</small></span>
+      <span class="brand-text"><strong>k_study</strong><small>Administração</small></span>
     </a>
-    <nav class="nav" id="nav" aria-label="Seções do painel">
+    <nav class="nav" id="nav" aria-label="Seções da administração">
       <a href="#/" data-nav="overview">Visão geral</a>
       <a href="#/students" data-nav="students">Alunos</a>
       <a href="#/trails" data-nav="trails">Trilhas</a>
+      <a href="#/import" data-nav="import">Importar trilha</a>
     </nav>
     <div class="topbar-tools">
+      <a class="btn" href="/" id="back-link">← Voltar às trilhas</a>
+      <span class="user-id"><span id="user-name" class="user-name"></span><span id="user-email" class="user-email"></span></span>
       <button class="icon-btn" id="theme-btn" type="button" aria-label="Alternar tema claro e escuro" title="Alternar tema"></button>
-      <button class="icon-btn" id="logout-btn" type="button" hidden>Sair</button>
+      <button class="icon-btn" id="logout-btn" type="button">Sair</button>
     </div>
   </header>
   <main id="main" tabindex="-1"></main>
 </div>
-<div class="login-wrap" id="login" hidden>
-  <form class="login-card" id="login-form">
-    <span class="brand-mark big" aria-hidden="true">k</span>
-    <h1>Painel do admin</h1>
-    <p class="muted">Este painel está aberto para a rede local e pede uma senha.</p>
-    <label for="login-pass">Senha</label>
-    <input id="login-pass" type="password" autocomplete="current-password" required>
-    <p class="form-error" id="login-error" role="alert" hidden></p>
-    <button class="btn primary" type="submit">Entrar</button>
-  </form>
-</div>
 <div class="tip" id="tip" role="tooltip" hidden></div>
-<script src="/app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>

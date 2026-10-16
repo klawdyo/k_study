@@ -201,3 +201,38 @@ td.small { font-size: .82rem; color: var(--muted); }
   .kpi-value { font-size: 1.55rem; }
 }
 @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+
+/* revisão 2: pessoas (nome + e-mail), trilhas com capa, importação */
+.person { display: inline-flex; flex-direction: column; line-height: 1.25; min-width: 0; }
+.person .pname { font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+.person .pmail { color: var(--muted); font-size: .8rem; overflow-wrap: anywhere; }
+.user-id { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; align-self: center; }
+.user-name { font-size: .85rem; font-weight: 600; max-width: 22ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-email { font-size: .72rem; color: var(--muted); max-width: 26ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topbar-tools { align-items: center; flex-wrap: wrap; }
+a.btn { display: inline-flex; align-items: center; text-decoration: none; }
+a.btn:hover { text-decoration: none; }
+.trail-card { display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden; }
+.trail-card.off { opacity: .8; }
+.trail-card .tbody { display: grid; gap: 12px; padding: 16px 20px 20px; }
+.tcover { display: block; width: 100%; aspect-ratio: 1200 / 630; object-fit: cover; background: var(--accent-soft); }
+.tcover.fallback { display: grid; place-items: center; font-size: 2.6rem; font-weight: 700; color: var(--accent); background: linear-gradient(135deg, var(--accent-soft), var(--surface) 75%); }
+.ttitle { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.tdesc { margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.dropzone { display: grid; gap: 6px; place-items: center; text-align: center; padding: 28px 16px; border: 2px dashed var(--border); border-radius: var(--radius); cursor: pointer; background: var(--surface-2); }
+.dropzone:hover, .dropzone.over, .dropzone:focus-within { border-color: var(--accent); background: var(--accent-soft); }
+.dropzone p { margin: 0; overflow-wrap: anywhere; }
+.check { display: flex; gap: 8px; align-items: flex-start; margin: 14px 0 0; }
+.check input { margin-top: 4px; }
+.actions { margin: 14px 0 0; display: flex; gap: 10px; flex-wrap: wrap; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.import-result { margin-top: 14px; }
+.notice { border-radius: 12px; padding: 12px 16px; border: 1px solid var(--border); background: var(--surface-2); }
+.notice.good { background: var(--good-soft); border-color: var(--good); }
+.notice.bad { background: var(--bad-soft); border-color: var(--bad); }
+.notice ul { margin: 6px 0 0; padding-left: 20px; }
+.steps { margin: 8px 0 0; padding-left: 22px; display: grid; gap: 8px; }
+.steps code, .card code { background: var(--surface-2); padding: 1px 6px; border-radius: 6px; }
+.skeleton { min-height: 120px; }
+@media (max-width: 760px) { .user-id { display: none; } }

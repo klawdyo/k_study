@@ -1,32 +1,34 @@
-"""Testes do painel do admin: consultas SQL e rotas HTTP, com banco temporário criado com o DDL do contrato."""
-import http.client
-import json
+"""Testes das consultas do painel do admin, contra um banco temporário criado com o DDL EXATO do contrato (seção 4).
+
+As rotas HTTP /api/admin/* e as páginas ficam em tests/test_server.py (acesso) e na verificação no navegador.
+"""
 import sqlite3
-import threading
 from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from k_study.admin import queries, server as admin_server
+from k_study.admin import queries
 
 DDL = """
 PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;
 CREATE TABLE meta      (key TEXT PRIMARY KEY, value TEXT);
-CREATE TABLE trails    (slug TEXT PRIMARY KEY, title TEXT, description TEXT, language TEXT, level TEXT,
-                        tags TEXT, manifest_mtime REAL, synced_at TEXT);
-CREATE TABLE blocks    (trail TEXT, block_id TEXT, title TEXT, position INTEGER, file TEXT,
-                        PRIMARY KEY (trail, block_id));
-CREATE TABLE items     (trail TEXT, block_id TEXT, item_id TEXT, section TEXT, position INTEGER, type TEXT,
-                        title TEXT, path TEXT, optional INTEGER DEFAULT 0, minutes REAL,
+CREATE TABLE trails    (slug TEXT PRIMARY KEY, title TEXT, description TEXT, language TEXT, level TEXT, tags TEXT,
+                        cover TEXT, active INTEGER NOT NULL DEFAULT 1, manifest_mtime REAL, synced_at TEXT);
+CREATE TABLE blocks    (trail TEXT, block_id TEXT, title TEXT, position INTEGER, file TEXT, PRIMARY KEY (trail, block_id));
+CREATE TABLE items     (trail TEXT, block_id TEXT, item_id TEXT, section TEXT, position INTEGER, type TEXT, title TEXT,
+                        path TEXT, transcript TEXT, optional INTEGER DEFAULT 0, minutes REAL,
                         PRIMARY KEY (trail, block_id, item_id));
-CREATE TABLE students  (id INTEGER PRIMARY KEY, email TEXT UNIQUE NOT NULL, created_at TEXT, last_seen_at TEXT);
-CREATE TABLE sessions  (token_hash TEXT PRIMARY KEY, student_id INTEGER NOT NULL REFERENCES students(id),
-                        created_at TEXT, last_seen_at TEXT, user_agent TEXT);
+CREATE TABLE assets    (trail TEXT, path TEXT, kind TEXT, size INTEGER, PRIMARY KEY (trail, path));
+CREATE TABLE students  (id INTEGER PRIMARY KEY, email TEXT UNIQUE NOT NULL, name TEXT NOT NULL,
+                        password_hash TEXT NOT NULL, is_admin INTEGER NOT NULL DEFAULT 0, created_at TEXT, last_seen_at TEXT);
+CREATE TABLE sessions  (token_hash TEXT PRIMARY KEY, student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+                        csrf_token TEXT NOT NULL, created_at TEXT, last_seen_at TEXT, expires_at TEXT, user_agent TEXT);
+CREATE TABLE login_attempts (key TEXT NOT NULL, at TEXT NOT NULL);
+CREATE TABLE audit_log (id INTEGER PRIMARY KEY, at TEXT, student_id INTEGER, action TEXT, detail TEXT, ip TEXT);
 CREATE TABLE progress  (student_id INTEGER, trail TEXT, block_id TEXT, item_id TEXT, done INTEGER, at TEXT,
                         PRIMARY KEY (student_id, trail, block_id, item_id));
-CREATE TABLE answers   (student_id INTEGER, trail TEXT, block_id TEXT, item_id TEXT, question_id TEXT,
-                        chosen TEXT, correct INTEGER, at TEXT,
-                        PRIMARY KEY (student_id, trail, block_id, item_id, question_id));
+CREATE TABLE answers   (student_id INTEGER, trail TEXT, block_id TEXT, item_id TEXT, question_id TEXT, chosen TEXT,
+                        correct INTEGER, at TEXT, PRIMARY KEY (student_id, trail, block_id, item_id, question_id));
 CREATE TABLE notes     (student_id INTEGER, trail TEXT, block_id TEXT, item_id TEXT, text TEXT, at TEXT,
                         PRIMARY KEY (student_id, trail, block_id, item_id));
 CREATE TABLE visits    (id INTEGER PRIMARY KEY, student_id INTEGER, trail TEXT, block_id TEXT, item_id TEXT,
@@ -52,8 +54,8 @@ def make_db(path, populate=True):
 
 
 def fill(conn):
-    conn.executemany("INSERT INTO trails(slug, title, description) VALUES (?,?,?)",
-                     [("am", "Aprendizado de Máquina", "Prova de AM"), ("py", "Python", "")])
+    conn.executemany("INSERT INTO trails(slug, title, description, cover, active) VALUES (?,?,?,?,?)",
+                     [("am", "Aprendizado de Máquina", "Prova de AM", "capa.png", 1), ("py", "Python", "", None, 0)])
     conn.executemany("INSERT INTO blocks VALUES ('am',?,?,?,?)", [("b1", "Bloco 1", 1, "b1/block.json"),
                                                                   ("b2", "Bloco 2", 2, "b2/block.json")])
     conn.executemany("INSERT INTO items(trail, block_id, item_id, section, position, type, title, optional) "
@@ -65,10 +67,11 @@ def fill(conn):
         ("am", "b2", "v3", "Aula 2", 2, "video", "Vídeo extra", 1),
         ("py", "p1", "x1", "Intro", 1, "markdown", "Intro", 0)])
     conn.execute("INSERT INTO blocks VALUES ('py','p1','Bloco P',1,'p1/block.json')")
-    conn.executemany("INSERT INTO students VALUES (?,?,?,?)", [
-        (1, "ana@exemplo.com", iso(20), iso(1)),
-        (2, "bia@exemplo.com", iso(10), iso(9)),
-        (3, "caio@exemplo.com", iso(2), None)])
+    conn.executemany("INSERT INTO students(id, email, name, password_hash, is_admin, created_at, last_seen_at) "
+                     "VALUES (?,?,?,?,?,?,?)", [
+        (1, "ana@exemplo.com", "Ana Souza", "x", 1, iso(20), iso(1)),
+        (2, "bia@exemplo.com", "Bia Lima", "x", 0, iso(10), iso(9)),
+        (3, "caio@exemplo.com", "", "", 0, iso(2), None)])            # conta antiga sem nome nem senha
     # visitas: (aluno, trilha, bloco, item, dias atrás, segundos)
     visits = [(1, "am", "b1", "v1", 1, 600), (1, "am", "b1", "v1", 1, 5), (1, "am", "b1", "r1", 1, 300),
               (1, "am", "b1", "q1", 0, 200), (1, "am", "b2", "v2", 0, 120),
@@ -205,162 +208,19 @@ def test_trail_without_students(tmp_path):
     assert item["completion"] is None and item["abandon_rate"] is None and item["avg_seconds"] == 0
 
 
-# ---------------------------------------------------------------- HTTP ---------------------------------------
-
-class Client:
-    def __init__(self, srv):
-        self.port = srv.server_address[1]
-
-    def request(self, method, path, body=None, headers=None):
-        conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
-        h = dict(headers or {})
-        data = None
-        if body is not None:
-            data = json.dumps(body).encode()
-            h["Content-Type"] = "application/json"
-        conn.request(method, path, data, h)
-        resp = conn.getresponse()
-        raw = resp.read()
-        conn.close()
-        try:
-            payload = json.loads(raw)
-        except ValueError:
-            payload = raw
-        return resp.status, payload, resp
+def test_nome_e_email_em_todas_as_respostas(db):
+    conn = conn_of(db)
+    rows = {s["email"]: s for s in queries.students(conn)["students"]}
+    assert rows["ana@exemplo.com"]["name"] == "Ana Souza" and rows["caio@exemplo.com"]["name"] == ""
+    assert queries.student(conn, 1)["student"]["name"] == "Ana Souza"
+    recent = queries.overview(conn, NOW)["recent"]
+    assert recent and all("name" in e and e["email"] for e in recent)
+    assert {e["name"] for e in recent} >= {"Ana Souza"}
 
 
-def start(db, **kwargs):
-    srv = admin_server.make_server(db, port=0, **kwargs)
-    threading.Thread(target=srv.serve_forever, daemon=True).start()
-    return srv, Client(srv)
+def test_trilhas_trazem_capa_e_active(db):
+    listing = {t["slug"]: t for t in queries.trails(conn_of(db), NOW)["trails"]}
+    assert listing["am"]["active"] is True and listing["am"]["cover"] == "/api/trails/am/cover"
+    assert listing["py"]["active"] is False and listing["py"]["cover"] is None       # desativada continua listada
+    assert queries.trail(conn_of(db), "py", NOW)["trail"]["active"] is False
 
-
-@pytest.fixture
-def panel(db):
-    srv, client = start(db)
-    yield client
-    srv.shutdown()
-    srv.server_close()
-
-
-def test_routes(panel):
-    status, data, _ = panel.request("GET", "/api/admin/overview")
-    assert status == 200 and data["totals"]["students"] == 3
-    assert panel.request("GET", "/api/admin/students")[1]["students"][0]["email"]
-    assert panel.request("GET", "/api/admin/students/1")[1]["student"]["id"] == 1
-    assert panel.request("GET", "/api/admin/students/999")[0] == 404
-    assert panel.request("GET", "/api/admin/students/abc")[0] == 404
-    assert len(panel.request("GET", "/api/admin/trails")[1]["trails"]) == 2
-    assert panel.request("GET", "/api/admin/trails/am")[1]["trail"]["slug"] == "am"
-    assert panel.request("GET", "/api/admin/trails/xxx")[0] == 404
-    assert panel.request("GET", "/api/admin/nada")[0] == 404
-    status, data, resp = panel.request("GET", "/api/admin/session")
-    assert data == {"required": False, "authenticated": True}
-    assert resp.getheader("Cache-Control") == "no-store"
-
-
-def test_static_files(panel):
-    status, body, resp = panel.request("GET", "/")
-    assert status == 200 and b"<html" in body.lower() and "text/html" in resp.getheader("Content-Type")
-    assert panel.request("GET", "/app.js")[0] == 200
-    assert panel.request("GET", "/style.css")[0] == 200
-    assert panel.request("GET", "/..%2f..%2fserver.py")[0] == 404
-    assert panel.request("GET", "/%2e%2e/server.py")[0] == 404
-
-
-def test_read_only_database(db, panel):
-    # o painel nunca escreve: uma tentativa direta pela mesma forma de conexão falha
-    with pytest.raises(sqlite3.OperationalError):
-        conn_of(db).execute("DELETE FROM students")
-    assert panel.request("POST", "/api/admin/students", {})[0] == 404
-    assert panel.request("PUT", "/api/admin/students/1", {})[0] == 405
-    assert panel.request("DELETE", "/api/admin/students/1")[0] == 405
-
-
-def test_missing_database(tmp_path):
-    srv, client = start(tmp_path / "nao-existe.db")
-    try:
-        status, data, _ = client.request("GET", "/api/admin/overview")
-        assert status == 503 and data["error"] == "database_missing" and "banco" in data["message"]
-        assert client.request("GET", "/")[0] == 200            # a interface carrega e mostra o aviso
-    finally:
-        srv.shutdown()
-        srv.server_close()
-
-
-def test_database_without_tables(tmp_path):
-    path = tmp_path / "x.db"
-    sqlite3.connect(path).close()
-    srv, client = start(path)
-    try:
-        status, data, _ = client.request("GET", "/api/admin/overview")
-        assert status == 503 and data["error"] == "database_error"
-    finally:
-        srv.shutdown()
-        srv.server_close()
-
-
-def test_invalid_host_rejected(panel):
-    status, data, _ = panel.request("GET", "/api/admin/overview", headers={"Host": "evil.example.com"})
-    assert status == 403 and data["error"] == "forbidden_host"
-    assert panel.request("GET", "/api/admin/overview", headers={"Host": "192.168.1.5:8766"})[0] == 403   # sem --lan
-    assert panel.request("GET", "/", headers={"Host": "evil.example.com:8766"})[0] == 403
-    assert panel.request("GET", "/api/admin/overview", headers={"Host": "localhost:8766"})[0] == 200
-    assert panel.request("GET", "/api/admin/overview", headers={"Host": "[::1]:8766"})[0] == 200
-
-
-def test_lan_requires_password(db):
-    with pytest.raises(ValueError, match="senha"):
-        admin_server.make_server(db, port=0, lan=True, password=None)
-    with pytest.raises(ValueError):
-        admin_server.run(db, port=0, lan=True, password="")
-
-
-def test_lan_login_flow(db):
-    srv, client = start(db, lan=True, password="segredo")
-    try:
-        assert client.request("GET", "/api/admin/session")[1] == {"required": True, "authenticated": False}
-        status, data, _ = client.request("GET", "/api/admin/overview")
-        assert status == 401 and data["error"] == "login_required"
-        assert client.request("GET", "/")[0] == 200                          # a tela de login é servida
-        status, data, _ = client.request("POST", "/api/admin/login", {"password": "errada"})
-        assert status == 401 and data["error"] == "invalid_password"
-        status, _, resp = client.request("POST", "/api/admin/login", {"password": "segredo"})
-        assert status == 200
-        cookie = resp.getheader("Set-Cookie")
-        assert cookie.startswith("kstudy_admin_sid=") and "HttpOnly" in cookie and "SameSite=Strict" in cookie
-        token = cookie.split(";")[0]
-        status, data, _ = client.request("GET", "/api/admin/overview", headers={"Cookie": token, "Host": "192.168.0.10:8766"})
-        assert status == 200 and data["totals"]["students"] == 3             # Host por IP aceito em --lan
-        assert client.request("GET", "/api/admin/overview", headers={"Cookie": "kstudy_sid=" + token.split("=")[1]})[0] == 401
-        assert client.request("GET", "/api/admin/overview", headers={"Cookie": token, "Host": "evil.example.com"})[0] == 403
-        client.request("POST", "/api/admin/logout", {}, {"Cookie": token})
-        assert client.request("GET", "/api/admin/overview", headers={"Cookie": token})[0] == 401
-    finally:
-        srv.shutdown()
-        srv.server_close()
-
-
-def test_lan_brute_force_blocked(db):
-    srv, client = start(db, lan=True, password="segredo")
-    try:
-        for _ in range(admin_server.MAX_FAILURES):
-            assert client.request("POST", "/api/admin/login", {"password": "x"})[0] == 401
-        status, data, _ = client.request("POST", "/api/admin/login", {"password": "segredo"})
-        assert status == 429 and data["error"] == "too_many_attempts"
-    finally:
-        srv.shutdown()
-        srv.server_close()
-
-
-def test_client_outside_private_network_refused(db, monkeypatch):
-    srv, client = start(db, lan=True, password="segredo")
-    try:
-        monkeypatch.setattr(admin_server.Handler, "_client_ip",
-                            lambda self: __import__("ipaddress").ip_address("8.8.8.8"))
-        status, data, _ = client.request("GET", "/api/admin/session")
-        assert status == 403 and data["error"] == "forbidden_client"
-        assert client.request("POST", "/api/admin/login", {"password": "segredo"})[0] == 403
-    finally:
-        srv.shutdown()
-        srv.server_close()

@@ -1,28 +1,48 @@
-/* Painel do admin do k_study. Sem bibliotecas: gráficos em SVG escritos à mão. */
+/* Área administrativa do k_study (servida em /admin/, só para administradores). Sem bibliotecas: gráficos em SVG escritos à mão.
+   Segurança: nenhum innerHTML e nenhum script inline; todo dado do servidor entra como texto (nós criados com h() e s()).
+   Toda escrita envia X-CSRF-Token (vem de GET /api/auth/me). */
 "use strict";
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const main = $("#main");
 const TYPE_LABEL = { video: "Vídeo", markdown: "Leitura", pdf: "PDF", link: "Link", questions: "Questões" };
+const SVG_NS = "http://www.w3.org/2000/svg";
 let redraw = [];            // funções que redesenham os gráficos ao redimensionar
 let token = 0;              // descarta respostas de rotas que já foram abandonadas
+const session = { user: null, csrf: null };
+
+/* ---------- construção de nós (sempre texto, nunca HTML) ---------- */
+function build(node, attrs, children) {
+  for (const [key, value] of Object.entries(attrs || {})) {
+    if (value == null || value === false) continue;
+    if (key === "class") node.setAttribute("class", value);
+    else if (key.startsWith("on") && typeof value === "function") node.addEventListener(key.slice(2), value);
+    else node.setAttribute(key, value === true ? "" : String(value));
+  }
+  for (const child of children.flat(Infinity)) {
+    if (child == null || child === false) continue;
+    node.append(child.nodeType ? child : document.createTextNode(String(child)));
+  }
+  return node;
+}
+const h = (tag, attrs, ...children) => build(document.createElement(tag), attrs, children);
+const s = (tag, attrs, ...children) => build(document.createElementNS(SVG_NS, tag), attrs, children);
+const setChildren = (el, ...nodes) => el.replaceChildren(...nodes.flat(Infinity).filter((n) => n != null && n !== false));
+const code = (text) => h("code", {}, text);
 
 /* ---------- utilidades ---------- */
-function esc(v) {
-  return String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+function fmtTime(sec) {
+  sec = Math.round(sec || 0);
+  if (sec < 60) return `${sec} s`;
+  if (sec < 3600) { const m = Math.floor(sec / 60), r = sec % 60; return r ? `${m} min ${r} s` : `${m} min`; }
+  const hh = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
+  return `${hh} h ${String(m).padStart(2, "0")} min`;
 }
-function fmtTime(s) {
-  s = Math.round(s || 0);
-  if (s < 60) return `${s} s`;
-  if (s < 3600) { const m = Math.floor(s / 60), r = s % 60; return r ? `${m} min ${r} s` : `${m} min`; }
-  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
-  return `${h} h ${String(m).padStart(2, "0")} min`;
-}
-function fmtHours(s) {            // total acumulado, para os cartões
-  s = s || 0;
-  if (s < 3600) return { v: String(Math.round(s / 60)), u: "min" };
-  const h = s / 3600;
-  return { v: h >= 100 ? String(Math.round(h)) : h.toFixed(1).replace(".", ","), u: "h" };
+function fmtHours(sec) {            // total acumulado, para os cartões
+  sec = sec || 0;
+  if (sec < 3600) return { v: String(Math.round(sec / 60)), u: "min" };
+  const hh = sec / 3600;
+  return { v: hh >= 100 ? String(Math.round(hh)) : hh.toFixed(1).replace(".", ","), u: "h" };
 }
 const pct = (r, d = 0) => (r == null ? "—" : `${(r * 100).toFixed(d).replace(".", ",")}%`);
 const fmtInt = (n) => (n ?? 0).toLocaleString("pt-BR");
@@ -46,25 +66,44 @@ function fmtWhen(iso) {
 }
 const plural = (n, one, many) => `${fmtInt(n)} ${n === 1 ? one : many}`;
 const num = (v) => (v == null ? -Infinity : v);
+const personName = (p) => p.name || "(sem nome)";
 
 function meter(rate, kind) {
-  if (rate == null) return `<span class="muted">—</span>`;
+  if (rate == null) return h("span", { class: "muted" }, "—");
   const w = Math.max(0, Math.min(1, rate)) * 100;
-  return `<div class="meter"><div class="meter-track"><div class="meter-fill ${kind || ""}" style="width:${w.toFixed(1)}%"></div></div>` +
-         `<span class="meter-val">${pct(rate)}</span></div>`;
+  const fill = h("div", { class: "meter-fill " + (kind || "") });
+  fill.style.width = `${w.toFixed(1)}%`;
+  return h("div", { class: "meter" }, h("div", { class: "meter-track" }, fill), h("span", { class: "meter-val" }, pct(rate)));
 }
 const accKind = (r) => (r == null ? "" : r >= 0.75 ? "good" : r >= 0.5 ? "warn" : "bad");
+/* Nome e e-mail sempre juntos. */
+const personLabel = (p, href) => h("span", { class: "person" },
+  href ? h("a", { class: "pname", href }, personName(p)) : h("span", { class: "pname" }, personName(p)),
+  h("span", { class: "pmail" }, p.email));
 
 /* ---------- API ---------- */
-class ApiError extends Error { constructor(status, code, message) { super(message); this.status = status; this.code = code; } }
-async function api(path, opts) {
+class ApiError extends Error {
+  constructor(status, code, message, extra) { super(message); this.status = status; this.code = code; this.extra = extra || {}; }
+}
+async function api(path, opts = {}, retried = false) {
+  const options = { cache: "no-store", ...opts, headers: { ...(opts.headers || {}) } };
+  if (options.method && options.method !== "GET") options.headers["X-CSRF-Token"] = session.csrf || "";
   let res;
-  try { res = await fetch(path, opts); }
-  catch (e) { throw new ApiError(0, "network", "Não foi possível falar com o servidor do painel. Ele ainda está rodando?"); }
+  try { res = await fetch(path, options); }
+  catch (e) { throw new ApiError(0, "network", "Não foi possível falar com o servidor. Ele ainda está rodando?"); }
   let data = null;
   try { data = await res.json(); } catch (e) { /* corpo vazio */ }
-  if (!res.ok) throw new ApiError(res.status, data?.error || "error", data?.message || `Erro ${res.status}`);
+  if (!res.ok) {
+    if (res.status === 403 && data?.error === "csrf_failed" && !retried) { await loadSession(); return api(path, opts, true); }
+    throw new ApiError(res.status, data?.error || "error", data?.message || `Erro ${res.status}`, data || {});
+  }
   return data;
+}
+const postJson = (path, body) => api(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+async function loadSession() {
+  const me = await api("/api/auth/me");
+  session.user = me.student; session.csrf = me.csrfToken;
+  return me;
 }
 
 /* ---------- tema ---------- */
@@ -81,12 +120,13 @@ $("#theme-btn").addEventListener("click", () => {
 });
 matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", paintThemeButton);
 
-/* ---------- dica flutuante (tooltip) ---------- */
+/* ---------- dica flutuante: o texto vem em data-tip, linhas separadas por quebra; a primeira vai em negrito ---------- */
 const tip = $("#tip");
 document.addEventListener("pointermove", (e) => {
   const el = e.target.closest?.("[data-tip]");
   if (!el) { tip.hidden = true; return; }
-  tip.innerHTML = el.dataset.tip;
+  const lines = el.dataset.tip.split("\n");
+  setChildren(tip, h("b", {}, lines[0]), lines.slice(1).map((line) => [h("br"), line]));
   tip.hidden = false;
   const r = tip.getBoundingClientRect();
   let x = e.clientX + 14, y = e.clientY + 16;
@@ -101,12 +141,13 @@ addEventListener("scroll", () => { tip.hidden = true; }, { passive: true });
 function niceMax(max, ticks = 4) {
   if (max <= 0) return { max: ticks, step: 1 };
   const raw = max / ticks, mag = Math.pow(10, Math.floor(Math.log10(raw)));
-  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw);
+  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((x) => x >= raw);
   return { max: step * ticks, step };
 }
 function dayLabel(date) { const [, m, d] = date.split("-"); return `${d}/${m}`; }
+const f1 = (n) => +n.toFixed(1);
 
-/** Gráfico de colunas (tempo por dia). series: [{date, value}], unit: "time" */
+/** Gráfico de colunas (tempo por dia). series: [{date, value, visits}] */
 function barChart(el, series, label) {
   const draw = () => {
     const W = Math.max(280, el.clientWidth), H = 220, L = 46, R = 8, T = 10, B = 26;
@@ -114,20 +155,22 @@ function barChart(el, series, label) {
     const useHours = maxRaw >= 7200, div = useHours ? 3600 : 60, unit = useHours ? "h" : "min";
     const { max, step } = niceMax(maxRaw / div);
     const iw = W - L - R, ih = H - T - B, bw = iw / series.length;
-    let g = "";
+    const g = [];
     for (let v = 0; v <= max + 1e-9; v += step) {
       const y = T + ih - (v / max) * ih;
-      g += `<line class="grid-line" x1="${L}" x2="${W - R}" y1="${y}" y2="${y}"/><text x="${L - 8}" y="${y + 4}" text-anchor="end">${(+v.toFixed(2)).toLocaleString("pt-BR")} ${unit}</text>`;
+      g.push(s("line", { class: "grid-line", x1: L, x2: W - R, y1: y, y2: y }),
+        s("text", { x: L - 8, y: y + 4, "text-anchor": "end" }, `${(+v.toFixed(2)).toLocaleString("pt-BR")} ${unit}`));
     }
     const every = W < 480 ? 7 : 5;
     series.forEach((d, i) => {
-      const x = L + i * bw, h = max ? (d.value / div / max) * ih : 0;
-      const tipTxt = `<b>${dayLabel(d.date)}</b><br>${fmtTime(d.value)} estudados<br>${plural(d.visits, "visita", "visitas")}`;
-      g += `<g class="col" data-tip="${esc(tipTxt)}"><rect class="hit" x="${x}" y="${T}" width="${bw}" height="${ih}"/>` +
-           (d.value ? `<rect class="bar" x="${x + bw * 0.14}" y="${T + ih - h}" width="${Math.max(2, bw * 0.72)}" height="${Math.max(2, h)}" rx="3"/>` : "") + `</g>`;
-      if ((series.length - 1 - i) % every === 0) g += `<text x="${x + bw / 2}" y="${H - 6}" text-anchor="middle">${dayLabel(d.date)}</text>`;
+      const x = L + i * bw, bh = max ? (d.value / div / max) * ih : 0;
+      const col = s("g", { class: "col", "data-tip": `${dayLabel(d.date)}\n${fmtTime(d.value)} estudados\n${plural(d.visits, "visita", "visitas")}` },
+        s("rect", { class: "hit", x, y: T, width: bw, height: ih }),
+        d.value ? s("rect", { class: "bar", x: f1(x + bw * 0.14), y: f1(T + ih - bh), width: f1(Math.max(2, bw * 0.72)), height: f1(Math.max(2, bh)), rx: 3 }) : null);
+      g.push(col);
+      if ((series.length - 1 - i) % every === 0) g.push(s("text", { x: x + bw / 2, y: H - 6, "text-anchor": "middle" }, dayLabel(d.date)));
     });
-    el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)}">${g}</svg>`;
+    setChildren(el, s("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": label }, g));
   };
   draw(); redraw.push(draw);
 }
@@ -140,22 +183,21 @@ function lineChart(el, series, label) {
     const { max, step } = niceMax(Math.max(maxRaw, 4), 4);
     const iw = W - L - R, ih = H - T - B, n = series.length;
     const px = (i) => L + (n === 1 ? iw / 2 : (i / (n - 1)) * iw), py = (v) => T + ih - (v / max) * ih;
-    let g = "";
+    const g = [];
     for (let v = 0; v <= max + 1e-9; v += step) {
       const y = py(v);
-      g += `<line class="grid-line" x1="${L}" x2="${W - R}" y1="${y}" y2="${y}"/><text x="${L - 8}" y="${y + 4}" text-anchor="end">${Math.round(v)}</text>`;
+      g.push(s("line", { class: "grid-line", x1: L, x2: W - R, y1: y, y2: y }), s("text", { x: L - 8, y: y + 4, "text-anchor": "end" }, Math.round(v)));
     }
     const pts = series.map((d, i) => `${px(i).toFixed(1)},${py(d.value).toFixed(1)}`);
-    g += `<polygon class="area" points="${px(0)},${T + ih} ${pts.join(" ")} ${px(n - 1)},${T + ih}"/><polyline class="line" points="${pts.join(" ")}"/>`;
-    const every = W < 480 ? 7 : 5;
+    g.push(s("polygon", { class: "area", points: `${px(0)},${T + ih} ${pts.join(" ")} ${px(n - 1)},${T + ih}` }), s("polyline", { class: "line", points: pts.join(" ") }));
+    const every = W < 480 ? 7 : 5, cw = iw / n;
     series.forEach((d, i) => {
-      const tipTxt = `<b>${dayLabel(d.date)}</b><br>${plural(d.value, "aluno ativo", "alunos ativos")}`;
-      const cw = iw / n;
-      g += `<g class="col" data-tip="${esc(tipTxt)}"><rect class="hit" x="${px(i) - cw / 2}" y="${T}" width="${cw}" height="${ih}"/>` +
-           (d.value ? `<circle class="dot" cx="${px(i)}" cy="${py(d.value)}" r="3.5"/>` : "") + `</g>`;
-      if ((n - 1 - i) % every === 0) g += `<text x="${px(i)}" y="${H - 6}" text-anchor="middle">${dayLabel(d.date)}</text>`;
+      g.push(s("g", { class: "col", "data-tip": `${dayLabel(d.date)}\n${plural(d.value, "aluno ativo", "alunos ativos")}` },
+        s("rect", { class: "hit", x: px(i) - cw / 2, y: T, width: cw, height: ih }),
+        d.value ? s("circle", { class: "dot", cx: px(i), cy: py(d.value), r: 3.5 }) : null));
+      if ((n - 1 - i) % every === 0) g.push(s("text", { x: px(i), y: H - 6, "text-anchor": "middle" }, dayLabel(d.date)));
     });
-    el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)}">${g}</svg>`;
+    setChildren(el, s("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": label }, g));
   };
   draw(); redraw.push(draw);
 }
@@ -164,192 +206,311 @@ addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setT
 
 /* ---------- tabela ordenável ---------- */
 function sortableTable(container, { columns, rows, sortKey, sortDir = -1, rowHref, filter, emptyText }) {
-  let state = { key: sortKey, dir: sortDir, text: "" };
+  let st = { key: sortKey, dir: sortDir, text: "" };
   const render = () => {
-    const col = columns.find((c) => c.key === state.key);
-    let shown = rows.filter((r) => !state.text || filter(r).toLowerCase().includes(state.text));
+    const col = columns.find((c) => c.key === st.key);
+    let shown = rows.filter((r) => !st.text || filter(r).toLowerCase().includes(st.text));
     if (col) {
       shown = shown.slice().sort((a, b) => {
         const va = col.sort(a), vb = col.sort(b);
         const c = typeof va === "string" ? va.localeCompare(vb, "pt-BR") : va - vb;
-        return c * state.dir || String(a.email ?? "").localeCompare(String(b.email ?? ""));
+        return c * st.dir || String(a.email ?? "").localeCompare(String(b.email ?? ""));
       });
     }
     const head = columns.map((c) => {
-      const active = c.key === state.key;
-      const arrow = active ? (state.dir > 0 ? "▲" : "▼") : "";
-      return `<th scope="col" class="${c.num ? "num" : ""}" ${active ? `aria-sort="${state.dir > 0 ? "ascending" : "descending"}"` : ""}>` +
-             `<button type="button" data-sort="${c.key}">${esc(c.label)}<span aria-hidden="true">${arrow}</span></button></th>`;
-    }).join("");
+      const active = c.key === st.key;
+      return h("th", { scope: "col", class: c.num ? "num" : "", "aria-sort": active ? (st.dir > 0 ? "ascending" : "descending") : null },
+        h("button", { type: "button", onclick: () => {
+          st = { ...st, key: c.key, dir: st.key === c.key ? -st.dir : (c.num ? -1 : 1) };
+          render();
+          container.querySelector(`th:nth-child(${columns.indexOf(c) + 1}) button`)?.focus();
+        } }, c.label, h("span", { "aria-hidden": "true" }, active ? (st.dir > 0 ? "▲" : "▼") : "")));
+    });
     const body = shown.map((r) => {
       const href = rowHref ? rowHref(r) : "";
-      return `<tr ${href ? `class="link" data-href="${esc(href)}"` : ""}>` +
-        columns.map((c) => `<td class="${c.num ? "num" : ""} ${c.cls || ""}">${c.render(r)}</td>`).join("") + `</tr>`;
-    }).join("");
-    container.innerHTML = `<div class="table-wrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>` +
-      (shown.length ? "" : `<p class="mini-empty">${esc(emptyText || "Nada encontrado.")}</p>`) +
-      `<p class="table-note">${plural(shown.length, "linha", "linhas")}${state.text ? ` de ${fmtInt(rows.length)}` : ""}</p>`;
+      const tr = h("tr", { class: href ? "link" : null }, columns.map((c) => h("td", { class: `${c.num ? "num" : ""} ${c.cls || ""}`.trim() }, c.render(r))));
+      if (href) tr.addEventListener("click", (e) => { if (!e.target.closest("a")) location.hash = href; });
+      return tr;
+    });
+    setChildren(container,
+      h("div", { class: "table-wrap" }, h("table", {}, h("thead", {}, h("tr", {}, head)), h("tbody", {}, body))),
+      shown.length ? null : h("p", { class: "mini-empty" }, emptyText || "Nada encontrado."),
+      h("p", { class: "table-note" }, plural(shown.length, "linha", "linhas") + (st.text ? ` de ${fmtInt(rows.length)}` : "")));
   };
-  container.addEventListener("click", (e) => {
-    const b = e.target.closest("[data-sort]");
-    if (b) {
-      const key = b.dataset.sort;
-      state = { ...state, key, dir: state.key === key ? -state.dir : (columns.find((c) => c.key === key).num ? -1 : 1) };
-      render(); container.querySelector(`[data-sort="${key}"]`)?.focus(); return;
-    }
-    const tr = e.target.closest("tr[data-href]");
-    if (tr && !e.target.closest("a")) location.hash = tr.dataset.href;
-  });
   render();
-  return { setFilter(t) { state.text = t.trim().toLowerCase(); render(); } };
+  return { setFilter(t) { st.text = t.trim().toLowerCase(); render(); } };
 }
 
 /* ---------- peças de tela ---------- */
 const kpi = (label, value, note) =>
-  `<div class="card kpi"><span class="kpi-label">${esc(label)}</span><span class="kpi-value">${value}</span>${note ? `<span class="kpi-note">${esc(note)}</span>` : ""}</div>`;
-const loading = () => { main.innerHTML = `<div class="grid kpis"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>`; };
-function emptyState(title, text) { return `<div class="card empty"><h2>${esc(title)}</h2>${text}</div>`; }
+  h("div", { class: "card kpi" }, h("span", { class: "kpi-label" }, label), h("span", { class: "kpi-value" }, value), note ? h("span", { class: "kpi-note" }, note) : null);
+const loading = () => setChildren(main, h("div", { class: "grid kpis" }, h("div", { class: "skeleton" }), h("div", { class: "skeleton" }), h("div", { class: "skeleton" })));
+const emptyState = (title, ...body) => h("div", { class: "card empty" }, h("h2", {}, title), body);
 function errorView(err) {
-  if (err.code === "database_missing" || err.code === "database_error") {
-    main.innerHTML = emptyState("O banco de dados ainda não está pronto",
-      `<p>${esc(err.message)}</p><p>Depois que o banco existir, recarregue esta página.</p><p><button class="btn" id="retry">Tentar de novo</button></p>`);
-  } else {
-    main.innerHTML = emptyState("Algo deu errado", `<p>${esc(err.message)}</p><p><button class="btn" id="retry">Tentar de novo</button></p>`);
-  }
-  $("#retry")?.addEventListener("click", route);
+  const title = err.code === "database_missing" || err.code === "database_error" ? "O banco de dados ainda não está pronto" : "Algo deu errado";
+  setChildren(main, emptyState(title, h("p", {}, err.message), h("p", {}, h("button", { class: "btn", type: "button", onclick: route }, "Tentar de novo"))));
 }
-const itemLink = (slug) => `#/trails/${encodeURIComponent(slug)}`;
+function head(title, sub, tools, crumbs) {
+  return h("div", { class: "page-head" },
+    h("div", {}, crumbs ? h("div", { class: "crumbs" }, crumbs) : null, h("h1", {}, title), sub ? h("p", {}, sub) : null),
+    tools ? h("div", {}, tools) : null);
+}
+const trailLink = (slug) => `#/trails/${encodeURIComponent(slug)}`;
+const card = (title, note, ...body) => h("section", { class: "card" }, h("div", { class: "card-head" }, h("h2", {}, title), note ? h("span", { class: "muted" }, note) : null), body);
 
 /* ---------- telas ---------- */
 async function viewOverview() {
   const d = await api("/api/admin/overview");
   const t = d.totals, hrs = fmtHours(t.seconds);
   if (!t.students) {
-    main.innerHTML = head("Visão geral", "Estatísticas de estudo de todos os alunos.") +
-      emptyState("Nenhum aluno ainda", `<p>Assim que alguém abrir o servidor dos alunos (<code>kstudy serve</code>) e informar o e-mail, as estatísticas aparecem aqui.</p>` +
-        `<p>${plural(t.trails, "trilha disponível", "trilhas disponíveis")} para estudar.</p>`);
+    setChildren(main, head("Visão geral", "Estatísticas de estudo de todos os alunos."),
+      emptyState("Nenhum aluno ainda", h("p", {}, "Assim que alguém abrir o servidor e criar uma conta, as estatísticas aparecem aqui."),
+        h("p", {}, plural(t.trails, "trilha disponível", "trilhas disponíveis") + " para estudar.")));
     return;
   }
   const quickRate = t.visits ? t.quick_visits / t.visits : null;
-  main.innerHTML = head("Visão geral", `Atualizado ${fmtWhen(d.generated_at)}. Datas em UTC.`, `<button class="btn" id="refresh">Atualizar</button>`) +
-    `<section class="grid kpis" aria-label="Resumo">` +
-    kpi("Alunos", fmtInt(t.students), "cadastrados") +
-    kpi("Ativos em 7 dias", `${fmtInt(t.active_7d)}`, t.students ? `${pct(t.active_7d / t.students)} dos alunos` : "") +
-    kpi("Tempo estudado", `${hrs.v}<small> ${hrs.u}</small>`, `${fmtTime(t.students ? t.seconds / t.students : 0)} por aluno`) +
-    kpi("Visitas", fmtInt(t.visits), quickRate == null ? "" : `${pct(quickRate)} só abriram e saíram`) +
-    kpi("Trilhas", fmtInt(t.trails), t.answers ? `${pct(t.accuracy)} de acerto em ${fmtInt(t.answers)} respostas` : "Sem respostas ainda") +
-    `</section>` +
-    `<section class="grid cols-2"><div class="card"><div class="card-head"><h2>Tempo estudado por dia</h2><span class="muted">últimos 30 dias</span></div><div class="chart" id="ch-time"></div></div>` +
-    `<div class="card"><div class="card-head"><h2>Alunos ativos por dia</h2><span class="muted">últimos 30 dias</span></div><div class="chart" id="ch-active"></div></div></section>` +
-    `<section class="grid cols-3">` +
-    `<div class="card"><div class="card-head"><h2>Conclusão por trilha</h2><span class="muted">só quem iniciou</span></div>${trailRank(d.trails)}</div>` +
-    `<div class="card"><div class="card-head"><h2>Questões mais erradas</h2><span class="muted">mín. 2 respostas</span></div>${hardList(d.hardest_questions, true)}</div>` +
-    `<div class="card"><div class="card-head"><h2>Aulas com mais abandono</h2><span class="muted">visitas &lt; 10 s</span></div>${abandonList(d.abandoned_items)}</div>` +
-    `</section>` +
-    `<section class="card"><div class="card-head"><h2>Atividade recente</h2></div>${recentFeed(d.recent)}</section>`;
-  barChart($("#ch-time"), d.daily.map((x) => ({ date: x.date, value: x.seconds, visits: x.visits })), "Tempo estudado por dia nos últimos 30 dias");
-  lineChart($("#ch-active"), d.daily.map((x) => ({ date: x.date, value: x.active_students })), "Alunos ativos por dia nos últimos 30 dias");
-  $("#refresh").addEventListener("click", route);
-}
-function head(title, sub, tools = "", crumbs = "") {
-  return `<div class="page-head"><div>${crumbs ? `<div class="crumbs">${crumbs}</div>` : ""}<h1>${esc(title)}</h1>${sub ? `<p>${sub}</p>` : ""}</div>${tools ? `<div>${tools}</div>` : ""}</div>`;
+  const chTime = h("div", { class: "chart" }), chActive = h("div", { class: "chart" });
+  setChildren(main,
+    head("Visão geral", `Atualizado ${fmtWhen(d.generated_at)}. Datas em UTC.`, h("button", { class: "btn", type: "button", onclick: route }, "Atualizar")),
+    h("section", { class: "grid kpis", "aria-label": "Resumo" },
+      kpi("Alunos", fmtInt(t.students), "cadastrados"),
+      kpi("Ativos em 7 dias", fmtInt(t.active_7d), t.students ? `${pct(t.active_7d / t.students)} dos alunos` : ""),
+      kpi("Tempo estudado", [hrs.v, h("small", {}, ` ${hrs.u}`)], `${fmtTime(t.students ? t.seconds / t.students : 0)} por aluno`),
+      kpi("Visitas", fmtInt(t.visits), quickRate == null ? "" : `${pct(quickRate)} só abriram e saíram`),
+      kpi("Trilhas", fmtInt(t.trails), t.answers ? `${pct(t.accuracy)} de acerto em ${fmtInt(t.answers)} respostas` : "Sem respostas ainda")),
+    h("section", { class: "grid cols-2" }, card("Tempo estudado por dia", "últimos 30 dias", chTime), card("Alunos ativos por dia", "últimos 30 dias", chActive)),
+    h("section", { class: "grid cols-3" },
+      card("Conclusão por trilha", "só quem iniciou", trailRank(d.trails)),
+      card("Questões mais erradas", "mín. 2 respostas", hardList(d.hardest_questions, true)),
+      card("Aulas com mais abandono", "visitas < 10 s", abandonList(d.abandoned_items))),
+    card("Atividade recente", null, recentFeed(d.recent)));
+  barChart(chTime, d.daily.map((x) => ({ date: x.date, value: x.seconds, visits: x.visits })), "Tempo estudado por dia nos últimos 30 dias");
+  lineChart(chActive, d.daily.map((x) => ({ date: x.date, value: x.active_students })), "Alunos ativos por dia nos últimos 30 dias");
 }
 function trailRank(list) {
-  if (!list.length) return `<p class="mini-empty">Nenhuma trilha indexada ainda. Rode <code>kstudy sync</code>.</p>`;
-  return `<ol class="rank">${list.map((t) => `<li><div class="rank-top"><a href="${itemLink(t.slug)}">${esc(t.title)}</a></div>` +
-    `${meter(t.avg_completion, "")}<span class="rank-sub">${plural(t.students, "aluno iniciou", "alunos iniciaram")}</span></li>`).join("")}</ol>`;
+  if (!list.length) return h("p", { class: "mini-empty" }, "Nenhuma trilha indexada ainda. Importe um pacote em ", h("a", { href: "#/import" }, "Importar trilha"), ".");
+  return h("ol", { class: "rank" }, list.map((t) => h("li", {},
+    h("div", { class: "rank-top" }, h("a", { href: trailLink(t.slug) }, t.title)), meter(t.avg_completion, ""),
+    h("span", { class: "rank-sub" }, plural(t.students, "aluno iniciou", "alunos iniciaram")))));
 }
 function hardList(list, showTrail) {
-  if (!list.length) return `<p class="mini-empty">Ainda não há erros suficientes para listar.</p>`;
-  return `<ol class="rank">${list.map((q) => `<li><div class="rank-top"><span>${esc(q.item_title)} · ${esc(q.question_id)}</span></div>` +
-    `${meter(q.error_rate, "bad")}<span class="rank-sub">${showTrail ? esc(q.trail_title) + " · " : ""}${q.wrong} erros em ${q.answers} respostas</span></li>`).join("")}</ol>`;
+  if (!list.length) return h("p", { class: "mini-empty" }, "Ainda não há erros suficientes para listar.");
+  return h("ol", { class: "rank" }, list.map((q) => h("li", {},
+    h("div", { class: "rank-top" }, h("span", {}, `${q.item_title} · ${q.question_id}`)), meter(q.error_rate, "bad"),
+    h("span", { class: "rank-sub" }, `${showTrail ? q.trail_title + " · " : ""}${q.wrong} erros em ${q.answers} respostas`))));
 }
 function abandonList(list) {
-  if (!list.length) return `<p class="mini-empty">Nenhuma aula com abandono relevante (precisa de 3 visitas ou mais).</p>`;
-  return `<ol class="rank">${list.map((a) => `<li><div class="rank-top"><a href="${itemLink(a.trail)}">${esc(a.title)}</a></div>` +
-    `${meter(a.abandon_rate, "warn")}<span class="rank-sub">${esc(a.trail_title)} · ${a.quick_visits} de ${a.visits} visitas</span></li>`).join("")}</ol>`;
+  if (!list.length) return h("p", { class: "mini-empty" }, "Nenhuma aula com abandono relevante (precisa de 3 visitas ou mais).");
+  return h("ol", { class: "rank" }, list.map((a) => h("li", {},
+    h("div", { class: "rank-top" }, h("a", { href: trailLink(a.trail) }, a.title)), meter(a.abandon_rate, "warn"),
+    h("span", { class: "rank-sub" }, `${a.trail_title} · ${a.quick_visits} de ${a.visits} visitas`))));
 }
 function recentFeed(list) {
-  if (!list.length) return `<p class="mini-empty">Nenhuma atividade registrada.</p>`;
-  const verb = { visit: (e) => `abriu <b>${esc(e.title)}</b> (${esc(e.detail)})`, answer: (e) => `${e.detail} uma questão de <b>${esc(e.title)}</b>`, done: (e) => `concluiu <b>${esc(e.title)}</b>` };
-  return `<ul class="feed">${list.map((e) => `<li><span class="dot-kind ${e.kind}" aria-hidden="true"></span>` +
-    `<span class="what"><a href="#/students/${e.student_id}">${esc(e.email)}</a> ${verb[e.kind](e)} <span class="muted">· ${esc(e.trail_title)}</span></span>` +
-    `<span class="when">${fmtWhen(e.at)}</span></li>`).join("")}</ul>`;
+  if (!list.length) return h("p", { class: "mini-empty" }, "Nenhuma atividade registrada.");
+  const verb = {
+    visit: (e) => ["abriu ", h("b", {}, e.title), ` (${e.detail})`],
+    answer: (e) => [`${e.detail} uma questão de `, h("b", {}, e.title)],
+    done: (e) => ["concluiu ", h("b", {}, e.title)],
+  };
+  return h("ul", { class: "feed" }, list.map((e) => h("li", {},
+    h("span", { class: `dot-kind ${e.kind}`, "aria-hidden": "true" }),
+    h("span", { class: "what" }, personLabel(e, `#/students/${e.student_id}`), " ", verb[e.kind](e), " ", h("span", { class: "muted" }, `· ${e.trail_title}`)),
+    h("span", { class: "when" }, fmtWhen(e.at)))));
 }
 
 async function viewStudents() {
   const { students } = await api("/api/admin/students");
   if (!students.length) {
-    main.innerHTML = head("Alunos", "Quem já entrou para estudar.") +
-      emptyState("Nenhum aluno cadastrado", `<p>Os alunos aparecem aqui depois de informarem o e-mail na interface de estudo.</p>`);
+    setChildren(main, head("Alunos", "Quem já entrou para estudar."), emptyState("Nenhum aluno cadastrado", h("p", {}, "Os alunos aparecem aqui depois de criarem a conta na interface de estudo.")));
     return;
   }
-  main.innerHTML = head("Alunos", `${plural(students.length, "aluno cadastrado", "alunos cadastrados")}.`) +
-    `<div class="card"><div class="toolbar"><input type="search" id="filter" placeholder="Filtrar por e-mail" aria-label="Filtrar alunos por e-mail"></div><div id="table"></div></div>`;
-  const t = sortableTable($("#table"), {
-    rows: students, sortKey: "last", sortDir: -1, filter: (r) => r.email, rowHref: (r) => `#/students/${r.id}`, emptyText: "Nenhum aluno com esse e-mail.",
+  const table = h("div");
+  const filter = h("input", { type: "search", placeholder: "Filtrar por nome ou e-mail", "aria-label": "Filtrar alunos por nome ou e-mail" });
+  setChildren(main, head("Alunos", `${plural(students.length, "aluno cadastrado", "alunos cadastrados")}.`),
+    h("div", { class: "card" }, h("div", { class: "toolbar" }, filter), table));
+  const t = sortableTable(table, {
+    rows: students, sortKey: "last", sortDir: -1, filter: (r) => `${r.name} ${r.email}`, rowHref: (r) => `#/students/${r.id}`, emptyText: "Nenhum aluno com esse nome ou e-mail.",
     columns: [
-      { key: "email", label: "E-mail", sort: (r) => r.email, render: (r) => `<a class="email" href="#/students/${r.id}">${esc(r.email)}</a>` },
+      { key: "email", label: "Aluno", sort: (r) => (r.name || r.email).toLowerCase(), render: (r) => personLabel(r, `#/students/${r.id}`) },
       { key: "created", label: "Cadastro", sort: (r) => r.created_at || "", render: (r) => fmtDate(r.created_at), cls: "small" },
-      { key: "last", label: "Última atividade", sort: (r) => r.last_activity || "", render: (r) => esc(fmtWhen(r.last_activity)), cls: "small" },
+      { key: "last", label: "Última atividade", sort: (r) => r.last_activity || "", render: (r) => fmtWhen(r.last_activity), cls: "small" },
       { key: "time", label: "Tempo", num: true, sort: (r) => r.seconds, render: (r) => fmtTime(r.seconds) },
       { key: "done", label: "Itens feitos", num: true, sort: (r) => r.items_done, render: (r) => fmtInt(r.items_done) },
-      { key: "acc", label: "Acerto", num: true, sort: (r) => num(r.accuracy), render: (r) => (r.answers ? `<span class="pill ${accKind(r.accuracy)}">${pct(r.accuracy)}</span> <span class="muted">${r.correct}/${r.answers}</span>` : `<span class="muted">—</span>`) },
+      { key: "acc", label: "Acerto", num: true, sort: (r) => num(r.accuracy),
+        render: (r) => (r.answers ? [h("span", { class: `pill ${accKind(r.accuracy)}` }, pct(r.accuracy)), " ", h("span", { class: "muted" }, `${r.correct}/${r.answers}`)] : h("span", { class: "muted" }, "—")) },
     ],
   });
-  $("#filter").addEventListener("input", (e) => t.setFilter(e.target.value));
+  filter.addEventListener("input", (e) => t.setFilter(e.target.value));
 }
 
 async function viewStudent(id) {
   let d;
-  try { d = await api(`/api/admin/students/${id}`); }
-  catch (e) { if (e.status === 404) { main.innerHTML = emptyState("Aluno não encontrado", `<p><a href="#/students">Voltar para a lista de alunos</a></p>`); return; } throw e; }
-  const s = d.student, quick = s.visits ? s.quick_visits / s.visits : null;
-  const crumbs = `<a href="#/students">Alunos</a> / ${esc(s.email)}`;
-  let html = head(s.email, `Cadastrado em ${fmtDate(s.created_at)} · última atividade ${esc(fmtWhen(s.last_activity))}`, "", crumbs) +
-    `<section class="grid kpis">` + kpi("Tempo estudado", fmtTime(s.seconds)) + kpi("Visitas", fmtInt(s.visits)) +
-    kpi("Só abriu e saiu", fmtInt(s.quick_visits), quick == null ? "" : `${pct(quick)} das visitas`) +
-    kpi("Itens feitos", fmtInt(s.items_done)) +
-    kpi("Acerto", s.answers ? pct(s.accuracy) : "—", s.answers ? `${s.correct} de ${s.answers} respostas` : "Sem respostas") + `</section>`;
-  if (!d.trails.length) html += emptyState("Sem atividade em trilhas", `<p>Este aluno ainda não abriu nenhuma aula.</p>`);
-  for (const tr of d.trails) html += studentTrail(tr);
-  main.innerHTML = html;
+  try { d = await api(`/api/admin/students/${encodeURIComponent(id)}`); }
+  catch (e) { if (e.status === 404) { setChildren(main, emptyState("Aluno não encontrado", h("p", {}, h("a", { href: "#/students" }, "Voltar para a lista de alunos")))); return; } throw e; }
+  const st = d.student, quick = st.visits ? st.quick_visits / st.visits : null;
+  setChildren(main,
+    head(personName(st), [st.email, ` · cadastrado em ${fmtDate(st.created_at)} · última atividade ${fmtWhen(st.last_activity)}`], null,
+      [h("a", { href: "#/students" }, "Alunos"), " / ", st.email]),
+    h("section", { class: "grid kpis" }, kpi("Tempo estudado", fmtTime(st.seconds)), kpi("Visitas", fmtInt(st.visits)),
+      kpi("Só abriu e saiu", fmtInt(st.quick_visits), quick == null ? "" : `${pct(quick)} das visitas`), kpi("Itens feitos", fmtInt(st.items_done)),
+      kpi("Acerto", st.answers ? pct(st.accuracy) : "—", st.answers ? `${st.correct} de ${st.answers} respostas` : "Sem respostas")),
+    d.trails.length ? d.trails.map(studentTrail) : emptyState("Sem atividade em trilhas", h("p", {}, "Este aluno ainda não abriu nenhuma aula.")));
 }
 function studentTrail(tr) {
   const maxSec = Math.max(1, ...tr.items.map((i) => i.seconds));
-  let lastBlock = null, rows = "";
+  let lastBlock = null;
+  const rows = [];
   for (const i of tr.items) {
-    if (i.block_id !== lastBlock) { lastBlock = i.block_id; rows += `<tr class="group-row"><td colspan="6">${esc(i.block_title)}</td></tr>`; }
-    const qs = i.questions.length ? `<span class="qs">${i.questions.map((q) => `<span class="q ${q.correct ? "" : "wrong"}" data-tip="${esc(`<b>${q.question_id}</b><br>${q.correct ? "Acertou" : "Errou"} · marcou ${q.chosen.join(", ") || "—"}`)}"></span>`).join("")}</span> <span class="muted">${i.questions.filter((q) => q.correct).length}/${i.questions.length}</span>` : `<span class="muted">—</span>`;
-    rows += `<tr><td>${esc(i.title)}${i.optional ? ` <span class="pill">opcional</span>` : ""}<div class="rank-sub">${esc(TYPE_LABEL[i.type] || i.type)} · ${esc(i.section || "")}</div></td>` +
-      `<td>${i.done ? `<span class="pill good">feito</span>` : `<span class="pill">pendente</span>`}</td>` +
-      `<td class="num"><div class="meter"><div class="meter-track"><div class="meter-fill" style="width:${(i.seconds / maxSec * 100).toFixed(1)}%"></div></div><span class="meter-val" style="min-width:5.5em">${i.seconds ? fmtTime(i.seconds) : "—"}</span></div></td>` +
-      `<td class="num">${i.visits || "—"}</td><td class="num">${i.quick_visits ? `<span class="pill warn">${i.quick_visits}</span>` : "—"}</td><td>${qs}</td></tr>`;
+    if (i.block_id !== lastBlock) { lastBlock = i.block_id; rows.push(h("tr", { class: "group-row" }, h("td", { colspan: 6 }, i.block_title))); }
+    const qs = i.questions.length
+      ? [h("span", { class: "qs" }, i.questions.map((q) => h("span", { class: "q" + (q.correct ? "" : " wrong"), "data-tip": `${q.question_id}\n${q.correct ? "Acertou" : "Errou"} · marcou ${q.chosen.join(", ") || "—"}` }))),
+        " ", h("span", { class: "muted" }, `${i.questions.filter((q) => q.correct).length}/${i.questions.length}`)]
+      : h("span", { class: "muted" }, "—");
+    const fill = h("div", { class: "meter-fill" });
+    fill.style.width = `${(i.seconds / maxSec * 100).toFixed(1)}%`;
+    const val = h("span", { class: "meter-val" }, i.seconds ? fmtTime(i.seconds) : "—");
+    val.style.minWidth = "5.5em";
+    rows.push(h("tr", {},
+      h("td", {}, i.title, i.optional ? [" ", h("span", { class: "pill" }, "opcional")] : null, h("div", { class: "rank-sub" }, `${TYPE_LABEL[i.type] || i.type} · ${i.section || ""}`)),
+      h("td", {}, i.done ? h("span", { class: "pill good" }, "feito") : h("span", { class: "pill" }, "pendente")),
+      h("td", { class: "num" }, h("div", { class: "meter" }, h("div", { class: "meter-track" }, fill), val)),
+      h("td", { class: "num" }, i.visits || "—"),
+      h("td", { class: "num" }, i.quick_visits ? h("span", { class: "pill warn" }, i.quick_visits) : "—"),
+      h("td", {}, qs)));
   }
-  return `<section class="card" style="margin-bottom:16px"><div class="card-head"><h2><a href="${itemLink(tr.slug)}">${esc(tr.title)}</a></h2>` +
-    `<span class="muted">${tr.required_done} de ${tr.required_items} itens obrigatórios · ${fmtTime(tr.seconds)}${tr.answers ? ` · acerto ${pct(tr.accuracy)}` : ""}</span></div>` +
-    `<div class="meter tall" style="margin-bottom:14px"><div class="meter-track"><div class="meter-fill good" style="width:${((tr.completion || 0) * 100).toFixed(1)}%"></div></div><span class="meter-val">${pct(tr.completion)}</span></div>` +
-    `<div class="table-wrap"><table><thead><tr><th scope="col">Item</th><th scope="col">Estado</th><th scope="col" class="num">Tempo</th><th scope="col" class="num">Visitas</th>` +
-    `<th scope="col" class="num">Só abriu e saiu</th><th scope="col">Questões</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+  const bar = h("div", { class: "meter-fill good" });
+  bar.style.width = `${((tr.completion || 0) * 100).toFixed(1)}%`;
+  const tall = h("div", { class: "meter tall" }, h("div", { class: "meter-track" }, bar), h("span", { class: "meter-val" }, pct(tr.completion)));
+  tall.style.marginBottom = "14px";
+  const section = h("section", { class: "card" },
+    h("div", { class: "card-head" }, h("h2", {}, h("a", { href: trailLink(tr.slug) }, tr.title)),
+      h("span", { class: "muted" }, `${tr.required_done} de ${tr.required_items} itens obrigatórios · ${fmtTime(tr.seconds)}${tr.answers ? ` · acerto ${pct(tr.accuracy)}` : ""}`)),
+    tall,
+    h("div", { class: "table-wrap" }, h("table", {},
+      h("thead", {}, h("tr", {}, h("th", { scope: "col" }, "Item"), h("th", { scope: "col" }, "Estado"), h("th", { scope: "col", class: "num" }, "Tempo"),
+        h("th", { scope: "col", class: "num" }, "Visitas"), h("th", { scope: "col", class: "num" }, "Só abriu e saiu"), h("th", { scope: "col" }, "Questões"))),
+      h("tbody", {}, rows))));
+  section.style.marginBottom = "16px";
+  return section;
 }
 
+/* ---------- trilhas: lista com capa, estado, ativar e desativar ---------- */
+function coverBox(t) {
+  return t.cover
+    ? h("img", { class: "tcover", src: t.cover, alt: "", loading: "lazy" })
+    : h("div", { class: "tcover fallback", "aria-hidden": "true" }, (t.title || "?").trim().charAt(0).toUpperCase());
+}
 async function viewTrails() {
   const { trails } = await api("/api/admin/trails");
   if (!trails.length) {
-    main.innerHTML = head("Trilhas", "Os cursos disponíveis para os alunos.") +
-      emptyState("Nenhuma trilha indexada", `<p>Crie uma trilha em <code>content/</code> e rode <code>kstudy sync</code>.</p>`);
+    setChildren(main, head("Trilhas", "Os cursos disponíveis para os alunos."),
+      emptyState("Nenhuma trilha ainda", h("p", {}, "Importe um pacote zip de trilha para começar."), h("p", {}, h("a", { class: "btn primary", href: "#/import" }, "Importar trilha"))));
     return;
   }
-  main.innerHTML = head("Trilhas", `${plural(trails.length, "trilha", "trilhas")} no catálogo.`) +
-    `<div class="grid cols-2">${trails.map((t) => `<a class="card trail-card" href="${itemLink(t.slug)}"><div><h3>${esc(t.title)}</h3>` +
-      `${t.description ? `<p class="muted" style="margin:4px 0 0">${esc(t.description)}</p>` : ""}</div>${meter(t.avg_completion)}` +
-      `<div class="trail-meta"><span>${plural(t.students, "aluno", "alunos")}</span><span>${plural(t.blocks, "bloco", "blocos")} · ${plural(t.items, "item", "itens")}</span>` +
-      `<span>${fmtTime(t.avg_seconds)} por aluno</span><span>${t.accuracy == null ? "sem respostas" : `acerto ${pct(t.accuracy)}`}</span></div></a>`).join("")}</div>`;
+  setChildren(main,
+    head("Trilhas", `${plural(trails.length, "trilha", "trilhas")} no catálogo.`, h("a", { class: "btn primary", href: "#/import" }, "Importar trilha")),
+    h("div", { class: "grid cols-2" }, trails.map((t) => {
+      const toggle = h("button", { class: "btn", type: "button", onclick: async () => {
+        const next = !t.active;
+        const question = next ? `Reativar "${t.title}"? Os alunos voltam a vê-la.` : `Desativar "${t.title}"? Os alunos deixam de vê-la (o progresso deles fica guardado).`;
+        if (!confirm(question)) return;
+        toggle.disabled = true;
+        try { await postJson(`/api/admin/trails/${encodeURIComponent(t.slug)}/active`, { active: next }); route(); }
+        catch (e) { toggle.disabled = false; alert(e.message); }
+      } }, t.active ? "Desativar" : "Reativar");
+      return h("div", { class: "card trail-card" + (t.active ? "" : " off") },
+        coverBox(t),
+        h("div", { class: "tbody" },
+          h("div", { class: "ttitle" }, h("h3", {}, h("a", { href: trailLink(t.slug) }, t.title)),
+            h("span", { class: "pill " + (t.active ? "good" : "warn") }, t.active ? "Ativa" : "Desativada")),
+          t.description ? h("p", { class: "muted tdesc" }, t.description) : null,
+          meter(t.avg_completion),
+          h("div", { class: "trail-meta" }, h("span", {}, plural(t.students, "aluno", "alunos")), h("span", {}, `${plural(t.blocks, "bloco", "blocos")} · ${plural(t.items, "item", "itens")}`),
+            h("span", {}, `${fmtTime(t.avg_seconds)} por aluno`), h("span", {}, t.accuracy == null ? "sem respostas" : `acerto ${pct(t.accuracy)}`)),
+          h("div", {}, toggle)));
+    })));
 }
 
+/* ---------- importar trilha e baixar specs ---------- */
+function uploadZip(file, replace, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `/api/admin/trails/import?replace=${replace ? 1 : 0}`);
+    xhr.setRequestHeader("Content-Type", "application/zip");
+    xhr.setRequestHeader("X-CSRF-Token", session.csrf || "");
+    xhr.responseType = "text";
+    xhr.upload.addEventListener("progress", (e) => { if (e.lengthComputable) onProgress(e.loaded / e.total); });
+    xhr.addEventListener("load", () => {
+      let data = null;
+      try { data = JSON.parse(xhr.responseText); } catch (e) { /* sem corpo */ }
+      if (xhr.status >= 200 && xhr.status < 300) resolve(data);
+      else reject(new ApiError(xhr.status, data?.error || "error", data?.message || `Erro ${xhr.status}`, data || {}));
+    });
+    xhr.addEventListener("error", () => reject(new ApiError(0, "network", "A conexão caiu durante o envio.")));
+    xhr.send(file);
+  });
+}
+function viewImport() {
+  const input = h("input", { type: "file", accept: ".zip,application/zip", id: "zip-file", class: "visually-hidden" });
+  const picked = h("p", { class: "muted", id: "picked" }, "Nenhum arquivo escolhido.");
+  const replace = h("input", { type: "checkbox", id: "replace" });
+  const bar = h("div", { class: "meter-fill" });
+  const track = h("div", { class: "meter-track" }, bar);
+  const progress = h("div", { class: "meter", hidden: true }, track, h("span", { class: "meter-val", id: "up-pct" }, "0%"));
+  const result = h("div", { class: "import-result", role: "status", "aria-live": "polite" });
+  const send = h("button", { class: "btn primary", type: "button", disabled: true }, "Enviar pacote");
+  let file = null;
+  const choose = (f) => {
+    if (!f) return;
+    file = f;
+    picked.textContent = `${f.name} · ${(f.size / (1024 * 1024)).toFixed(1).replace(".", ",")} MB`;
+    send.disabled = false;
+    setChildren(result);
+  };
+  const drop = h("label", { class: "dropzone", for: "zip-file" }, h("strong", {}, "Escolha o arquivo .zip ou arraste-o até aqui"), picked, input);
+  for (const name of ["dragenter", "dragover"]) drop.addEventListener(name, (e) => { e.preventDefault(); drop.classList.add("over"); });
+  for (const name of ["dragleave", "drop"]) drop.addEventListener(name, (e) => { e.preventDefault(); drop.classList.remove("over"); });
+  drop.addEventListener("drop", (e) => choose(e.dataTransfer?.files?.[0]));
+  input.addEventListener("change", () => choose(input.files[0]));
+  send.addEventListener("click", async () => {
+    if (!file) return;
+    send.disabled = true; progress.hidden = false; bar.style.width = "0%";
+    setChildren(result);
+    try {
+      const out = await uploadZip(file, replace.checked, (r) => { bar.style.width = `${(r * 100).toFixed(0)}%`; $("#up-pct").textContent = pct(r); });
+      bar.style.width = "100%"; $("#up-pct").textContent = "100%";
+      setChildren(result, h("div", { class: "notice good" }, h("strong", {}, `Trilha importada: ${out.slug}${out.replaced ? " (substituiu a anterior)" : ""}.`),
+        out.warnings?.length ? [h("p", {}, "Avisos (não impedem o uso; vale conferir):"), h("ul", {}, out.warnings.map((w) => h("li", {}, w)))] : h("p", {}, "Sem avisos."),
+        h("p", {}, h("a", { href: trailLink(out.slug) }, "Ver a trilha"), " · ", h("a", { href: "#/trails" }, "Ir para a lista de trilhas"))));
+    } catch (e) {
+      const problems = e.extra?.problems;
+      setChildren(result, h("div", { class: "notice bad", role: "alert" }, h("strong", {}, e.message),
+        problems?.length ? [h("p", {}, "O pacote foi recusado por estes motivos:"), h("ul", {}, problems.map((p) => h("li", {}, p)))] : null));
+      send.disabled = false;
+    }
+  });
+  const specs = h("a", { class: "btn", href: "/api/admin/specs.zip", download: "k_study-specs.zip" }, "Baixar specs para criar uma trilha");
+  setChildren(main, head("Importar trilha", "Envie o pacote .zip que o agente de IA gerou, ou baixe as instruções para criar uma trilha nova."),
+    h("section", { class: "grid cols-2" },
+      card("Importar um pacote de trilha", "arquivo .zip",
+        drop,
+        h("label", { class: "check", for: "replace" }, replace, " Substituir se a trilha já existir (o progresso dos alunos é mantido)"),
+        h("div", { class: "actions" }, send), progress, result),
+      card("Criar uma trilha nova", "feito fora do servidor",
+        h("p", {}, "O servidor não cria trilhas: quem cria é um agente de IA rodando no seu computador. Para começar:"),
+        h("ol", { class: "steps" },
+          h("li", {}, "Baixe o zip das specs abaixo."),
+          h("li", {}, "Abra um agente de IA (por exemplo, o Claude Code) numa pasta vazia e descompacte o zip nela."),
+          h("li", {}, "Peça a criação da trilha, dizendo o assunto e enviando o seu material. O agente segue as specs: entrevista você, baixa e transcreve os vídeos com o k_transcriptor (projeto de apoio) e gera a pasta da trilha."),
+          h("li", {}, ["Quando a trilha estiver pronta, o agente roda ", code("kstudy pack SLUG"), " e gera um arquivo .zip."]),
+          h("li", {}, "Volte aqui e envie esse .zip em \"Importar um pacote de trilha\".")),
+        h("div", { class: "actions" }, specs))));
+}
+
+/* ---------- mapa de calor de uma trilha ---------- */
 const METRICS = {
   completion: { label: "Conclusão", get: (i) => i.completion, tone: "accent", text: (v) => pct(v), hint: "alunos que concluíram" },
-  abandon: { label: "Abandono", get: (i) => i.abandon_rate, tone: "warn", text: (v) => pct(v), hint: "visitas &lt; 10 s" },
+  abandon: { label: "Abandono", get: (i) => i.abandon_rate, tone: "warn", text: (v) => pct(v), hint: "visitas < 10 s" },
   time: { label: "Tempo médio", get: (i) => (i.students_opened ? i.avg_seconds : null), tone: "teal", text: (v) => fmtTime(v), hint: "por aluno que abriu" },
   accuracy: { label: "Acerto", get: (i) => i.accuracy, tone: "good", text: (v) => pct(v), hint: "nas questões" },
 };
@@ -362,71 +523,84 @@ function heatColor(v, scale, tone) {
 async function viewTrail(slug) {
   let d;
   try { d = await api(`/api/admin/trails/${encodeURIComponent(slug)}`); }
-  catch (e) { if (e.status === 404) { main.innerHTML = emptyState("Trilha não encontrada", `<p><a href="#/trails">Voltar para as trilhas</a></p>`); return; } throw e; }
+  catch (e) { if (e.status === 404) { setChildren(main, emptyState("Trilha não encontrada", h("p", {}, h("a", { href: "#/trails" }, "Voltar para as trilhas")))); return; } throw e; }
   const t = d.trail;
   let metric = "completion";
-  const crumbs = `<a href="#/trails">Trilhas</a> / ${esc(t.title)}`;
-  const all = d.blocks.flatMap((b) => b.sections.flatMap((s) => s.items));
-  main.innerHTML = head(t.title, t.description ? esc(t.description) : "", "", crumbs) +
-    `<section class="grid kpis">` + kpi("Alunos", fmtInt(t.students), `${plural(t.active_7d, "ativo", "ativos")} em 7 dias`) +
-    kpi("Conclusão média", pct(t.avg_completion), `${plural(t.required_items, "item obrigatório", "itens obrigatórios")}`) +
-    kpi("Tempo por aluno", fmtTime(t.avg_seconds), `${fmtTime(t.seconds)} no total`) + kpi("Visitas", fmtInt(t.visits)) +
-    kpi("Acerto", pct(t.accuracy)) + `</section>`;
-  if (!t.students) { main.insertAdjacentHTML("beforeend", emptyState("Ninguém começou esta trilha", `<p>Os números aparecem quando algum aluno abrir uma aula.</p>`)); return; }
-  main.insertAdjacentHTML("beforeend",
-    `<section class="card" style="margin-bottom:16px"><div class="card-head"><div><h2>Onde os alunos empacam</h2><span class="muted">cada quadrado é um item; passe o mouse para ver os números. Borda tracejada = opcional.</span></div>` +
-    `<div class="seg" id="metric" role="group" aria-label="Métrica do mapa">${Object.entries(METRICS).map(([k, m]) => `<button type="button" data-m="${k}" aria-pressed="${k === metric}">${m.label}</button>`).join("")}</div></div>` +
-    `<div id="heat"></div><div class="legend" id="legend" style="margin-top:12px"></div></section>`);
+  const all = d.blocks.flatMap((b) => b.sections.flatMap((x) => x.items));
+  const parts = [
+    head(t.title, [t.description || "", t.active ? null : " (trilha desativada: os alunos não a veem)"], null, [h("a", { href: "#/trails" }, "Trilhas"), " / ", t.title]),
+    h("section", { class: "grid kpis" }, kpi("Alunos", fmtInt(t.students), `${plural(t.active_7d, "ativo", "ativos")} em 7 dias`),
+      kpi("Conclusão média", pct(t.avg_completion), plural(t.required_items, "item obrigatório", "itens obrigatórios")),
+      kpi("Tempo por aluno", fmtTime(t.avg_seconds), `${fmtTime(t.seconds)} no total`), kpi("Visitas", fmtInt(t.visits)), kpi("Acerto", pct(t.accuracy))),
+  ];
+  if (!t.students) {
+    setChildren(main, parts, emptyState("Ninguém começou esta trilha", h("p", {}, "Os números aparecem quando algum aluno abrir uma aula.")));
+    return;
+  }
+  const heat = h("div"), legend = h("div", { class: "legend" });
+  legend.style.marginTop = "12px";
+  const seg = h("div", { class: "seg", role: "group", "aria-label": "Métrica do mapa" }, Object.entries(METRICS).map(([k, m]) =>
+    h("button", { type: "button", "data-m": k, "aria-pressed": String(k === metric), onclick: () => { metric = k; drawHeat(); } }, m.label)));
   const drawHeat = () => {
     const m = METRICS[metric];
     const vals = all.map(m.get).filter((v) => v != null);
     const scale = metric === "time" ? Math.max(1, ...vals) : 0;
-    $("#heat").innerHTML = d.blocks.map((b) => `<div class="heat-block"><div class="heat-title"><h3>${esc(b.title)}</h3>` +
-      `<span class="muted">conclusão média ${pct(b.avg_completion)} · abandono ${pct(b.abandon_rate)}</span></div><div class="heat-sections">` +
-      b.sections.map((s) => `<div class="heat-row"><span class="heat-label" title="${esc(s.title)}">${esc(s.title || "Itens")}</span><div class="heat-cells">` +
-        s.items.map((i) => {
+    setChildren(heat, d.blocks.map((b) => h("div", { class: "heat-block" },
+      h("div", { class: "heat-title" }, h("h3", {}, b.title), h("span", { class: "muted" }, `conclusão média ${pct(b.avg_completion)} · abandono ${pct(b.abandon_rate)}`)),
+      h("div", { class: "heat-sections" }, b.sections.map((sec) => h("div", { class: "heat-row" },
+        h("span", { class: "heat-label", title: sec.title }, sec.title || "Itens"),
+        h("div", { class: "heat-cells" }, sec.items.map((i) => {
           const v = m.get(i), bg = heatColor(v, scale, m.tone);
-          const tipTxt = `<b>${esc(i.title)}</b><br>${esc(TYPE_LABEL[i.type] || i.type)}${i.optional ? " · opcional" : ""}<br>${m.label}: ${v == null ? "sem dados" : m.text(v)}<br>${plural(i.students_opened, "aluno abriu", "alunos abriram")}`;
-          return `<span class="cell ${bg ? "" : "empty"} ${i.optional ? "opt" : ""}" ${bg ? `style="background:${bg}"` : ""} data-tip="${esc(tipTxt)}"></span>`;
-        }).join("") + `</div></div>`).join("") + `</div></div>`).join("");
+          const cell = h("span", { class: `cell ${bg ? "" : "empty"} ${i.optional ? "opt" : ""}`.trim(),
+            "data-tip": `${i.title}\n${TYPE_LABEL[i.type] || i.type}${i.optional ? " · opcional" : ""}\n${m.label}: ${v == null ? "sem dados" : m.text(v)}\n${plural(i.students_opened, "aluno abriu", "alunos abriram")}` });
+          if (bg) cell.style.background = bg;
+          return cell;
+        }))))))));
     const lo = heatColor(0.1, 0, m.tone), hi = heatColor(1, 0, m.tone);
-    $("#legend").innerHTML = `<span>menos</span><i style="background:linear-gradient(90deg,${lo},${hi})"></i><span>mais · ${m.label.toLowerCase()} (${m.hint})</span><span class="cell empty" style="width:14px;height:14px"></span><span>sem dados</span>`;
-    document.querySelectorAll("#metric button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.m === metric)));
+    const gradient = h("i");
+    gradient.style.background = `linear-gradient(90deg,${lo},${hi})`;
+    const none = h("span", { class: "cell empty" });
+    none.style.width = none.style.height = "14px";
+    setChildren(legend, h("span", {}, "menos"), gradient, h("span", {}, `mais · ${m.label.toLowerCase()} (${m.hint})`), none, h("span", {}, "sem dados"));
+    seg.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.m === metric)));
   };
-  $("#metric").addEventListener("click", (e) => { const b = e.target.closest("[data-m]"); if (b) { metric = b.dataset.m; drawHeat(); } });
-  drawHeat();
-  main.insertAdjacentHTML("beforeend", `<section class="grid cols-2" id="hardrow"></section>`);
-  $("#hardrow").innerHTML =
-    `<div class="card"><div class="card-head"><h2>Questões mais erradas</h2><span class="muted">mín. 2 respostas</span></div>${hardList(d.hardest_questions, false)}</div>` +
-    `<div class="card"><div class="card-head"><h2>Aulas com mais abandono</h2><span class="muted">mín. 3 visitas</span></div>${abandonItems(all)}</div>`;
-  let tables = "";
-  for (const b of d.blocks) {
-    let rows = "";
-    for (const s of b.sections) {
-      rows += `<tr class="group-row"><td colspan="7">${esc(s.title || "Itens")}</td></tr>`;
-      for (const i of s.items) {
-        rows += `<tr><td>${esc(i.title)}${i.optional ? ` <span class="pill">opcional</span>` : ""}<div class="rank-sub">${esc(TYPE_LABEL[i.type] || i.type)}</div></td>` +
-          `<td class="num">${i.students_opened}</td><td class="num">${i.students_opened ? fmtTime(i.avg_seconds) : "—"}</td>` +
-          `<td>${meter(i.abandon_rate, "warn")}</td><td>${meter(i.completion)}</td><td>${meter(i.accuracy, accKind(i.accuracy))}</td></tr>`;
+  const heatCard = h("section", { class: "card" }, h("div", { class: "card-head" },
+    h("div", {}, h("h2", {}, "Onde os alunos empacam"), h("span", { class: "muted" }, "cada quadrado é um item; passe o mouse para ver os números. Borda tracejada = opcional.")), seg), heat, legend);
+  heatCard.style.marginBottom = "16px";
+  const tables = d.blocks.map((b) => {
+    const rows = [];
+    for (const sec of b.sections) {
+      rows.push(h("tr", { class: "group-row" }, h("td", { colspan: 6 }, sec.title || "Itens")));
+      for (const i of sec.items) {
+        rows.push(h("tr", {},
+          h("td", {}, i.title, i.optional ? [" ", h("span", { class: "pill" }, "opcional")] : null, h("div", { class: "rank-sub" }, TYPE_LABEL[i.type] || i.type)),
+          h("td", { class: "num" }, i.students_opened), h("td", { class: "num" }, i.students_opened ? fmtTime(i.avg_seconds) : "—"),
+          h("td", {}, meter(i.abandon_rate, "warn")), h("td", {}, meter(i.completion)), h("td", {}, meter(i.accuracy, accKind(i.accuracy)))));
       }
     }
-    tables += `<section class="card" style="margin-bottom:16px"><div class="card-head"><h2>${esc(b.title)}</h2><span class="muted">${plural(b.students_opened, "aluno abriu", "alunos abriram")} · ${fmtTime(b.seconds)}</span></div>` +
-      `<div class="table-wrap"><table><thead><tr><th scope="col">Item</th><th scope="col" class="num">Abriram</th><th scope="col" class="num">Tempo médio</th>` +
-      `<th scope="col">Abandono</th><th scope="col">Conclusão</th><th scope="col">Acerto</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
-  }
-  main.insertAdjacentHTML("beforeend", tables);
+    const section = h("section", { class: "card" },
+      h("div", { class: "card-head" }, h("h2", {}, b.title), h("span", { class: "muted" }, `${plural(b.students_opened, "aluno abriu", "alunos abriram")} · ${fmtTime(b.seconds)}`)),
+      h("div", { class: "table-wrap" }, h("table", {}, h("thead", {}, h("tr", {}, h("th", { scope: "col" }, "Item"), h("th", { scope: "col", class: "num" }, "Abriram"),
+        h("th", { scope: "col", class: "num" }, "Tempo médio"), h("th", { scope: "col" }, "Abandono"), h("th", { scope: "col" }, "Conclusão"), h("th", { scope: "col" }, "Acerto"))), h("tbody", {}, rows))));
+    section.style.marginBottom = "16px";
+    return section;
+  });
+  setChildren(main, parts, heatCard,
+    h("section", { class: "grid cols-2" }, card("Questões mais erradas", "mín. 2 respostas", hardList(d.hardest_questions, false)), card("Aulas com mais abandono", "mín. 3 visitas", abandonItems(all))), tables);
+  drawHeat();
 }
 function abandonItems(items) {
   const list = items.filter((i) => i.visits >= 3 && i.quick_visits).sort((a, b) => b.abandon_rate - a.abandon_rate || b.quick_visits - a.quick_visits).slice(0, 8);
-  if (!list.length) return `<p class="mini-empty">Nenhum item com abandono relevante.</p>`;
-  return `<ol class="rank">${list.map((i) => `<li><div class="rank-top"><span>${esc(i.title)}</span></div>${meter(i.abandon_rate, "warn")}<span class="rank-sub">${i.quick_visits} de ${i.visits} visitas</span></li>`).join("")}</ol>`;
+  if (!list.length) return h("p", { class: "mini-empty" }, "Nenhum item com abandono relevante.");
+  return h("ol", { class: "rank" }, list.map((i) => h("li", {}, h("div", { class: "rank-top" }, h("span", {}, i.title)), meter(i.abandon_rate, "warn"),
+    h("span", { class: "rank-sub" }, `${i.quick_visits} de ${i.visits} visitas`))));
 }
 
 /* ---------- roteador e início ---------- */
 async function route() {
   const my = ++token;
   redraw = [];
-  const parts = (location.hash.replace(/^#\/?/, "") || "").split("/").filter(Boolean).map(decodeURIComponent);
+  const parts = (location.hash.replace(/^#\/?/, "") || "").split("/").filter(Boolean).map((p) => { try { return decodeURIComponent(p); } catch (e) { return p; } });
   const section = parts[0] || "overview";
   document.querySelectorAll("#nav a").forEach((a) => (a.dataset.nav === section ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current")));
   loading();
@@ -434,40 +608,30 @@ async function route() {
     if (section === "overview") await viewOverview();
     else if (section === "students") await (parts[1] ? viewStudent(parts[1]) : viewStudents());
     else if (section === "trails") await (parts[1] ? viewTrail(parts[1]) : viewTrails());
-    else main.innerHTML = emptyState("Página não encontrada", `<p><a href="#/">Voltar para a visão geral</a></p>`);
+    else if (section === "import") viewImport();
+    else setChildren(main, emptyState("Página não encontrada", h("p", {}, h("a", { href: "#/" }, "Voltar para a visão geral"))));
   } catch (err) {
     if (my !== token) return;
-    if (err.code === "login_required") return start();
+    if (err.status === 401 || err.status === 403) { location.replace("/"); return; }
     errorView(err);
   }
-  if (my === token) { document.title = `${$("h1")?.textContent || "Painel"} · k_study`; window.scrollTo(0, 0); }
+  if (my === token) { document.title = `${$("h1")?.textContent || "Administração"} · k_study`; window.scrollTo(0, 0); }
 }
 addEventListener("hashchange", route);
 
+$("#logout-btn").addEventListener("click", async () => {
+  try { await postJson("/api/auth/logout", {}); } catch (e) { /* sai mesmo assim */ }
+  location.replace("/");
+});
+
 async function start() {
   paintThemeButton();
-  let session;
-  try { session = await api("/api/admin/session"); }
+  try { await loadSession(); }
   catch (e) { $("#shell").hidden = false; errorView(e); return; }
-  const need = session.required && !session.authenticated;
-  $("#login").hidden = !need;
-  $("#shell").hidden = need;
-  $("#logout-btn").hidden = !session.required;
-  if (need) { $("#login-pass").focus(); return; }
+  if (!session.user || !session.user.isAdmin) { location.replace("/"); return; }
+  $("#user-name").textContent = session.user.name || "(sem nome)";
+  $("#user-email").textContent = session.user.email;
+  $("#shell").hidden = false;
   route();
 }
-$("#login-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const err = $("#login-error");
-  err.hidden = true;
-  try {
-    await api("/api/admin/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: $("#login-pass").value }) });
-    $("#login-pass").value = "";
-    start();
-  } catch (ex) { err.textContent = ex.message; err.hidden = false; }
-});
-$("#logout-btn").addEventListener("click", async () => {
-  try { await api("/api/admin/logout", { method: "POST" }); } catch (e) { /* ignora */ }
-  start();
-});
 start();
