@@ -3,21 +3,28 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Estudo · Aprendizado de Máquina</title>
+<title>k_study · Trilhas de estudo</title>
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="view-loading">
+<a class="skip-link" href="#main">Ir para o conteúdo</a>
 <header class="topbar">
-  <button id="menu-btn" class="icon-btn" aria-label="Abrir menu"></button>
-  <div class="brand">Estudo · Aprendizado de Máquina</div>
-  <select id="block-select" aria-label="Bloco"></select>
-  <div class="overall" title="Progresso do bloco">
-    <div class="bar"><div id="overall-fill"></div></div>
+  <button id="menu-btn" class="icon-btn" aria-label="Abrir o menu de aulas" aria-expanded="false" aria-controls="sidebar"></button>
+  <a id="home-link" class="brand" href="#/">k_study</a>
+  <a id="back-link" class="back-link" href="#/">← Trilhas</a>
+  <span id="trail-name" class="trail-name"></span>
+  <select id="block-select" aria-label="Bloco da trilha"></select>
+  <div class="overall" id="overall">
+    <div class="bar" role="progressbar" aria-label="Progresso do bloco" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="overall-fill"></div></div>
     <span id="overall-text"></span>
+  </div>
+  <div class="user" id="user-box">
+    <span id="user-email" class="user-email"></span>
+    <button id="logout-btn" class="btn small-btn" type="button">Sair</button>
   </div>
 </header>
 <div class="layout">
-  <nav id="sidebar" aria-label="Sequência de estudo"></nav>
+  <nav id="sidebar" aria-label="Aulas do bloco"></nav>
   <main id="main" tabindex="-1"><p class="muted">Carregando…</p></main>
 </div>
 <script src="vendor/marked.min.js"></script>
