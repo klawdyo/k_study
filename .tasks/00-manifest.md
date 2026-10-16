@@ -17,7 +17,7 @@ Para começar uma sessão nova, basta dizer ao agente: *"Leia `.tasks/00-manifes
 ## Regras gerais (valem para todas as tarefas)
 
 - **Idioma:** código (arquivos, módulos, funções, variáveis, classes, tabelas, colunas, chaves JSON, comandos e opções) em **inglês**; specs, README, interface, mensagens vistas por pessoas, logs de operação, comentários e docstrings em **português do Brasil**.
-- **Commits:** atômicos e mínimos (uma mudança lógica por commit), em Conventional Commits (`feat`, `fix`, `docs`, `test`, `refactor`, `chore`, `build`; `!` ou `BREAKING CHANGE:` para quebra), tipo em inglês e descrição em português, terminando com a linha em branco e `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`. A versão do projeto é calculada pelos commits (SemVer): não edite a versão à mão.
+- **Commits:** atômicos e mínimos (uma mudança lógica por commit), em Conventional Commits (`feat`, `fix`, `docs`, `test`, `refactor`, `chore`, `build`; **nunca** `!` nem `BREAKING CHANGE:` sem autorização explícita do usuário), tipo em inglês e descrição em português, terminando com a linha em branco e `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`. A versão do projeto é calculada pelos commits (SemVer): não edite a versão à mão.
 - **Nunca** faça `push`, nem crie ou apague repositórios remotos, sem autorização explícita do usuário.
 - **Só biblioteca padrão** do Python no servidor (3.10+). Sem rede nos testes.
 - **Testes:** `python -c "import sys,os; sys.path[:0]=['src', os.path.expanduser('~/.local/lib/pylibs')]; import pytest; sys.exit(pytest.main(['-q','-p','no:cacheprovider']))"` na raiz do repositório (ou `pytest`, se instalado). Rode a suíte várias vezes quando mexer em concorrência.

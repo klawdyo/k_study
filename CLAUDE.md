@@ -56,6 +56,6 @@ Se a pasta `.tasks/` existir, há tarefas planejadas e o registro do que já foi
 - **Testes:** `pip install -e ".[dev]"` e `pytest` (sem rede, sem GPU). Rode antes de commitar; teste de contrato quando mexer em API ou validador.
 - **Conteúdo não se edita pela API**; o servidor só lê `content/`. Estado de aluno fica só no banco.
 - **Não quebre ids publicados** nem a leitura de trilhas existentes (`content/aprendizagem-de-maquina/` deve continuar válida).
-- **Commits:** atômicos, Conventional Commits (tipo em inglês, descrição em português no imperativo), um assunto por commit; o código novo vem com teste. A versão é calculada pelos commits: não edite à mão. Não faça push sem autorização da pessoa.
+- **Commits:** atômicos, Conventional Commits (tipo em inglês, descrição em português no imperativo), um assunto por commit; o código novo vem com teste. A versão é calculada pelos commits: não edite à mão. **Nunca registre breaking change** (nem `!` depois do tipo, nem rodapé `BREAKING CHANGE:`) sem a autorização explícita da pessoa: se achar que uma mudança quebra a compatibilidade, descreva isso no corpo do commit em texto comum e pergunte antes. O `!` e o rodapé sobem a versão maior. Não faça push sem autorização da pessoa.
 - **Dados reais** (`content/` com material de terceiros, transcrições) não devem ir para um repositório público: veja o README.
 - Se mudar o que o validador reprova ou avisa, atualize `specs/07-validacao-e-qualidade.md` e `docs/modelo-de-dados.md`.
