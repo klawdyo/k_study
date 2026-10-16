@@ -738,7 +738,7 @@ async function renderVideo(item, body) {
   const first = clips[0] || { start: item.start, end: item.end };
   let frame;
   if (id) {
-    frame = h("iframe", { src: embedUrl(first, false), title: item.title,
+    frame = h("iframe", { src: embedUrl(first, false), title: item.title, referrerpolicy: "strict-origin-when-cross-origin",
       allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" });
     body.append(h("div", { class: "video-wrap" }, frame));
   }

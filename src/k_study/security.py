@@ -30,7 +30,7 @@ SECURITY_HEADERS = {
                                 "object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"),
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
-    "Referrer-Policy": "same-origin",
+    "Referrer-Policy": "strict-origin-when-cross-origin",   # o player do YouTube exige o Referer (erro 153 sem ele); só a origem sai
     "Cross-Origin-Resource-Policy": "same-origin",
 }
 

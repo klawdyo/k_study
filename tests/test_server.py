@@ -98,7 +98,7 @@ def test_cabecalhos_de_seguranca_em_todas_as_respostas(browser, student):
         headers = browser.raw("GET", path)[2]
         assert "default-src 'self'" in headers["Content-Security-Policy"] and "object-src 'none'" in headers["Content-Security-Policy"]
         assert headers["X-Content-Type-Options"] == "nosniff" and headers["X-Frame-Options"] == "DENY"
-        assert headers["Referrer-Policy"] == "same-origin" and headers["Cross-Origin-Resource-Policy"] == "same-origin"
+        assert headers["Referrer-Policy"] == "strict-origin-when-cross-origin" and headers["Cross-Origin-Resource-Policy"] == "same-origin"
         assert "frame-ancestors 'none'" in headers["Content-Security-Policy"]
     assert browser.raw("GET", "/api/auth/me")[2]["Cache-Control"] == "no-store"
     assert "Python" not in browser.raw("GET", "/")[2].get("Server", "")
