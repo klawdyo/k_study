@@ -36,7 +36,10 @@ async function loadIcons() {
 const icon = (name, cls = "") => h("span", { class: "ic " + cls, "aria-hidden": "true", html: SVG[name] || "" });
 
 const state = {
-  user: null,                                       // {email} ou null
+  user: null,                                       // {email, name, isAdmin} ou null
+  csrf: null,                                       // token CSRF da sessão (vem de /api/auth/me)
+  oauth: { google: false },                         // provedores configurados no servidor (só então o botão aparece)
+  oauthError: null,                                 // mensagem fixa depois de uma entrada com o Google que falhou
   trails: null,                                     // lista de /api/trails
   slug: null, trail: null,                          // trilha aberta (manifesto)
   blocks: [],                                       // [{entry, url, data, error}] de todos os blocos da trilha
@@ -49,12 +52,13 @@ const state = {
 class ApiError extends Error {
   constructor(status, code, message) { super(message); this.status = status; this.code = code; }
 }
-async function api(method, url, body) {
+async function api(method, url, body, retried = false) {
+  const headers = {};
+  if (body !== undefined) headers["Content-Type"] = "application/json";
+  if (method !== "GET" && state.csrf) headers["X-CSRF-Token"] = state.csrf;
   let response;
   try {
-    response = await fetch(url, { method, cache: "no-store",
-      headers: body !== undefined ? { "Content-Type": "application/json" } : undefined,
-      body: body !== undefined ? JSON.stringify(body) : undefined });
+    response = await fetch(url, { method, cache: "no-store", headers, body: body !== undefined ? JSON.stringify(body) : undefined });
   } catch {
     throw new ApiError(0, "network", "Não consegui falar com o servidor. Confira se ele está rodando e se a rede está funcionando.");
   }
@@ -62,10 +66,24 @@ async function api(method, url, body) {
   let data = null;
   try { data = text ? JSON.parse(text) : null; } catch { data = null; }
   if (!response.ok) {
+    if (response.status === 403 && data?.error === "csrf_failed" && !retried) {      // token vencido: pega outro e tenta uma vez
+      await loadSession();
+      return api(method, url, body, true);
+    }
     if (response.status === 401 && state.user) { onLoggedOut(); }
-    throw new ApiError(response.status, data?.error || "http", data?.message || `O servidor respondeu com erro ${response.status}.`);
+    const error = new ApiError(response.status, data?.error || "http", data?.message || `O servidor respondeu com erro ${response.status}.`);
+    error.retryAfter = Number(response.headers.get("Retry-After")) || 0;
+    throw error;
   }
   return data;
+}
+/* Lê quem está logado e o token CSRF (também antes do login, para as telas de entrada). */
+async function loadSession() {
+  const me = await api("GET", "/api/auth/me");
+  state.user = me?.student || null;
+  state.csrf = me?.csrfToken || null;
+  state.oauth = { google: !!me?.oauth?.google };
+  return me;
 }
 async function getText(url) {
   const response = await fetch(url, { cache: "no-store" });
@@ -74,10 +92,10 @@ async function getText(url) {
 }
 const getJson = (url) => api("GET", url);
 
-const encodePath = (path) => path.split("/").map(encodeURIComponent).join("/");
 const trailBase = () => `/api/trails/${encodeURIComponent(state.slug)}`;
-const fileUrl = (path) => new URL(`${trailBase()}/files/${encodePath(path)}`, location.origin).href;
-const resolve = (path, base) => new URL(path, base).href;
+/* Conteúdo SEMPRE por ids (o servidor traduz para arquivo); nunca por caminho. */
+const blockUrl = (blockId) => `${trailBase()}/blocks/${encodeURIComponent(blockId)}`;
+const itemUrl = (blockId, itemId, part) => `${blockUrl(blockId)}/items/${encodeURIComponent(itemId)}/${part}`;
 const keyPath = (key) => key.split("/").map(encodeURIComponent).join("/");
 const trailHash = (slug, block, item) => "#/t/" + [slug, block, item].filter(Boolean).map(encodeURIComponent).join("/");
 
@@ -120,6 +138,8 @@ async function sync() {
 document.addEventListener("visibilitychange", () => { if (!document.hidden) sync(); });
 window.addEventListener("focus", sync);
 
+const csrfHeaders = () => ({ "Content-Type": "application/json", "X-CSRF-Token": state.csrf || "" });
+
 /* ---------- rastreio de tempo ---------- */
 /* Contrato (seção 6): open cria a visita; a cada 10 s com a aba visível e em foco vai um beat de 10 s;
    ao sair, leave com o resto. Falhas aqui são ignoradas: nunca podem quebrar a interface. */
@@ -131,7 +151,7 @@ const tracker = {
     const rec = { visit: null, secs: 0 };
     this.rec = rec;
     try {
-      fetch("/api/track", { method: "POST", headers: { "Content-Type": "application/json" }, cache: "no-store",
+      fetch("/api/track", { method: "POST", headers: csrfHeaders(), cache: "no-store",
         body: JSON.stringify({ event: "open", trail, block, item }) })
         .then((r) => (r.ok ? r.json() : null))
         .then((d) => { if (d && d.visit != null) rec.visit = d.visit; })
@@ -146,7 +166,7 @@ const tracker = {
     if (rec.secs >= 10 && rec.visit != null) {
       rec.secs -= 10;
       try {
-        fetch("/api/track", { method: "POST", headers: { "Content-Type": "application/json" }, cache: "no-store", keepalive: true,
+        fetch("/api/track", { method: "POST", headers: csrfHeaders(), cache: "no-store", keepalive: true,
           body: JSON.stringify({ event: "beat", visit: rec.visit, seconds: 10 }) }).catch(() => {});
       } catch { /* ignorado */ }
     }
@@ -158,9 +178,10 @@ const tracker = {
     const seconds = Math.min(rec.secs, 30);
     rec.secs = 0;
     try {
-      const body = new Blob([JSON.stringify({ event: "leave", visit: rec.visit, seconds })], { type: "application/json" });
+      // sendBeacon não envia cabeçalhos: o token CSRF vai no corpo (campo csrf)
+      const body = new Blob([JSON.stringify({ event: "leave", visit: rec.visit, seconds, csrf: state.csrf })], { type: "application/json" });
       if (!(navigator.sendBeacon && navigator.sendBeacon("/api/track", body))) {
-        fetch("/api/track", { method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true, body: body }).catch(() => {});
+        fetch("/api/track", { method: "POST", headers: csrfHeaders(), keepalive: true, body: body }).catch(() => {});
       }
     } catch { /* ignorado */ }
   },
@@ -201,59 +222,136 @@ async function renderRoute() {
 }
 window.addEventListener("hashchange", renderRoute);
 
-function onLoggedOut() {
+async function onLoggedOut() {
   state.user = null; state.trails = null; state.slug = null; state.trail = null; state.block = null; state.current = null;
   tracker.stop(); banner(null);
+  try { await loadSession(); } catch { /* a tela de entrada mostra o erro ao enviar */ }
   renderRoute();
 }
 
 /* ---------- topo ---------- */
 function drawUser() {
-  const email = state.user?.email || "";
+  const user = state.user;
+  const name = user?.name || "", email = user?.email || "";
+  $("#user-name").textContent = name;
   $("#user-email").textContent = email;
-  $("#user-email").title = email ? "Você está identificado como " + email : "";
+  $("#user-box").title = email ? `Você está identificado como ${name ? name + " — " : ""}${email}` : "";
 }
 $("#logout-btn").addEventListener("click", async () => {
   tracker.stop();
-  try { await api("POST", "/api/logout", {}); } catch { /* sai da tela mesmo se falhar */ }
+  try { await api("POST", "/api/auth/logout", {}); } catch { /* sai da tela mesmo se falhar */ }
   state.user = null;
   location.hash = "#/";
   onLoggedOut();
 });
 
-/* ---------- tela de e-mail ---------- */
-function renderLogin() {
+/* ---------- entrada em etapas: e-mail -> senha (conta existe) ou cadastro (conta nova) ---------- */
+const EMAIL_RE = /^[^@\s]+@[^@\s.]+(\.[^@\s.]+)+$/;
+function waitMessage(error) {
+  if (error.status !== 429) return error.message;
+  const minutes = Math.max(1, Math.ceil((error.retryAfter || 60) / 60));
+  return `Muitas tentativas. Tente de novo em ${minutes} ${minutes === 1 ? "minuto" : "minutos"}.`;
+}
+function passwordField(id, label, autocomplete) {
+  const input = h("input", { id, class: "text-input", type: "password", name: id, autocomplete, required: true, maxlength: "128" });
+  const toggle = h("button", { type: "button", class: "btn small-btn show-pass", "aria-pressed": "false",
+    onclick: () => { const shown = input.type === "text"; input.type = shown ? "password" : "text"; toggle.setAttribute("aria-pressed", String(!shown)); toggle.textContent = shown ? "Mostrar" : "Ocultar"; } }, "Mostrar");
+  return { input, node: h("div", {}, h("label", { for: id, class: "field-label" }, label), h("div", { class: "pass-row" }, input, toggle)) };
+}
+
+/* O botão só existe quando o servidor informa (em /api/auth/me) que o Google está configurado. É um link: a
+   navegação vai para o servidor, que redireciona ao Google (o retorno é fixo: /auth/oauth/google/callback). */
+const googleButton = () => h("a", { class: "btn google-btn", href: "/auth/oauth/google/start" },
+  h("span", { class: "g-mark", "aria-hidden": "true" }, "G"), "Entrar com o Google");
+const OAUTH_MESSAGES = {
+  denied: "Você cancelou a entrada com o Google.",
+  invalid_state: "A entrada com o Google expirou ou foi interrompida. Tente de novo.",
+  failed: "Não foi possível entrar com o Google. Tente de novo ou use e-mail e senha.",
+  unverified: "O Google informa que o e-mail dessa conta não foi verificado.",
+  too_many: "Muitas tentativas. Aguarde alguns minutos e tente de novo.",
+};
+
+function renderLogin(step = { name: "email" }) {
   document.title = "Entrar · k_study";
   $("#sidebar").replaceChildren();
-  const input = h("input", { id: "email-input", class: "text-input", type: "email", name: "email", autocomplete: "email", inputmode: "email",
-    required: true, placeholder: "voce@exemplo.com", spellcheck: "false", "aria-describedby": "login-help login-error" });
   const error = h("p", { id: "login-error", class: "form-error", role: "alert" });
-  const submit = h("button", { class: "btn primary", type: "submit" }, "Entrar");
-  const form = h("form", { class: "login-card", novalidate: true },
-    h("h1", { class: "page-title" }, "Bem-vindo aos estudos"),
-    h("p", { id: "login-help" }, "Informe seu e-mail para guardar seu progresso e continuar em outros computadores. Se você já usou, seu progresso volta."),
-    h("label", { for: "email-input", class: "field-label" }, "Seu e-mail"),
-    input, error, h("div", { class: "login-actions" }, submit),
-    h("p", { class: "muted small" }, "Não há senha nem confirmação por e-mail: quem digitar o seu e-mail verá o seu progresso. Use só para estudo."));
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const email = input.value.trim();
-    error.textContent = "";
-    if (!email) { error.textContent = "Digite seu e-mail para continuar."; input.focus(); return; }
-    submit.disabled = true; submit.textContent = "Entrando…";
-    try {
-      const result = await api("POST", "/api/login", { email });
-      state.user = result.student;
-      drawUser();
-      renderRoute();
-    } catch (e) {
-      error.textContent = e.message;
-      submit.disabled = false; submit.textContent = "Entrar";
-      input.focus();
-    }
-  });
-  $("#main").replaceChildren(h("div", { class: "login-wrap" }, form));
-  input.focus();
+  const fail = (e) => { error.textContent = waitMessage(e); };
+  const change = (email) => h("button", { type: "button", class: "link-btn", onclick: () => renderLogin({ name: "email", email }) }, "(trocar)");
+  let card;
+
+  if (step.name === "email") {
+    const email = h("input", { id: "email-input", class: "text-input", type: "email", name: "username", autocomplete: "username", inputmode: "email",
+      required: true, placeholder: "voce@exemplo.com", spellcheck: "false", value: step.email || "", "aria-describedby": "login-help login-error" });
+    const submit = h("button", { class: "btn primary", type: "submit" }, "Continuar");
+    card = h("form", { class: "login-card", novalidate: true },
+      h("h1", { class: "page-title" }, "Bem-vindo ao k_study"),
+      h("p", { id: "login-help" }, "Informe seu e-mail para entrar ou criar sua conta. Seu progresso fica guardado nela."),
+      state.oauthError ? h("p", { class: "form-error", role: "alert" }, state.oauthError) : null,
+      state.oauth.google ? [googleButton(), h("p", { class: "or-line" }, h("span", {}, "ou entre com e-mail e senha"))] : null,
+      h("label", { for: "email-input", class: "field-label" }, "Seu e-mail"), email, error,
+      h("div", { class: "login-actions" }, submit));
+    card.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const value = email.value.trim().toLowerCase();
+      error.textContent = "";
+      if (!EMAIL_RE.test(value)) { error.textContent = "Digite um e-mail válido, como voce@exemplo.com."; email.focus(); return; }
+      submit.disabled = true; submit.textContent = "Verificando…";
+      try {
+        const result = await api("POST", "/api/auth/check", { email: value });
+        renderLogin({ name: result.exists && !result.needsSetup ? "password" : "register", email: value, firstUser: result.firstUser, setup: result.needsSetup });
+      } catch (e) { fail(e); submit.disabled = false; submit.textContent = "Continuar"; email.focus(); }
+    });
+  } else if (step.name === "password") {
+    const pass = passwordField("password-input", "Sua senha", "current-password");
+    const submit = h("button", { class: "btn primary", type: "submit" }, "Entrar");
+    card = h("form", { class: "login-card", novalidate: true },
+      h("h1", { class: "page-title" }, "Entrar"),
+      h("p", {}, "Conta: ", h("strong", {}, step.email), " ", change(step.email)),
+      pass.node, error, h("div", { class: "login-actions" }, submit));
+    card.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      error.textContent = "";
+      if (!pass.input.value) { error.textContent = "Digite sua senha."; pass.input.focus(); return; }
+      submit.disabled = true; submit.textContent = "Entrando…";
+      try {
+        const result = await api("POST", "/api/auth/login", { email: step.email, password: pass.input.value });
+        pass.input.value = "";
+        state.user = result.student; state.csrf = result.csrfToken;
+        drawUser(); renderRoute();
+      } catch (e) { fail(e); submit.disabled = false; submit.textContent = "Entrar"; pass.input.select(); }
+    });
+    queueMicrotask(() => pass.input.focus());
+  } else {
+    const nameInput = h("input", { id: "name-input", class: "text-input", type: "text", name: "name", autocomplete: "name", required: true, maxlength: "80" });
+    const pass = passwordField("new-password", "Crie uma senha (8 a 128 caracteres)", "new-password");
+    const confirm = passwordField("confirm-password", "Repita a senha", "new-password");
+    const label = step.setup ? "Definir senha" : "Criar conta";
+    const submit = h("button", { class: "btn primary", type: "submit" }, label);
+    card = h("form", { class: "login-card", novalidate: true },
+      h("h1", { class: "page-title" }, step.setup ? "Defina sua senha" : "Criar sua conta"),
+      h("p", {}, "E-mail: ", h("strong", {}, step.email), " ", change(step.email)),
+      step.setup ? h("p", { class: "muted small" }, "Esta conta já existia, mas ainda não tem senha. Escolha uma senha e informe seu nome; seu progresso continua.") : null,
+      step.firstUser ? h("div", { class: "goals" }, h("strong", {}, "Você será a pessoa administradora"), h("p", {}, "Ainda não há nenhuma conta neste servidor: a primeira conta criada recebe acesso à área de administração.")) : null,
+      h("label", { for: "name-input", class: "field-label" }, "Seu nome"), nameInput,
+      pass.node, confirm.node, error, h("div", { class: "login-actions" }, submit));
+    card.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      error.textContent = "";
+      if (!nameInput.value.trim()) { error.textContent = "Informe seu nome."; nameInput.focus(); return; }
+      if (pass.input.value.length < 8) { error.textContent = "A senha deve ter pelo menos 8 caracteres."; pass.input.focus(); return; }
+      if (pass.input.value !== confirm.input.value) { error.textContent = "A confirmação da senha não confere."; confirm.input.focus(); return; }
+      submit.disabled = true; submit.textContent = "Salvando…";
+      try {
+        const result = await api("POST", "/api/auth/register", { email: step.email, name: nameInput.value.trim(), password: pass.input.value, passwordConfirm: confirm.input.value });
+        pass.input.value = confirm.input.value = "";
+        state.user = result.student; state.csrf = result.csrfToken;
+        drawUser(); renderRoute();
+      } catch (e) { fail(e); submit.disabled = false; submit.textContent = label; }
+    });
+    queueMicrotask(() => nameInput.focus());
+  }
+  $("#main").replaceChildren(h("div", { class: "login-wrap" }, card));
+  if (step.name === "email") $("#email-input").focus();
 }
 
 /* ---------- página inicial: grade de trilhas ---------- */
@@ -279,12 +377,14 @@ async function renderHome(token) {
   if (token !== routeToken) return;
   state.trails = Array.isArray(list) ? list : (list?.trails || []);
   const head = h("div", { class: "home-head" },
-    h("h1", { class: "page-title" }, "Trilhas de estudo"),
+    h("div", { class: "home-title" },
+      h("h1", { class: "page-title" }, "Trilhas de estudo"),
+      state.user?.isAdmin ? h("a", { class: "btn", href: "/admin/" }, "Administração") : null),
     h("p", { class: "muted" }, "Escolha uma trilha para começar ou continuar de onde parou."));
   if (!state.trails.length) {
     main.replaceChildren(head, h("div", { class: "empty-state" },
       h("strong", {}, "Nenhuma trilha encontrada."),
-      h("p", {}, "Peça a um agente de IA para criar uma; veja o README.")));
+      h("p", {}, state.user?.isAdmin ? "Importe um pacote de trilha na área de Administração." : "Peça à pessoa administradora para importar uma trilha.")));
     return;
   }
   const grid = h("div", { class: "trail-grid" });
@@ -294,27 +394,32 @@ async function renderHome(token) {
 
 function trailCard(t) {
   const items = t.items || 0;
-  const total = t.requiredItems != null ? t.requiredItems : items;       // o servidor conta só as aulas obrigatórias em "done"
-  const done = Math.min(t.done || 0, total || t.done || 0);
-  const percent = total ? Math.round((100 * done) / total) : 0;
+  const required = t.requiredItems != null ? t.requiredItems : items;
+  const done = Math.min(t.done || 0, items);                          // a barra conta TODAS as aulas (obrigatórias e opcionais)
+  const percent = items ? Math.round((100 * done) / items) : 0;
   const action = !done ? "Começar" : percent >= 100 ? "Revisar" : "Continuar";
   const time = formatMinutes(t.minutes);
   const stats = [plural(t.blocks || 0, "bloco", "blocos"), plural(items, "aula", "aulas"), time ? "cerca de " + time : null].filter(Boolean).join(" · ");
-  const required = t.requiredItems != null && t.requiredItems !== items ? ` (${t.requiredItems} obrigatórias)` : "";
+  const note = required !== items ? ` (${plural(required, "obrigatória", "obrigatórias")})` : "";
   const level = t.level ? (LEVELS[String(t.level).toLowerCase()] || t.level) : null;
+  const cover = t.cover
+    ? h("img", { class: "trail-cover", src: t.cover, alt: "", loading: "lazy", width: "1200", height: "630" })
+    : h("div", { class: "trail-cover fallback", "aria-hidden": "true" }, h("span", {}, (t.title || "?").trim().charAt(0).toUpperCase()));
   return h("a", { class: "trail-card", href: trailHash(t.slug), "aria-label": `${t.title}: ${action}` },
-    h("div", { class: "trail-top" },
-      level ? h("span", { class: "badge" }, level) : null,
-      percent >= 100 ? h("span", { class: "badge ok" }, "Concluída") : null),
-    h("h2", {}, t.title),
-    t.description ? h("p", { class: "trail-desc" }, t.description) : null,
-    (t.tags || []).length ? h("div", { class: "tags" }, t.tags.map((tag) => h("span", { class: "tag-chip" }, tag))) : null,
-    h("p", { class: "trail-stats" }, stats + required),
-    h("div", { class: "trail-progress" },
-      h("div", { class: "bar", role: "progressbar", "aria-label": "Seu progresso na trilha", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": String(percent) },
-        h("div", { style: `width:${percent}%` })),
-      h("span", { class: "trail-count" }, total ? `${done} de ${total} ${required ? "aulas obrigatórias" : "aulas"} feitas (${percent}%)` : "Sem aulas ainda")),
-    h("span", { class: "btn primary trail-action" }, action, " ›"));
+    cover,
+    h("div", { class: "trail-body" },
+      h("div", { class: "trail-top" },
+        level ? h("span", { class: "badge" }, level) : null,
+        percent >= 100 ? h("span", { class: "badge ok" }, "Concluída") : null),
+      h("h2", {}, t.title),
+      t.description ? h("p", { class: "trail-desc" }, t.description) : null,
+      (t.tags || []).length ? h("div", { class: "tags" }, t.tags.map((tag) => h("span", { class: "tag-chip" }, tag))) : null,
+      h("p", { class: "trail-stats" }, stats + note),
+      h("div", { class: "trail-progress" },
+        h("div", { class: "bar", role: "progressbar", "aria-label": "Seu progresso na trilha", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": String(percent) },
+          h("div", { style: `width:${percent}%` })),
+        h("span", { class: "trail-count" }, items ? `${done} de ${items} aulas feitas (${percent}%)` : "Sem aulas ainda")),
+      h("span", { class: "btn primary trail-action" }, action, " ›")));
 }
 
 /* ---------- trilha ---------- */
@@ -329,10 +434,11 @@ async function renderTrailRoute(route, token) {
     const slug = route.slug;
     const trail = await getJson(`/api/trails/${encodeURIComponent(slug)}`);
     state.slug = slug;
+    mdContext.slug = slug;
     if (!(await reloadProgress())) throw new Error("não consegui carregar o seu progresso.");
     const entries = trail.blocks || [];
     const blocks = await Promise.all(entries.map(async (entry) => {
-      const url = fileUrl(entry.file);
+      const url = blockUrl(entry.id);
       try { return { entry, url, data: await getJson(url) }; }
       catch (error) { return { entry, url, data: null, error: error.message }; }
     }));
@@ -418,13 +524,13 @@ function drawMenu() {
       list.append(h("button", {
         class: "item" + (isDone(item) ? " done" : "") + (isNext ? " next" : "") + (active ? " active" : ""),
         type: "button", "data-id": raw.id, "aria-current": active ? "page" : null,
-        "aria-label": `${raw.title}. ${kind.label}. ${isDone(item) ? "Feito" : "Pendente"}${isNext ? ". Próxima aula" : ""}`,
+        "aria-label": `${raw.title}. ${kind.label}. ${raw.optional ? "Opcional" : "Obrigatória"}. ${isDone(item) ? "Feito" : "Pendente"}${isNext ? ". Próxima aula" : ""}`,
         onclick: () => openByClick(item),
       },
         icon(isDone(item) ? "check_circle_filled" : "radio_button_unchecked", "status"),
         h("span", {}, h("span", { class: "title" }, icon(kind.icon, "kind"), raw.title,
           isNext ? h("span", { class: "tag-next" }, "PRÓXIMA AULA") : null),
-          h("span", { class: "meta" }, [kind.label, raw.optional ? "opcional" : null, raw.duration, raw.channel].filter(Boolean).join(" · ")))));
+          h("span", { class: "meta" }, requirementChip(raw), " ", [kind.label, raw.duration, raw.channel].filter(Boolean).join(" · ")))));
     }
     box.append(list);
     nav.append(box);
@@ -460,6 +566,8 @@ $("#menu-btn").addEventListener("click", () => {
 });
 
 /* ---------- itens ---------- */
+/* Obrigatória e Opcional têm cor própria E texto (nunca só cor). */
+const requirementChip = (item) => h("span", { class: "chip " + (item.optional ? "optional" : "required") }, item.optional ? "Opcional" : "Obrigatória");
 const questionProgress = {};            // chave do item -> {answered, total}; preenchido por renderQuestions
 
 /* O que vem depois: o item seguinte do bloco ou, no último item, o primeiro item do próximo bloco. */
@@ -510,7 +618,7 @@ async function showItem(item, { mark = false, track = true } = {}) {
   const badges = h("div", { class: "badges" }, h("span", { class: "badge" }, kind.label));
   if (item.duration) badges.append(h("span", { class: "badge" }, item.duration));
   if (item.channel) badges.append(h("span", { class: "badge" }, item.channel));
-  if (item.optional) badges.append(h("span", { class: "badge" }, "opcional"));
+  badges.append(requirementChip(item));
   if (item.type === "video" && item.review) badges.append(h("span", { class: "badge ok", title: "A transcrição foi lida e comparada com o material; os detalhes estão em \"Conferência\", abaixo do vídeo." }, item.review.badge));
   if (item.type === "video" && !item.review) badges.append(h("span", { class: "badge warn", title: "A transcrição deste vídeo ainda não foi lida e conferida." }, "transcrição ainda não lida"));
   badges.append(h("span", { class: "pillbar top" }, h("span", { class: "status-slot" }, statusPill(item)), nextPill(item)));
@@ -551,40 +659,64 @@ async function toggleDone(item, value) {
 async function renderItem(item, body) {
   if (item.type === "video") return renderVideo(item, body);
   if (item.type === "markdown") {
-    let text, base;
-    if (item.content != null) { text = item.content; base = state.blockUrl; }
-    else { base = resolve(item.path, state.blockUrl); text = await getText(base); }
+    const text = item.content != null ? item.content : await getText(itemUrl(state.block.id, item.id, "content"));
     const minutes = Math.max(1, Math.round(text.split(/\s+/).length / 180));
     const bar = $(".badges");
     if (bar) bar.insertBefore(h("span", { class: "badge" }, `~${minutes} min de leitura`), $(".badges .pillbar"));
-    return renderMarkdown(text, base, body);
+    return renderMarkdown(text, body);
   }
   if (item.type === "pdf") {
-    const url = resolve(item.path, state.blockUrl);
-    body.append(h("div", { class: "pdf-wrap" }, h("iframe", { src: url, title: item.title })),
-      h("p", {}, h("a", { class: "btn", href: url, target: "_blank", rel: "noopener" }, icon("open_in_new"), "Abrir o PDF em outra aba")));
+    const url = itemUrl(state.block.id, item.id, "content");
+    body.append(h("p", {}, "Este PDF abre em outra aba."),
+      h("p", {}, h("a", { class: "btn primary", href: url, target: "_blank", rel: "noopener noreferrer" }, icon("open_in_new"), "Abrir o PDF em outra aba")));
     return;
   }
   if (item.type === "link") {
     if (item.description) body.append(h("div", { class: "md", html: marked.parse(item.description) }));
+    const link = safeUrl(item.url);
     body.append(h("div", { class: "link-card" }, h("p", {}, item.url || ""),
-      item.url ? h("a", { class: "btn primary", href: item.url, target: "_blank", rel: "noopener" }, icon("open_in_new"), "Abrir a matéria em outra aba") : null));
+      link ? h("a", { class: "btn primary", href: link, target: "_blank", rel: "noopener noreferrer" }, icon("open_in_new"), "Abrir a matéria em outra aba") : null));
     return;
   }
   if (item.type === "questions") return renderQuestions(item, body);
   body.append(h("p", {}, `Tipo de item desconhecido: ${item.type}`));
 }
 
-/* ---------- markdown ---------- */
-function renderMarkdown(text, baseUrl, target) {
-  const box = h("div", { class: "md", html: marked.parse(text || "") });
-  for (const image of box.querySelectorAll("img")) image.src = resolve(image.getAttribute("src"), baseUrl);
-  for (const link of box.querySelectorAll("a[href]")) {
-    const href = link.getAttribute("href");
-    if (href.startsWith("#")) continue;
-    link.href = resolve(href, baseUrl); link.target = "_blank"; link.rel = "noopener";
-  }
-  target.append(box);
+/* ---------- markdown seguro ---------- */
+/* O conteúdo vem de arquivos que agentes escrevem: nunca é confiável. O marked é configurado para
+   (1) escapar qualquer HTML bruto, (2) aceitar só links http, https, mailto, âncoras e rotas internas e
+   (3) aceitar imagens somente pela rota de figuras da própria trilha. A CSP do servidor é a segunda barreira. */
+const mdContext = { slug: null };
+const escapeHtml = (text) => String(text ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+const SAFE_LINK = /^(https?:\/\/|mailto:|#|\/(?!\/))/i;
+const FIGURE_NAME = /^[A-Za-z0-9._-]+$/;
+const safeUrl = (url) => (/^https?:\/\//i.test(String(url || "").trim()) ? String(url).trim() : null);
+function figureName(href) {
+  const parts = String(href || "").split(/[?#]/)[0].split("/").filter(Boolean);
+  const name = parts[parts.length - 1] || "";
+  return parts.includes("figures") && FIGURE_NAME.test(name) ? name : null;
+}
+marked.use({
+  gfm: true,
+  renderer: {
+    html(token) { return escapeHtml(typeof token === "string" ? token : token?.text ?? token?.raw ?? ""); },
+    link(href, title, text) {
+      const target = String(href ?? "").trim();
+      if (typeof href === "object" && href !== null) return escapeHtml(href.text ?? "");          // formato novo do marked: não suportado aqui
+      if (!SAFE_LINK.test(target)) return text;                                                    // sem link: só o texto
+      const external = /^(https?:|mailto:)/i.test(target);
+      return `<a href="${escapeHtml(target)}"${title ? ` title="${escapeHtml(title)}"` : ""}${external ? ' target="_blank" rel="noopener noreferrer"' : ""}>${text}</a>`;
+    },
+    image(href, title, text) {
+      if (typeof href === "object" && href !== null) return escapeHtml(href.text ?? "");
+      const name = figureName(href);
+      if (!name || !mdContext.slug) return escapeHtml(text);                                       // imagem fora das figuras: só o texto alternativo
+      return `<img src="/api/trails/${encodeURIComponent(mdContext.slug)}/figures/${encodeURIComponent(name)}" alt="${escapeHtml(text)}"${title ? ` title="${escapeHtml(title)}"` : ""} loading="lazy">`;
+    },
+  },
+});
+function renderMarkdown(text, target) {
+  target.append(h("div", { class: "md", html: marked.parse(text || "") }));
 }
 
 /* ---------- vídeo ---------- */
@@ -606,7 +738,7 @@ async function renderVideo(item, body) {
   const first = clips[0] || { start: item.start, end: item.end };
   let frame;
   if (id) {
-    frame = h("iframe", { src: embedUrl(first, false), title: item.title, allowfullscreen: true,
+    frame = h("iframe", { src: embedUrl(first, false), title: item.title,
       allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" });
     body.append(h("div", { class: "video-wrap" }, frame));
   }
@@ -626,12 +758,12 @@ async function renderVideo(item, body) {
     body.append(list);
   }
   body.append(h("p", { class: "muted" }, id ? "Se o vídeo não abrir aqui (o autor pode ter bloqueado a incorporação), use o botão. Dica: velocidade 1,25× e legendas ligadas." : "",
-    " ", item.url ? h("a", { class: "btn", href: item.url, target: "_blank", rel: "noopener" }, icon("open_in_new"), "Abrir no YouTube") : null));
+    " ", safeUrl(item.url) ? h("a", { class: "btn", href: safeUrl(item.url), target: "_blank", rel: "noopener noreferrer" }, icon("open_in_new"), "Abrir no YouTube") : null));
   if (item.summary) body.append(h("div", { class: "md", html: marked.parse(item.summary) }));
   if (item.review) body.append(reviewCard(item.review));
   if (item.transcript) {
     try {
-      const transcript = await getJson(resolve(item.transcript, state.blockUrl));
+      const transcript = await getJson(itemUrl(state.block.id, item.id, "transcript"));
       const seek = (second) => { if (id && frame) { frame.src = embedUrl({ start: second }, true); frame.scrollIntoView({ behavior: "smooth", block: "center" }); } };
       body.append(transcriptCard(transcript, clips, seek));
     } catch (error) { body.append(h("p", { class: "muted small" }, "Não consegui carregar a transcrição: " + error.message)); }
@@ -677,14 +809,13 @@ function transcriptCard(transcript, clips, seek) {
 // Uma questão por vez. O conjunto só fica "feito" quando todas forem respondidas; quando está completo, entrar
 // no item mostra o resumo (o que você marcou, o que estava certo ou errado, com todas as explicações).
 async function renderQuestions(item, body) {
-  const url = resolve(item.path, state.blockUrl);
-  const set = await getJson(url);
+  const set = await getJson(itemUrl(state.block.id, item.id, "content"));
   const total = (set.questions || []).length;
   if (!total) { body.append(h("p", { class: "muted" }, "Este conjunto ainda não tem questões.")); return; }
   const prepared = await Promise.all(set.questions.map(async (question) => {
-    let prompt = question.prompt || "", base = url;
-    if (question.promptFile) { base = resolve(question.promptFile, url); prompt = await getText(base); }
-    return { question, prompt, base };
+    let prompt = question.prompt || "";
+    if (!prompt && question.promptFile) prompt = "_O enunciado desta questão está em um arquivo que a interface não carrega._";
+    return { question, prompt, base: null };
   }));
   const given = () => state.progress.answers[item.key] || {};
   const answeredCount = () => prepared.filter((p) => given()[p.question.id]).length;
@@ -772,7 +903,7 @@ function drawQuestion(card, question, number, prompt, base, saved, actions, inSu
     inSummary && saved ? h("span", { class: "badge " + (saved.correct ? "ok" : "warn") }, saved.correct ? "acertou" : "errou") : null,
     inSummary && !saved ? h("span", { class: "badge pending" }, "não respondida") : null));
   const promptBox = h("div");
-  renderMarkdown(prompt, base, promptBox);
+  renderMarkdown(prompt, promptBox);
   card.append(promptBox);
 
   const chosen = new Set(saved ? saved.chosen : []);
@@ -788,7 +919,7 @@ function drawQuestion(card, question, number, prompt, base, saved, actions, inSu
       else if (!option.correct && picked) cls += " wrong";
       else if (option.correct && !picked) cls += " missed";
     }
-    const content = h("div", { class: "body" }, h("div", { html: `<strong>${option.id.toUpperCase()})</strong> ` + marked.parseInline(option.text || "") }));
+    const content = h("div", { class: "body" }, h("div", {}, h("strong", {}, String(option.id).toUpperCase() + ")"), " ", h("span", { html: marked.parseInline(option.text || "") })));
     if (saved && option.explanation) {
       const tag = option.correct ? (picked ? "Correta — você marcou." : "Correta — você não marcou.") : (picked ? "Errada — você marcou." : "Errada.");
       content.append(h("div", { class: "why" }, h("span", { class: "tag" }, tag + " "), h("span", { html: marked.parseInline(option.explanation) })));
@@ -811,7 +942,7 @@ function drawQuestion(card, question, number, prompt, base, saved, actions, inSu
       saved.correct ? `Você acertou. Marcou: ${mine}.` : `Você errou. Marcou: ${mine}. Gabarito: ${gabarito}. Leia a explicação de cada alternativa.`));
     if (question.generalExplanation) {
       const general = h("div", { class: "general" });
-      renderMarkdown(question.generalExplanation, base, general);
+      renderMarkdown(question.generalExplanation, general);
       card.append(general);
     }
     card.append(h("p", {}, h("button", { type: "button", class: "btn small-btn", onclick: () => actions.redo() }, "Refazer esta questão")));
@@ -823,11 +954,12 @@ async function start() {
   await loadIcons();
   $("#menu-btn").replaceChildren(icon("menu"));
   try {
-    const me = await api("GET", "/api/me");
-    state.user = me?.student || null;
+    await loadSession();
+    const code = new URLSearchParams(location.search).get("oauth_error");      // só chaves conhecidas viram mensagem
+    if (code) { state.oauthError = OAUTH_MESSAGES[code] || OAUTH_MESSAGES.failed; history.replaceState(null, "", location.pathname + location.hash); }
   } catch (error) {
     $("#main").replaceChildren(h("div", { class: "verdict no", role: "alert" }, "Não consegui iniciar: " + error.message),
-      h("p", {}, "Inicie o servidor com: py main serve  e abra http://localhost:8765/"));
+      h("p", {}, "Inicie o servidor com: py main.py serve  e abra http://localhost:8765/"));
     return;
   }
   drawUser();
