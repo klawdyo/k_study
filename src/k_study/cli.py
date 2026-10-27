@@ -8,7 +8,7 @@
   pack SLUG        valida e gera o pacote zip importável de uma trilha
   import-trail ZIP importa um pacote zip de trilha (mesma rotina do upload do admin)
   set-admin EMAIL  torna uma conta existente administradora (recuperação)
-  reset-password EMAIL  define uma nova senha (pedida no terminal, sem eco)
+  reset-password EMAIL [SENHA]  define uma nova senha (sem SENHA, é pedida no terminal, sem eco)
   import-progress  importa um progress.json antigo para uma conta existente
 
 Códigos de saída: 0 ok, 1 problemas de validação, 2 erro de uso ou de ambiente.
@@ -121,6 +121,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     s = add("reset-password", "define uma nova senha para uma conta existente")
     s.add_argument("email", help="e-mail da conta")
+    s.add_argument("password", nargs="?", help="nova senha (opcional; sem ela, é pedida no terminal sem eco; "
+                                               "digitada aqui, fica no histórico do shell)")
 
     s = add("import-progress", "importa um progress.json antigo para uma conta existente")
     s.add_argument("file", metavar="ARQUIVO.json", help="progress.json antigo (não é alterado)")
@@ -287,11 +289,11 @@ def cmd_reset_password(args) -> int:
     from . import security
     db, row = _existing_student(args)
     secret = security.ensure_secret(env_path_of(args))
-    first = getpass.getpass("Nova senha: ")
+    first = args.password if args.password is not None else getpass.getpass("Nova senha: ")
     problem = security.check_password_policy(first, row["email"])
     if problem:
         raise UsageError(problem)
-    if getpass.getpass("Repita a nova senha: ") != first:
+    if args.password is None and getpass.getpass("Repita a nova senha: ") != first:
         raise UsageError("a confirmação não confere; nada foi alterado.")
     db.set_credentials(row["id"], None, security.hash_password(first, secret))
     db.run("DELETE FROM sessions WHERE student_id=?", (row["id"],))
