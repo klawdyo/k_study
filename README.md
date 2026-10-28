@@ -142,7 +142,7 @@ main.py                  py main.py <comando>
 .env                     segredo local e credenciais do Google (criado no primeiro uso; fora do Git)
 .env.example             modelo do .env, sem segredos (este vai para o Git)
 Dockerfile               imagem para subir o servidor (veja a seção Docker)
-CLAUDE.md                instruções de entrada para agentes de IA
+CLAUDE.md, AGENTS.md, GEMINI.md, OPENCODE.md  instruções de entrada para agentes de IA
 README.md                este arquivo
 specs/                   instruções detalhadas para agentes (entrevista, pipeline, vídeos, leituras, questões, pacote...)
 docs/arquitetura.md      o contrato técnico (pastas, banco, API, CLI, segurança)
